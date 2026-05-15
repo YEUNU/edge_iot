@@ -1,6 +1,3 @@
-# SENSITIVE — contains Xiaomi device tokens. Use the .example to scaffold yours.
-xiaomi-miio/src/devices_config.lua
-
 # Editor / OS scratch
 .DS_Store
 *.swp

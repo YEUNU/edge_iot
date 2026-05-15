@@ -1,68 +1,59 @@
 --[[
-  Discovery: enumerate the hard-coded device list and try to create a SmartThings
-  device record for each one. Verification is best-effort — we send a miIO Hello
-  to confirm the device is reachable before adding it; if the Hello fails we skip
-  it (the user can rerun discovery once the device is online).
+  Discovery: spawn one SmartThings device record per supported Xiaomi model.
+
+  This driver does not know the user's IP/token at build time. We create three
+  placeholder devices on first Scan-nearby; the user then enters each device's
+  IP and token in its SmartThings settings panel, which triggers
+  `infoChanged` and the driver starts polling that device.
 ]]
 
-local cosock = require "cosock"
-local socket = require "cosock.socket"
 local log = require "log"
-
-local devices_config = require "devices_config"
-local Client = require "miio.client"
-local handlers = {
-  fan_za5  = require "devices.fan_za5",
-  airp_cpa4 = require "devices.airp_cpa4",
-  derh_13l = require "devices.derh_13l",
-}
+local models = require "models"
 
 local Discovery = {}
 
-local function probe(entry)
-  local c = Client.new{ ip = entry.ip, token = entry.token, timeout_s = 4 }
-  local id, _, err = c:handshake()
-  if not id then
-    log.warn(string.format("discovery: %s @ %s unreachable: %s",
-      entry.model, entry.ip, tostring(err)))
-    return false
-  end
-  log.info(string.format("discovery: %s @ %s id=0x%08x ok",
-    entry.model, entry.ip, id))
-  return true
+local function hex_byte()
+  return string.format("%02x", math.random(0, 255))
+end
+
+local function random_dni(prefix)
+  -- 12-hex pseudo-MAC, suffixed by the model handler key so we never clash
+  -- with anything real on the network.
+  local parts = {}
+  for i = 1, 6 do parts[i] = hex_byte() end
+  return prefix .. "-" .. table.concat(parts)
 end
 
 function Discovery.handle(driver, _, should_continue)
-  local known = {}
+  -- Which model handlers already have a device created on this hub?
+  local existing = {}
   for _, dev in ipairs(driver:get_devices()) do
-    known[dev.device_network_id] = true
+    local cfg = dev:get_field("model_def")
+    if cfg then existing[cfg.handler] = true end
+    -- Also fall back to vendor model name when the field is not yet populated.
+    if dev.model then existing[dev.model] = true end
   end
 
-  while should_continue() do
-    for _, entry in ipairs(devices_config) do
-      if not known[entry.dni] and handlers[entry.handler] then
-        if probe(entry) then
-          local create_msg = {
-            type = "LAN",
-            device_network_id = entry.dni,
-            label = entry.name,
-            profile = entry.profile,
-            manufacturer = "Xiaomi",
-            model = entry.model,
-            vendor_provided_label = entry.vendor_label,
-          }
-          local ok, err = driver:try_create_device(create_msg)
-          if ok then
-            known[entry.dni] = true
-            log.info("discovery: created " .. entry.dni)
-          else
-            log.error("discovery: failed to create " .. entry.dni .. ": " .. tostring(err))
-          end
-        end
+  for _, m in ipairs(models) do
+    if not should_continue() then break end
+    if not (existing[m.handler] or existing[m.model]) then
+      local create_msg = {
+        type = "LAN",
+        device_network_id = random_dni(m.handler),
+        label = m.label,
+        profile = m.profile,
+        manufacturer = "Xiaomi",
+        model = m.model,
+        vendor_provided_label = m.vendor_label,
+      }
+      local ok, err = driver:try_create_device(create_msg)
+      if ok then
+        log.info("discovery: created placeholder " .. m.label)
+        existing[m.handler] = true
+      else
+        log.error("discovery: try_create_device failed for " .. m.label .. ": " .. tostring(err))
       end
     end
-    -- Give the user time to confirm in the UI, then re-scan.
-    socket.sleep(3)
   end
 end
 
