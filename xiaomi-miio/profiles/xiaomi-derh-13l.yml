@@ -1,0 +1,32 @@
+name: xiaomi-derh-13l.v1
+components:
+  - id: main
+    capabilities:
+      - id: switch
+        version: 1
+      - id: mode
+        version: 1
+      - id: relativeHumidityMeasurement
+        version: 1
+      - id: temperatureMeasurement
+        version: 1
+      - id: earthpanel38939.targetHumidity
+        version: 1
+      - id: earthpanel38939.childLock
+        version: 1
+      - id: earthpanel38939.alarmBuzzer
+        version: 1
+      - id: earthpanel38939.indicatorLightMode
+        version: 1
+      - id: earthpanel38939.dryAfterOff
+        version: 1
+      - id: earthpanel38939.dryRemainingMinutes
+        version: 1
+      - id: earthpanel38939.deviceFault
+        version: 1
+      - id: earthpanel38939.isWarmingUp
+        version: 1
+      - id: refresh
+        version: 1
+    categories:
+      - name: Dehumidifier
