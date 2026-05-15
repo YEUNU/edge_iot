@@ -53,14 +53,13 @@ Deferred (custom capabilities required): target humidity slider for the dehumidi
 
 ## Configure your devices
 
-`xiaomi-miio/src/devices_config.lua` is **gitignored** because it holds plaintext device tokens. Copy the example and fill in your own values:
+No source-code editing required. Each device's IP and token are read from the device's SmartThings settings panel (defined as `preferences` in the profile YAMLs). After the driver is installed:
 
-```bash
-cp xiaomi-miio/src/devices_config.lua.example xiaomi-miio/src/devices_config.lua
-$EDITOR xiaomi-miio/src/devices_config.lua
-```
-
-Extract device tokens with [Xiaomi-Cloud-Tokens-Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) (logs into your Mi Home account and prints token + IP per device).
+1. In the SmartThings app, choose **Add device → Scan nearby** with your hub selected. The driver creates three placeholder devices: Xiaomi Fan, Xiaomi Air Purifier, Xiaomi Dehumidifier. Delete the ones you don't own.
+2. Open each device → ⚙ Settings → enter:
+   - **기기 IP 주소** — LAN IPv4 of the device (set a reserved DHCP lease on your router).
+   - **기기 Token (32-hex)** — extract with [Xiaomi-Cloud-Tokens-Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) (logs into your Mi Home account and prints token + IP per device).
+3. Save. The driver picks up the new values via `infoChanged`, runs a first refresh, and starts the 60-second polling loop.
 
 ## Deploy
 

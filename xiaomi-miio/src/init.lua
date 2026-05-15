@@ -1,5 +1,9 @@
 --[[
   Xiaomi miIO/MiOT LAN driver — entry point.
+
+  Per-device IP and token come from the device's SmartThings settings panel
+  (see `preferences` in each profile YAML). No secrets are baked into the
+  driver source.
 ]]
 
 local log = require "log"
@@ -8,7 +12,7 @@ log.info("xiaomi-miio init.lua loading")
 local capabilities = require "st.capabilities"
 local Driver = require "st.driver"
 
-local devices_config = require "devices_config"
+local models = require "models"
 local Client = require "miio.client"
 local discovery = require "discovery"
 local cmds = require "command_handlers"
@@ -18,6 +22,11 @@ local handler_modules = {
   airp_cpa4 = require "devices.airp_cpa4",
   derh_13l  = require "devices.derh_13l",
 }
+
+local model_to_def = {}
+for _, m in ipairs(models) do
+  model_to_def[m.model] = m
+end
 
 local NS = "earthpanel38939"
 local function safe_cap(id)
@@ -34,31 +43,58 @@ local cap_dryAfterOff    = safe_cap(NS .. ".dryAfterOff")
 
 local POLL_INTERVAL_S = 60
 
-local function find_config(dni)
-  for _, entry in ipairs(devices_config) do
-    if entry.dni == dni then return entry end
-  end
-  return nil
+local function find_model_def(device)
+  -- Prefer the model string on the device record; fall back to handler hint
+  -- stored as a field during discovery.
+  local m = device.model and model_to_def[device.model]
+  if m then return m end
+  return device:get_field("model_def")
+end
+
+local function prefs_complete(prefs)
+  return prefs
+     and type(prefs.deviceIp)    == "string" and #prefs.deviceIp    >= 7
+     and type(prefs.deviceToken) == "string" and #prefs.deviceToken == 32
 end
 
 local function attach(device)
-  local cfg = find_config(device.device_network_id)
+  local cfg = find_model_def(device)
   if not cfg then
-    device.log.error("no devices_config entry for dni=" .. device.device_network_id)
+    device.log.error("unknown model: " .. tostring(device.model))
     return false
   end
+  device:set_field("model_def", cfg)
+
+  local prefs = device.preferences or {}
+  if not prefs_complete(prefs) then
+    device.log.info("missing IP/token preferences; idle until configured")
+    device:offline()
+    device:set_field("client", nil)
+    return false
+  end
+
   local handler = handler_modules[cfg.handler]
   if not handler then
-    device.log.error("unknown handler: " .. tostring(cfg.handler))
+    device.log.error("no handler module for " .. cfg.handler)
     return false
   end
-  -- Air purifier is slow when powered off; give it more headroom.
+
+  -- Air purifier needs a slightly longer per-RPC timeout (slow when off).
   local timeout_s = (cfg.handler == "airp_cpa4") and 10 or 6
-  local client = Client.new{ ip = cfg.ip, token = cfg.token, timeout_s = timeout_s }
+  local client = Client.new{ ip = prefs.deviceIp, token = prefs.deviceToken, timeout_s = timeout_s }
   device:set_field("client", client)
   device:set_field("handler_module", handler)
-  device:set_field("config", cfg)
   return true
+end
+
+local function start_polling(driver, device)
+  if device:get_field("poll_scheduled") then return end
+  device:set_field("poll_scheduled", true)
+  device.thread:call_on_schedule(
+    POLL_INTERVAL_S,
+    function() cmds.refresh(driver, device) end,
+    device.id .. "_poll"
+  )
 end
 
 local function device_init(driver, device)
@@ -67,19 +103,35 @@ local function device_init(driver, device)
   local handler = device:get_field("handler_module")
   if handler and handler.on_init then handler.on_init(device) end
   cmds.refresh(driver, device)
-  device.thread:call_on_schedule(
-    POLL_INTERVAL_S,
-    function() cmds.refresh(driver, device) end,
-    device.id .. "_poll"
-  )
+  start_polling(driver, device)
 end
 
 local function device_added(driver, device)
   device.log.info("added " .. device.device_network_id)
+  -- Set the model_def regardless of preferences so we know which handler to use
+  -- once the user fills them in.
+  local cfg = find_model_def(device)
+  if cfg then
+    device:set_field("model_def", cfg)
+    local handler = handler_modules[cfg.handler]
+    if handler and handler.on_added then handler.on_added(device) end
+  end
   if attach(device) then
-    local handler = device:get_field("handler_module")
-    if handler.on_added then handler.on_added(device) end
     cmds.refresh(driver, device)
+    start_polling(driver, device)
+  end
+end
+
+local function device_info_changed(driver, device, _, old_prefs)
+  -- Re-attach when the IP or token changes.
+  local prefs = device.preferences or {}
+  if (old_prefs or {}).deviceIp    ~= prefs.deviceIp
+  or (old_prefs or {}).deviceToken ~= prefs.deviceToken then
+    device.log.info("preferences changed, re-attaching")
+    if attach(device) then
+      cmds.refresh(driver, device)
+      start_polling(driver, device)
+    end
   end
 end
 
@@ -106,9 +158,6 @@ local capability_handlers = {
   },
   [capabilities.fanOscillationMode.ID] = {
     [capabilities.fanOscillationMode.commands.setFanOscillationMode.NAME] = cmds.set_oscillation_mode,
-  },
-  [capabilities.windMode.ID] = {
-    [capabilities.windMode.commands.setWindMode.NAME] = cmds.set_wind_mode,
   },
   [capabilities.switchLevel.ID] = {
     [capabilities.switchLevel.commands.setLevel.NAME] = cmds.set_switch_level,
@@ -150,9 +199,10 @@ end
 local driver = Driver("xiaomi-miio", {
   discovery = discovery.handle,
   lifecycle_handlers = {
-    init    = device_init,
-    added   = device_added,
-    removed = device_removed,
+    init        = device_init,
+    added       = device_added,
+    infoChanged = device_info_changed,
+    removed     = device_removed,
   },
   capability_handlers = capability_handlers,
 })

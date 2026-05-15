@@ -24,3 +24,24 @@ components:
         version: 1
     categories:
       - name: Fan
+preferences:
+  - name: deviceIp
+    title: 기기 IP 주소
+    description: 192.168.x.x 형식
+    required: true
+    preferenceType: string
+    definition:
+      stringType: text
+      minLength: 7
+      maxLength: 15
+      default: "0.0.0.0"
+  - name: deviceToken
+    title: 기기 Token (32-hex)
+    description: Xiaomi-Cloud-Tokens-Extractor 로 추출
+    required: true
+    preferenceType: string
+    definition:
+      stringType: text
+      minLength: 32
+      maxLength: 32
+      default: "00000000000000000000000000000000"
