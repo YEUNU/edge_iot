@@ -1,0 +1,7 @@
+name: 'Tuya IR Cloud'
+packageKey: 'com.yunu.tuya-ir'
+permissions:
+  lan: {}
+  discovery: {}
+description: "SmartThings Edge driver for Tuya IR-blaster virtual devices (air conditioner via Tuya OpenAPI)"
+vendorSupportInformation: "https://github.com/YEUNU/edge_iot"
