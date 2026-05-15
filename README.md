@@ -45,11 +45,19 @@ xiaomi-miio/
 
 Deferred (custom capabilities required): target humidity slider for the dehumidifier, oscillation/angle for the fan, child-lock, buzzer, indicator brightness, fault alerts.
 
-## Prerequisites
+## Install the driver (easy path)
+
+If you just want to run this driver on your own hub, you don't need to clone the repo or build anything. Open the invite link below on your phone, accept it, and the driver shows up in the SmartThings app's "Add device → Scan nearby" list.
+
+**Invite link**: <https://bestow-regional.api.smartthings.com/invite/KPMekJRvL0lQ>
+
+After enrolling, follow [Configure your devices](#configure-your-devices) below to plug in each device's IP and token via the SmartThings settings panel. No secrets ship in the driver package.
+
+## Prerequisites (for development / re-publishing)
 
 - A SmartThings hub that supports Edge (Station / Aeotec v3 / newer).
 - The [SmartThings CLI](https://github.com/SmartThingsCommunity/smartthings-cli) (`smartthings`) authenticated against your Samsung account.
-- The hub and the three Xiaomi devices on the same LAN. Set static/reserved DHCP leases for the three MACs on your router so the IPs in `devices_config.lua` stay stable.
+- The hub and your Xiaomi devices on the same LAN. Set static/reserved DHCP leases on your router so each device's IP stays stable.
 
 ## Configure your devices
 
