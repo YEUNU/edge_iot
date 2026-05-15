@@ -1,0 +1,53 @@
+--[[
+  Inventory of Xiaomi devices this driver controls.
+
+  Copy this file to `devices_config.lua` (gitignored) and fill in YOUR own
+  values. The driver reads from `devices_config.lua` at runtime.
+
+  Each entry needs:
+    dni    – stable device-network-id. Lowercase MAC (no colons) is a fine choice.
+    ip     – LAN IPv4 of the device. Use a static/reserved DHCP lease.
+    token  – 32-char hex (16 raw bytes) Xiaomi device token. Extract with the
+             Xiaomi-Cloud-Tokens-Extractor or a Mi Home logfile.
+    model  – Xiaomi MiOT model id, e.g. zhimi.fan.za5.
+    profile– SmartThings profile name (see profiles/*.yml without extension).
+    handler– key in handler_modules in init.lua (fan_za5 | airp_cpa4 | derh_13l).
+]]
+
+return {
+  -- Mi Smart Standing Fan 2 (DC inverter)
+  {
+    dni = "aabbccddeeff",
+    name = "Xiaomi Fan",
+    model = "zhimi.fan.za5",
+    ip = "192.168.x.x",
+    token = "00000000000000000000000000000000",
+    profile = "xiaomi-fan-za5.v1",
+    handler = "fan_za5",
+    vendor_label = "Mi Smart Standing Fan 2",
+  },
+
+  -- Mi Air Purifier 4 Compact
+  {
+    dni = "112233445566",
+    name = "Xiaomi Air Purifier",
+    model = "zhimi.airp.cpa4",
+    ip = "192.168.x.x",
+    token = "00000000000000000000000000000000",
+    profile = "xiaomi-airp-cpa4.v1",
+    handler = "airp_cpa4",
+    vendor_label = "Mi Air Purifier 4 Compact",
+  },
+
+  -- Xiaomi Smart Dehumidifier 13L
+  {
+    dni = "778899aabbcc",
+    name = "Xiaomi Dehumidifier",
+    model = "xiaomi.derh.13l",
+    ip = "192.168.x.x",
+    token = "00000000000000000000000000000000",
+    profile = "xiaomi-derh-13l.v1",
+    handler = "derh_13l",
+    vendor_label = "Xiaomi Smart Dehumidifier 13L",
+  },
+}

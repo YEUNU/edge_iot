@@ -1,0 +1,7 @@
+name: 'Xiaomi MiIO LAN'
+packageKey: 'com.yunu.xiaomi-miio'
+permissions:
+  lan: {}
+  discovery: {}
+description: "SmartThings Edge driver for Xiaomi miIO/MiOT devices (fan, air purifier, dehumidifier) over local LAN"
+vendorSupportInformation: "https://github.com/yunu/edge_iot"

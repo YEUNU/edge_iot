@@ -1,0 +1,28 @@
+name: xiaomi-airp-cpa4.v1
+components:
+  - id: main
+    capabilities:
+      - id: switch
+        version: 1
+      - id: mode
+        version: 1
+      - id: fineDustSensor
+        version: 1
+      - id: airQualitySensor
+        version: 1
+      - id: filterState
+        version: 1
+      - id: switchLevel
+        version: 1
+      - id: earthpanel38939.childLock
+        version: 1
+      - id: earthpanel38939.alarmBuzzer
+        version: 1
+      - id: earthpanel38939.indicatorLightMode
+        version: 1
+      - id: earthpanel38939.deviceFault
+        version: 1
+      - id: refresh
+        version: 1
+    categories:
+      - name: AirPurifier
