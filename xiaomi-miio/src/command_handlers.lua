@@ -37,6 +37,14 @@ function M.refresh(driver, device)
   local handler, client = get_handler(device)
   if not (handler and client) then return end
 
+  -- One handshake covers every chunk in this refresh cycle.
+  local sess_ok, sess_err = client:begin_session()
+  if not sess_ok then
+    device:offline()
+    warn_fail(device, "refresh (handshake)", sess_err)
+    return
+  end
+
   local by_did = {}
   local any_ok = false
   local last_err
@@ -48,7 +56,7 @@ function M.refresh(driver, device)
     for j = i, math.min(i + CHUNK_SIZE - 1, #handler.refresh_props) do
       chunk[#chunk + 1] = handler.refresh_props[j]
     end
-    if idx > 1 then cosock.socket.sleep(0.3) end
+    if idx > 1 then cosock.socket.sleep(0.05) end
     local result, err = client:get_properties(chunk)
     if result then
       any_ok = true
@@ -60,6 +68,8 @@ function M.refresh(driver, device)
       log.warn(string.format("[%s] refresh chunk %d failed: %s", device.label, idx, tostring(err)))
     end
   end
+
+  client:end_session()
 
   if not any_ok then
     device:offline()

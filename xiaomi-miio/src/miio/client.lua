@@ -85,15 +85,45 @@ function Client:handshake()
   return dev_id, stamp
 end
 
--- One attempt of: hello → request → reply. Returns (payload, err).
+--- Start a session: do one handshake and cache device_id + stamp offset so
+-- subsequent send_raw calls skip the hello round-trip.
+function Client:begin_session()
+  local dev_id, stamp, err = self:handshake()
+  if not dev_id then return false, err end
+  self._session = {
+    dev_id = dev_id,
+    base_stamp = stamp,
+    base_time = os.time(),
+  }
+  return true
+end
+
+function Client:end_session()
+  self._session = nil
+end
+
+local function session_dev_stamp(self)
+  local s = self._session
+  if not s then return nil, nil end
+  return s.dev_id, s.base_stamp + (os.time() - s.base_time)
+end
+
+-- One attempt of: (optional hello) → request → reply. Returns (payload, err).
 local function send_once(self, json_body)
   local s, oerr = open_socket(self.timeout)
   if not s then return nil, oerr end
-  s:sendto(pkt.hello_packet(), self.ip, PORT)
-  local hello = s:receivefrom()
-  if not hello then s:close(); return nil, "hello timeout" end
-  local dev_id, stamp = pkt.parse(self.token_bytes, hello)
-  if not dev_id then s:close(); return nil, "hello parse" end
+
+  local dev_id, stamp
+  if self._session then
+    dev_id, stamp = session_dev_stamp(self)
+  else
+    s:sendto(pkt.hello_packet(), self.ip, PORT)
+    local hello = s:receivefrom()
+    if not hello then s:close(); return nil, "hello timeout" end
+    dev_id, stamp = pkt.parse(self.token_bytes, hello)
+    if not dev_id then s:close(); return nil, "hello parse" end
+  end
+
   local req = pkt.build(self.token_bytes, dev_id, stamp, json_body)
   local ok, serr = s:sendto(req, self.ip, PORT)
   if not ok then s:close(); return nil, "send: " .. tostring(serr) end
@@ -108,10 +138,15 @@ end
 --- Low-level: send a JSON-RPC body and return the decrypted reply string.
 function Client:send_raw(json_body)
   local last_err = "unknown"
-  for _ = 1, MAX_RETRIES do
+  for attempt = 1, MAX_RETRIES do
     local payload, err = send_once(self, json_body)
     if payload then return payload end
     last_err = err
+    -- If we're in a session and the RPC failed, the cached stamp may be stale.
+    -- Drop it; the next attempt will perform a fresh handshake.
+    if self._session and attempt < MAX_RETRIES then
+      self._session = nil
+    end
   end
   return nil, last_err
 end
