@@ -25,10 +25,7 @@ local cap_targetHumidity = capabilities[NS .. ".targetHumidity"]
 local cap_childLock      = capabilities[NS .. ".childLock"]
 local cap_alarmBuzzer    = capabilities[NS .. ".alarmBuzzer"]
 local cap_indicatorMode  = capabilities[NS .. ".indicatorLightMode"]
-local cap_dryAfterOff    = capabilities[NS .. ".dryAfterOff"]
-local cap_dryRemaining   = capabilities[NS .. ".dryRemainingMinutes"]
 local cap_deviceFault    = capabilities[NS .. ".deviceFault"]
-local cap_isWarmingUp    = capabilities[NS .. ".isWarmingUp"]
 
 local SIID_DERH = 2
 local PIID_POWER = 1
@@ -71,18 +68,15 @@ local LED_FROM_MODE = { off = 0, dim = 1, bright = 2 }
 M.supported_modes = { "스마트", "수면", "옷 건조" }
 
 M.refresh_props = {
-  { siid = SIID_DERH,  piid = PIID_POWER,        did = "power" },
-  { siid = SIID_DERH,  piid = PIID_MODE,         did = "mode" },
-  { siid = SIID_DERH,  piid = PIID_FAULT,        did = "fault" },
-  { siid = SIID_DERH,  piid = PIID_TARGET,       did = "target" },
-  { siid = SIID_ENV,   piid = PIID_HUM,          did = "humidity" },
-  { siid = SIID_ENV,   piid = PIID_TEMP,         did = "temperature" },
-  { siid = SIID_ALARM, piid = PIID_ALARM,        did = "alarm" },
-  { siid = SIID_LED,   piid = PIID_LED_MODE,     did = "led" },
-  { siid = SIID_LOCK,  piid = PIID_LOCK,         did = "lock" },
-  { siid = SIID_WARMUP, piid = PIID_WARMUP,      did = "warming" },
-  { siid = SIID_DELAY, piid = PIID_DELAY_ON,     did = "dryAfter" },
-  { siid = SIID_DELAY, piid = PIID_DELAY_REMAIN, did = "dryRemain" },
+  { siid = SIID_DERH,  piid = PIID_POWER,    did = "power" },
+  { siid = SIID_DERH,  piid = PIID_MODE,     did = "mode" },
+  { siid = SIID_DERH,  piid = PIID_FAULT,    did = "fault" },
+  { siid = SIID_DERH,  piid = PIID_TARGET,   did = "target" },
+  { siid = SIID_ENV,   piid = PIID_HUM,      did = "humidity" },
+  { siid = SIID_ENV,   piid = PIID_TEMP,     did = "temperature" },
+  { siid = SIID_ALARM, piid = PIID_ALARM,    did = "alarm" },
+  { siid = SIID_LED,   piid = PIID_LED_MODE, did = "led" },
+  { siid = SIID_LOCK,  piid = PIID_LOCK,     did = "lock" },
 }
 
 local function emit_supported_modes(device)
@@ -138,20 +132,6 @@ function M.apply_state(device, p)
     device:emit_event(cap_childLock.lock(lock and "locked" or "unlocked"))
   end
 
-  local warming = p["warming"]
-  if warming ~= nil and cap_isWarmingUp then
-    device:emit_event(cap_isWarmingUp.warmingUp(warming and "yes" or "no"))
-  end
-
-  local dryAfter = p["dryAfter"]
-  if dryAfter ~= nil and cap_dryAfterOff then
-    device:emit_event(cap_dryAfterOff.dryAfterOff(dryAfter and "on" or "off"))
-  end
-
-  local dryRemain = p["dryRemain"]
-  if dryRemain ~= nil and cap_dryRemaining then
-    device:emit_event(cap_dryRemaining.remainingMinutes({ value = dryRemain, unit = "min" }))
-  end
 end
 
 function M.set_switch(client, on)
@@ -181,10 +161,6 @@ function M.set_indicator(client, mode)
   local code = LED_FROM_MODE[mode]
   if not code then return nil, "unknown indicator mode: " .. tostring(mode) end
   return client:set_property(SIID_LED, PIID_LED_MODE, code, "led")
-end
-
-function M.set_dry_after_off(client, state)
-  return client:set_property(SIID_DELAY, PIID_DELAY_ON, state == "on", "dryAfter")
 end
 
 return M

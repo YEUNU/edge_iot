@@ -39,7 +39,6 @@ local cap_childLock      = safe_cap(NS .. ".childLock")
 local cap_alarmBuzzer    = safe_cap(NS .. ".alarmBuzzer")
 local cap_indicatorMode  = safe_cap(NS .. ".indicatorLightMode")
 local cap_targetHumidity = safe_cap(NS .. ".targetHumidity")
-local cap_dryAfterOff    = safe_cap(NS .. ".dryAfterOff")
 
 local POLL_INTERVAL_S = 10
 
@@ -186,13 +185,6 @@ end
 if cap_targetHumidity then
   capability_handlers[cap_targetHumidity.ID] = {
     ["setTargetHumidity"] = cmds.set_target_humidity,
-  }
-end
-if cap_dryAfterOff then
-  capability_handlers[cap_dryAfterOff.ID] = {
-    ["setDryAfterOff"] = cmds.set_dry_after_off,
-    ["enable"]         = cmds.dry_after_off_enable,
-    ["disable"]        = cmds.dry_after_off_disable,
   }
 end
 

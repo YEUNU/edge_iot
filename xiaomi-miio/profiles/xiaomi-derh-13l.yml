@@ -18,13 +18,7 @@ components:
         version: 1
       - id: earthpanel38939.indicatorLightMode
         version: 1
-      - id: earthpanel38939.dryAfterOff
-        version: 1
-      - id: earthpanel38939.dryRemainingMinutes
-        version: 1
       - id: earthpanel38939.deviceFault
-        version: 1
-      - id: earthpanel38939.isWarmingUp
         version: 1
       - id: refresh
         version: 1
