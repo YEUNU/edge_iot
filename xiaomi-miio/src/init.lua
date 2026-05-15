@@ -41,7 +41,7 @@ local cap_indicatorMode  = safe_cap(NS .. ".indicatorLightMode")
 local cap_targetHumidity = safe_cap(NS .. ".targetHumidity")
 local cap_dryAfterOff    = safe_cap(NS .. ".dryAfterOff")
 
-local POLL_INTERVAL_S = 60
+local POLL_INTERVAL_S = 10
 
 local function find_model_def(device)
   -- Prefer the model string on the device record; fall back to handler hint
