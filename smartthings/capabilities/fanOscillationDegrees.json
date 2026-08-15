@@ -1,0 +1,29 @@
+{
+  "name": "Fan Oscillation Degrees",
+  "attributes": {
+    "degrees": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": { "type": "integer", "minimum": 30, "maximum": 120 }
+        },
+        "additionalProperties": false,
+        "required": ["value"]
+      },
+      "setter": "setDegrees",
+      "enumCommands": []
+    }
+  },
+  "commands": {
+    "setDegrees": {
+      "name": "setDegrees",
+      "arguments": [
+        {
+          "name": "degrees",
+          "optional": false,
+          "schema": { "type": "integer", "minimum": 30, "maximum": 120 }
+        }
+      ]
+    }
+  }
+}

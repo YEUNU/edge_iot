@@ -45,6 +45,9 @@ local DEFAULT_TIMEOUT = 5
 local MAX_RETRIES = 3
 
 local function hex2bin(h)
+  if type(h) ~= "string" or #h ~= 32 or not h:match("^%x+$") then
+    return nil, "token must be exactly 32 hexadecimal characters"
+  end
   return (h:gsub("..", function(b) return string.char(tonumber(b, 16)) end))
 end
 
@@ -53,10 +56,14 @@ Client.__index = Client
 
 --- @param opts table { ip = "1.2.3.4", token = "32hex", timeout_s = number? }
 function Client.new(opts)
-  assert(opts and opts.ip and opts.token, "ip and token required")
+  if not (opts and opts.ip and opts.token) then
+    return nil, "ip and token required"
+  end
+  local token_bytes, token_err = hex2bin(opts.token)
+  if not token_bytes then return nil, token_err end
   return setmetatable({
     ip = opts.ip,
-    token_bytes = hex2bin(opts.token),
+    token_bytes = token_bytes,
     timeout = opts.timeout_s or DEFAULT_TIMEOUT,
     next_id = 1,
   }, Client)
@@ -85,37 +92,32 @@ function Client:handshake()
   return dev_id, stamp
 end
 
---- Start a session: do one handshake and cache device_id + stamp offset so
--- subsequent send_raw calls skip the hello round-trip.
+--- Start a session: do one handshake and return an immutable session value.
+-- Keeping the session local to a refresh prevents a concurrently spawned set
+-- command from replacing or clearing another operation's cached stamp.
 function Client:begin_session()
   local dev_id, stamp, err = self:handshake()
-  if not dev_id then return false, err end
-  self._session = {
+  if not dev_id then return nil, err end
+  return {
     dev_id = dev_id,
     base_stamp = stamp,
     base_time = os.time(),
   }
-  return true
 end
 
-function Client:end_session()
-  self._session = nil
-end
-
-local function session_dev_stamp(self)
-  local s = self._session
-  if not s then return nil, nil end
-  return s.dev_id, s.base_stamp + (os.time() - s.base_time)
+local function session_dev_stamp(session)
+  if not session then return nil, nil end
+  return session.dev_id, session.base_stamp + (os.time() - session.base_time)
 end
 
 -- One attempt of: (optional hello) → request → reply. Returns (payload, err).
-local function send_once(self, json_body)
+local function send_once(self, json_body, session)
   local s, oerr = open_socket(self.timeout)
   if not s then return nil, oerr end
 
   local dev_id, stamp
-  if self._session then
-    dev_id, stamp = session_dev_stamp(self)
+  if session then
+    dev_id, stamp = session_dev_stamp(session)
   else
     s:sendto(pkt.hello_packet(), self.ip, PORT)
     local hello = s:receivefrom()
@@ -136,17 +138,16 @@ local function send_once(self, json_body)
 end
 
 --- Low-level: send a JSON-RPC body and return the decrypted reply string.
-function Client:send_raw(json_body)
+function Client:send_raw(json_body, session)
   local last_err = "unknown"
+  local active_session = session
   for attempt = 1, MAX_RETRIES do
-    local payload, err = send_once(self, json_body)
+    local payload, err = send_once(self, json_body, active_session)
     if payload then return payload end
     last_err = err
-    -- If we're in a session and the RPC failed, the cached stamp may be stale.
-    -- Drop it; the next attempt will perform a fresh handshake.
-    if self._session and attempt < MAX_RETRIES then
-      self._session = nil
-    end
+    -- A failed RPC may mean the cached stamp is stale. Retry with a fresh
+    -- handshake without mutating the caller's session value.
+    active_session = nil
   end
   return nil, last_err
 end
@@ -206,7 +207,7 @@ function Client:miio_info()
 end
 
 --- @param props table list of {siid=, piid=, did=opt}
-function Client:get_properties(props)
+function Client:get_properties(props, session)
   local entries = {}
   for _, p in ipairs(props) do
     local did = p.did or string.format("%d-%d", p.siid, p.piid)
@@ -215,7 +216,7 @@ function Client:get_properties(props)
   end
   local params = "[" .. table.concat(entries, ",") .. "]"
   local body = make_body(self:next_request_id(), "get_properties", params)
-  local resp, err = self:send_raw(body)
+  local resp, err = self:send_raw(body, session)
   if not resp then return nil, err end
   return self:_parse_reply(resp)
 end
@@ -237,7 +238,23 @@ function Client:set_properties(props)
 end
 
 function Client:set_property(siid, piid, value, did)
-  return self:set_properties({ { siid = siid, piid = piid, value = value, did = did } })
+  local result, err = self:set_properties({
+    { siid = siid, piid = piid, value = value, did = did }
+  })
+  if not result then return nil, err end
+  if type(result) ~= "table" or #result == 0 then
+    return nil, "set_properties returned no result"
+  end
+  for _, item in ipairs(result) do
+    local code = tonumber(item.code)
+    if code ~= 0 then
+      return nil, string.format(
+        "set_properties failed for %s (code %s)",
+        tostring(item.did or did or (siid .. "-" .. piid)),
+        tostring(item.code or "missing"))
+    end
+  end
+  return true
 end
 
 function Client:action(siid, aiid, args, did)
@@ -254,7 +271,20 @@ function Client:action(siid, aiid, args, did)
   local body = make_body(self:next_request_id(), "action", params)
   local resp, err = self:send_raw(body)
   if not resp then return nil, err end
-  return self:_parse_reply(resp)
+  local result, parse_err = self:_parse_reply(resp)
+  if not result then return nil, parse_err end
+  if type(result) ~= "table" or #result == 0 then
+    return nil, "action returned no result"
+  end
+  for _, item in ipairs(result) do
+    local code = tonumber(item.code)
+    if code ~= 0 then
+      return nil, string.format(
+        "action failed for %s (code %s)",
+        tostring(item.did or did), tostring(item.code or "missing"))
+    end
+  end
+  return true
 end
 
 return Client

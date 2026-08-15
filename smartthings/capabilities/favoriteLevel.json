@@ -1,0 +1,29 @@
+{
+  "name": "Air Purifier Favorite Level",
+  "attributes": {
+    "level": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": { "type": "integer", "minimum": 0, "maximum": 14 }
+        },
+        "additionalProperties": false,
+        "required": ["value"]
+      },
+      "setter": "setFavoriteLevel",
+      "enumCommands": []
+    }
+  },
+  "commands": {
+    "setFavoriteLevel": {
+      "name": "setFavoriteLevel",
+      "arguments": [
+        {
+          "name": "level",
+          "optional": false,
+          "schema": { "type": "integer", "minimum": 0, "maximum": 14 }
+        }
+      ]
+    }
+  }
+}

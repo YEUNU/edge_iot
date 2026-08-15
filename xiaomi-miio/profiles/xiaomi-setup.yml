@@ -1,27 +1,23 @@
-name: xiaomi-derh-13l.v1
+name: xiaomi-setup.v1
 components:
   - id: main
     capabilities:
-      - id: switch
-        version: 1
-      - id: mode
-        version: 1
-      - id: relativeHumidityMeasurement
-        version: 1
-      - id: earthpanel38939.targetHumidity
-        version: 1
-      - id: earthpanel38939.deviceFault
+      - id: refresh
         version: 1
     categories:
-      - name: Dehumidifier
+      - name: Others
 preferences:
-  - name: showAdvanced
-    title: 고급 기능 표시
-    description: 온도, 표시등, 부저, 잠금, 필터 관리를 표시합니다
+  - name: deviceModel
+    title: 기기 종류
+    description: 연결할 Xiaomi 기기를 선택하세요
     required: true
-    preferenceType: boolean
+    preferenceType: enumeration
     definition:
-      default: false
+      options:
+        fan_za5: Mi Smart Standing Fan 2
+        airp_cpa4: Mi Air Purifier 4 Compact
+        derh_13l: Xiaomi Smart Dehumidifier 13L
+      default: fan_za5
   - name: deviceIp
     title: 기기 IP 주소
     description: 192.168.x.x 형식
@@ -42,3 +38,10 @@ preferences:
       minLength: 32
       maxLength: 32
       default: "00000000000000000000000000000000"
+  - name: showAdvanced
+    title: 고급 기능 표시
+    description: 연결 후 세부 기능까지 표시합니다
+    required: true
+    preferenceType: boolean
+    definition:
+      default: false

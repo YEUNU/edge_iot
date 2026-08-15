@@ -1,16 +1,26 @@
-name: xiaomi-derh-13l.v1
+name: xiaomi-derh-13l.advanced.v1
 components:
   - id: main
     capabilities:
       - id: switch
         version: 1
-      - id: mode
-        version: 1
       - id: relativeHumidityMeasurement
         version: 1
       - id: earthpanel38939.targetHumidity
         version: 1
+      - id: mode
+        version: 1
       - id: earthpanel38939.deviceFault
+        version: 1
+      - id: temperatureMeasurement
+        version: 1
+      - id: earthpanel38939.indicatorLightMode
+        version: 1
+      - id: earthpanel38939.alarmBuzzer
+        version: 1
+      - id: earthpanel38939.childLock
+        version: 1
+      - id: earthpanel38939.filterMaintenance
         version: 1
     categories:
       - name: Dehumidifier
@@ -21,7 +31,7 @@ preferences:
     required: true
     preferenceType: boolean
     definition:
-      default: false
+      default: true
   - name: deviceIp
     title: 기기 IP 주소
     description: 192.168.x.x 형식

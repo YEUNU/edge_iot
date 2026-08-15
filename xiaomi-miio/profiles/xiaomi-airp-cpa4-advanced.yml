@@ -1,4 +1,4 @@
-name: xiaomi-derh-13l.v1
+name: xiaomi-airp-cpa4.advanced.v1
 components:
   - id: main
     capabilities:
@@ -6,22 +6,30 @@ components:
         version: 1
       - id: mode
         version: 1
-      - id: relativeHumidityMeasurement
+      - id: fineDustSensor
         version: 1
-      - id: earthpanel38939.targetHumidity
+      - id: filterState
+        version: 1
+      - id: earthpanel38939.airPurifierFavoriteLevel
+        version: 1
+      - id: earthpanel38939.indicatorLightMode
+        version: 1
+      - id: earthpanel38939.alarmBuzzer
+        version: 1
+      - id: earthpanel38939.childLock
         version: 1
       - id: earthpanel38939.deviceFault
         version: 1
     categories:
-      - name: Dehumidifier
+      - name: AirPurifier
 preferences:
   - name: showAdvanced
     title: 고급 기능 표시
-    description: 온도, 표시등, 부저, 잠금, 필터 관리를 표시합니다
+    description: 표시등, 부저, 잠금, 상세 오류를 표시합니다
     required: true
     preferenceType: boolean
     definition:
-      default: false
+      default: true
   - name: deviceIp
     title: 기기 IP 주소
     description: 192.168.x.x 형식

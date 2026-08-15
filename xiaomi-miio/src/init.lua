@@ -24,8 +24,10 @@ local handler_modules = {
 }
 
 local model_to_def = {}
+local handler_to_def = {}
 for _, m in ipairs(models) do
   model_to_def[m.model] = m
+  handler_to_def[m.handler] = m
 end
 
 local NS = "earthpanel38939"
@@ -39,21 +41,64 @@ local cap_childLock      = safe_cap(NS .. ".childLock")
 local cap_alarmBuzzer    = safe_cap(NS .. ".alarmBuzzer")
 local cap_indicatorMode  = safe_cap(NS .. ".indicatorLightMode")
 local cap_targetHumidity = safe_cap(NS .. ".targetHumidity")
+local cap_oscillationAngle = safe_cap(NS .. ".fanOscillationDegrees")
+local cap_powerOffTimer = safe_cap(NS .. ".powerOffTimer")
+local cap_filterMaintenance = safe_cap(NS .. ".filterMaintenance")
+local cap_favoriteLevel = safe_cap(NS .. ".airPurifierFavoriteLevel")
 
-local POLL_INTERVAL_S = 10
+local CORE_POLL_INTERVAL_S = 20
+local AUX_POLL_INTERVAL_S = 300
 
 local function find_model_def(device)
   -- Prefer the model string on the device record; fall back to handler hint
-  -- stored as a field during discovery.
+  -- selected on the generic setup record, then to the stored handler hint.
   local m = device.model and model_to_def[device.model]
   if m then return m end
+  local selected = device.preferences and device.preferences.deviceModel
+  if selected and handler_to_def[selected] then return handler_to_def[selected] end
   return device:get_field("model_def")
 end
 
+local function desired_profile(cfg, prefs)
+  if prefs and prefs.showAdvanced == true then
+    return cfg.advanced_profile
+  end
+  return cfg.profile
+end
+
+local function valid_ipv4(ip)
+  if type(ip) ~= "string" or ip == "0.0.0.0" then return false end
+  local count = 0
+  for part in ip:gmatch("[^.]+") do
+    count = count + 1
+    if count > 4 or not part:match("^%d+$") then return false end
+    local value = tonumber(part)
+    if not value or value < 0 or value > 255 then return false end
+  end
+  return count == 4 and not ip:match("%.%.") and not ip:match("^%.") and not ip:match("%.$")
+end
+
 local function prefs_complete(prefs)
+  local token = prefs and prefs.deviceToken
   return prefs
-     and type(prefs.deviceIp)    == "string" and #prefs.deviceIp    >= 7
-     and type(prefs.deviceToken) == "string" and #prefs.deviceToken == 32
+     and valid_ipv4(prefs.deviceIp)
+     and type(token) == "string" and #token == 32
+     and token:match("^%x+$") ~= nil
+     and token ~= string.rep("0", 32)
+end
+
+local function sync_device_metadata(device, cfg)
+  if not cfg then return end
+  local metadata = {
+    profile = desired_profile(cfg, device.preferences or {}),
+    model = cfg.model,
+    manufacturer = "Xiaomi",
+    vendor_provided_label = cfg.vendor_label,
+  }
+  if prefs_complete(device.preferences or {}) then
+    metadata.provisioning_state = "PROVISIONED"
+  end
+  device:try_update_metadata(metadata)
 end
 
 local function attach(device)
@@ -80,27 +125,63 @@ local function attach(device)
 
   -- Air purifier needs a slightly longer per-RPC timeout (slow when off).
   local timeout_s = (cfg.handler == "airp_cpa4") and 10 or 6
-  local client = Client.new{ ip = prefs.deviceIp, token = prefs.deviceToken, timeout_s = timeout_s }
+  local client, client_err = Client.new{
+    ip = prefs.deviceIp,
+    token = prefs.deviceToken,
+    timeout_s = timeout_s,
+  }
+  if not client then
+    device.log.error("invalid miIO client settings: " .. tostring(client_err))
+    device:offline()
+    return false
+  end
   device:set_field("client", client)
   device:set_field("handler_module", handler)
   return true
 end
 
+local function initialize_handler(device)
+  local handler = device:get_field("handler_module")
+  if handler and handler.on_init then handler.on_init(device) end
+end
+
 local function start_polling(driver, device)
-  if device:get_field("poll_scheduled") then return end
-  device:set_field("poll_scheduled", true)
-  device.thread:call_on_schedule(
-    POLL_INTERVAL_S,
-    function() cmds.refresh(driver, device) end,
-    device.id .. "_poll"
-  )
+  if not device:get_field("core_poll_scheduled") then
+    device:set_field("core_poll_scheduled", true)
+    device.thread:call_on_schedule(
+      CORE_POLL_INTERVAL_S,
+      function() cmds.refresh_core(driver, device) end,
+      device.id .. "_core_poll"
+    )
+  end
+  if not device:get_field("aux_poll_scheduled") then
+    device:set_field("aux_poll_scheduled", true)
+    device.thread:call_on_schedule(
+      AUX_POLL_INTERVAL_S,
+      function() cmds.refresh_aux(driver, device) end,
+      device.id .. "_aux_poll"
+    )
+  end
 end
 
 local function device_init(driver, device)
   device.log.info("init " .. device.device_network_id)
+  local cfg = find_model_def(device)
+  if device.model == "xiaomi.setup" and not cfg then
+    device.log.info("waiting for Xiaomi model/IP/token settings")
+    device:offline()
+    return
+  end
+  if cfg then
+    device:set_field("model_def", cfg)
+    -- A configured generic setup record may restart before its metadata update
+    -- reaches the hub. Re-submit the selected model/profile without recreating it.
+    if device.model == "xiaomi.setup" and prefs_complete(device.preferences or {}) then
+      sync_device_metadata(device, cfg)
+    end
+  end
   if not attach(device) then return end
-  local handler = device:get_field("handler_module")
-  if handler and handler.on_init then handler.on_init(device) end
+  initialize_handler(device)
   cmds.refresh(driver, device)
   start_polling(driver, device)
 end
@@ -112,25 +193,39 @@ local function device_added(driver, device)
   local cfg = find_model_def(device)
   if cfg then
     device:set_field("model_def", cfg)
-    local handler = handler_modules[cfg.handler]
-    if handler and handler.on_added then handler.on_added(device) end
-  end
-  if attach(device) then
-    cmds.refresh(driver, device)
-    start_polling(driver, device)
+  elseif device.model == "xiaomi.setup" then
+    device:offline()
   end
 end
 
-local function device_info_changed(driver, device, _, old_prefs)
-  -- Re-attach when the IP or token changes.
+local function device_info_changed(driver, device, _, args)
+  -- Re-attach when connection/model settings change and switch between the
+  -- simple and advanced profiles without replacing the SmartThings device.
   local prefs = device.preferences or {}
-  if (old_prefs or {}).deviceIp    ~= prefs.deviceIp
-  or (old_prefs or {}).deviceToken ~= prefs.deviceToken then
+  local old_prefs = args and args.old_st_store and args.old_st_store.preferences or {}
+  local connection_changed = old_prefs.deviceIp ~= prefs.deviceIp
+                          or old_prefs.deviceToken ~= prefs.deviceToken
+  local model_changed = old_prefs.deviceModel ~= prefs.deviceModel
+  local advanced_changed = old_prefs.showAdvanced ~= prefs.showAdvanced
+  local cfg = find_model_def(device)
+  local setup_completed = device.model == "xiaomi.setup" and connection_changed
+
+  if cfg and prefs_complete(prefs) and (model_changed or advanced_changed or setup_completed) then
+    device:set_field("model_def", cfg)
+    sync_device_metadata(device, cfg)
+  end
+
+  if connection_changed or model_changed then
     device.log.info("preferences changed, re-attaching")
     if attach(device) then
+      initialize_handler(device)
       cmds.refresh(driver, device)
       start_polling(driver, device)
     end
+  elseif advanced_changed and device:get_field("client") then
+    -- Populate capabilities newly exposed by the advanced profile.
+    initialize_handler(device)
+    cmds.refresh(driver, device)
   end
 end
 
@@ -146,6 +241,7 @@ local capability_handlers = {
     [capabilities.switch.commands.on.NAME]  = cmds.switch_on,
     [capabilities.switch.commands.off.NAME] = cmds.switch_off,
   },
+  -- Kept for devices that still have the earlier fan profile during an update.
   [capabilities.fanSpeed.ID] = {
     [capabilities.fanSpeed.commands.setFanSpeed.NAME] = cmds.set_fan_speed,
   },
@@ -160,6 +256,9 @@ local capability_handlers = {
   },
   [capabilities.switchLevel.ID] = {
     [capabilities.switchLevel.commands.setLevel.NAME] = cmds.set_switch_level,
+  },
+  [capabilities.filterState.ID] = {
+    [capabilities.filterState.commands.resetFilter.NAME] = cmds.reset_filter,
   },
 }
 
@@ -185,6 +284,26 @@ end
 if cap_targetHumidity then
   capability_handlers[cap_targetHumidity.ID] = {
     ["setTargetHumidity"] = cmds.set_target_humidity,
+  }
+end
+if cap_oscillationAngle then
+  capability_handlers[cap_oscillationAngle.ID] = {
+    ["setDegrees"] = cmds.set_oscillation_angle,
+  }
+end
+if cap_powerOffTimer then
+  capability_handlers[cap_powerOffTimer.ID] = {
+    ["setTimer"] = cmds.set_power_off_timer,
+  }
+end
+if cap_filterMaintenance then
+  capability_handlers[cap_filterMaintenance.ID] = {
+    ["resetFilter"] = cmds.reset_filter,
+  }
+end
+if cap_favoriteLevel then
+  capability_handlers[cap_favoriteLevel.ID] = {
+    ["setFavoriteLevel"] = cmds.set_favorite_level,
   }
 end
 

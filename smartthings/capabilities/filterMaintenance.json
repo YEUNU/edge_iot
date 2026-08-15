@@ -1,0 +1,22 @@
+{
+  "name": "Filter Maintenance",
+  "attributes": {
+    "status": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": { "type": "string", "enum": ["ready", "resetting"] }
+        },
+        "additionalProperties": false,
+        "required": ["value"]
+      },
+      "enumCommands": []
+    }
+  },
+  "commands": {
+    "resetFilter": {
+      "name": "resetFilter",
+      "arguments": []
+    }
+  }
+}
