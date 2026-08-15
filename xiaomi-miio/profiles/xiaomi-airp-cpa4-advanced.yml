@@ -1,0 +1,52 @@
+name: xiaomi-airp-cpa4.advanced.v1
+components:
+  - id: main
+    capabilities:
+      - id: switch
+        version: 1
+      - id: mode
+        version: 1
+      - id: fineDustSensor
+        version: 1
+      - id: filterState
+        version: 1
+      - id: earthpanel38939.airPurifierFavoriteLevel
+        version: 1
+      - id: earthpanel38939.indicatorLightMode
+        version: 1
+      - id: earthpanel38939.alarmBuzzer
+        version: 1
+      - id: earthpanel38939.childLock
+        version: 1
+      - id: earthpanel38939.deviceFault
+        version: 1
+    categories:
+      - name: AirPurifier
+preferences:
+  - name: showAdvanced
+    title: 고급 기능 표시
+    description: 표시등, 부저, 잠금, 상세 오류를 표시합니다
+    required: true
+    preferenceType: boolean
+    definition:
+      default: true
+  - name: deviceIp
+    title: 기기 IP 주소
+    description: 192.168.x.x 형식
+    required: true
+    preferenceType: string
+    definition:
+      stringType: text
+      minLength: 7
+      maxLength: 15
+      default: "0.0.0.0"
+  - name: deviceToken
+    title: 기기 Token (32-hex)
+    description: Xiaomi-Cloud-Tokens-Extractor 로 추출
+    required: true
+    preferenceType: string
+    definition:
+      stringType: password
+      minLength: 32
+      maxLength: 32
+      default: "00000000000000000000000000000000"

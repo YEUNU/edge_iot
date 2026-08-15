@@ -18,6 +18,7 @@
 ]]
 
 local capabilities = require "st.capabilities"
+local events = require "devices.events"
 
 local M = {}
 local NS = "earthpanel38939"
@@ -26,6 +27,7 @@ local cap_childLock      = capabilities[NS .. ".childLock"]
 local cap_alarmBuzzer    = capabilities[NS .. ".alarmBuzzer"]
 local cap_indicatorMode  = capabilities[NS .. ".indicatorLightMode"]
 local cap_deviceFault    = capabilities[NS .. ".deviceFault"]
+local cap_filterMaintenance = capabilities[NS .. ".filterMaintenance"]
 
 local SIID_DERH = 2
 local PIID_POWER = 1
@@ -66,6 +68,7 @@ local LED_TO_MODE = { [0] = "off", [1] = "dim", [2] = "bright" }
 local LED_FROM_MODE = { off = 0, dim = 1, bright = 2 }
 
 M.supported_modes = { "스마트", "수면", "옷 건조" }
+M.uses_filter_maintenance = true
 
 M.refresh_props = {
   { siid = SIID_DERH,  piid = PIID_POWER,    did = "power" },
@@ -79,8 +82,32 @@ M.refresh_props = {
   { siid = SIID_LOCK,  piid = PIID_LOCK,     did = "lock" },
 }
 
+local function select_props(wanted)
+  local selected = {}
+  for _, prop in ipairs(M.refresh_props) do
+    if wanted[prop.did] then selected[#selected + 1] = prop end
+  end
+  return selected
+end
+
+M.core_props = select_props{
+  power = true, mode = true, fault = true, target = true, humidity = true,
+}
+M.aux_props = select_props{
+  temperature = true, alarm = true, led = true, lock = true,
+}
+
+local function confirmed(expected, ok, err)
+  if not ok then return nil, err, expected end
+  return true, nil, expected
+end
+
 local function emit_supported_modes(device)
-  device:emit_event(capabilities.mode.supportedModes(M.supported_modes, { visibility = { displayed = false } }))
+  events.emit(device, capabilities.mode,
+    capabilities.mode.supportedModes(M.supported_modes, { visibility = { displayed = false } }))
+  if cap_filterMaintenance then
+    events.emit(device, cap_filterMaintenance, cap_filterMaintenance.status("ready"))
+  end
 end
 
 function M.on_added(device) emit_supported_modes(device) end
@@ -89,78 +116,101 @@ function M.on_init(device)  emit_supported_modes(device) end
 function M.apply_state(device, p)
   local power = p["power"]
   if power ~= nil then
-    device:emit_event(power and capabilities.switch.switch.on() or capabilities.switch.switch.off())
+    events.emit(device, capabilities.switch,
+      power and capabilities.switch.switch.on() or capabilities.switch.switch.off())
   end
 
   local mode = p["mode"]
   if mode ~= nil and MODE_LABELS[mode] then
-    device:emit_event(capabilities.mode.mode(MODE_LABELS[mode]))
+    events.emit(device, capabilities.mode, capabilities.mode.mode(MODE_LABELS[mode]))
   end
 
   local fault = p["fault"]
   if fault ~= nil and cap_deviceFault then
-    device:emit_event(cap_deviceFault.fault(FAULT_LABELS[fault] or "noFault"))
+    local fault_label = FAULT_LABELS[fault]
+    if fault_label then
+      events.emit(device, cap_deviceFault, cap_deviceFault.fault(fault_label))
+    else
+      device.log.warn("unknown dehumidifier fault code: " .. tostring(fault))
+    end
   end
 
   local target = p["target"]
   if target ~= nil and cap_targetHumidity then
-    device:emit_event(cap_targetHumidity.targetHumidity({ value = target, unit = "%" }))
+    events.emit(device, cap_targetHumidity,
+      cap_targetHumidity.targetHumidity({ value = target, unit = "%" }))
   end
 
   local hum = p["humidity"]
   if hum ~= nil then
-    device:emit_event(capabilities.relativeHumidityMeasurement.humidity(hum))
+    events.emit(device, capabilities.relativeHumidityMeasurement,
+      capabilities.relativeHumidityMeasurement.humidity(hum))
   end
 
   local temp = p["temperature"]
   if temp ~= nil then
-    device:emit_event(capabilities.temperatureMeasurement.temperature({ value = temp, unit = "C" }))
+    events.emit(device, capabilities.temperatureMeasurement,
+      capabilities.temperatureMeasurement.temperature({ value = temp, unit = "C" }))
   end
 
   local alarm = p["alarm"]
   if alarm ~= nil and cap_alarmBuzzer then
-    device:emit_event(cap_alarmBuzzer.buzzer(alarm and "on" or "off"))
+    events.emit(device, cap_alarmBuzzer, cap_alarmBuzzer.buzzer(alarm and "on" or "off"))
   end
 
   local led = p["led"]
   if led ~= nil and cap_indicatorMode then
-    device:emit_event(cap_indicatorMode.indicator(LED_TO_MODE[led] or "off"))
+    events.emit(device, cap_indicatorMode,
+      cap_indicatorMode.indicator(LED_TO_MODE[led] or "off"))
   end
 
   local lock = p["lock"]
   if lock ~= nil and cap_childLock then
-    device:emit_event(cap_childLock.lock(lock and "locked" or "unlocked"))
+    events.emit(device, cap_childLock, cap_childLock.lock(lock and "locked" or "unlocked"))
   end
 
 end
 
 function M.set_switch(client, on)
-  return client:set_property(SIID_DERH, PIID_POWER, on and true or false, "power")
+  local value = on and true or false
+  return confirmed({ power = value },
+    client:set_property(SIID_DERH, PIID_POWER, value, "power"))
 end
 
 function M.set_mode(client, mode_label)
   local code = LABEL_TO_MODE_CODE[mode_label]
   if not code then return nil, "unknown mode: " .. tostring(mode_label) end
-  return client:set_property(SIID_DERH, PIID_MODE, code, "mode")
+  return confirmed({ mode = code },
+    client:set_property(SIID_DERH, PIID_MODE, code, "mode"))
 end
 
 function M.set_target_humidity(client, humidity)
   humidity = math.max(30, math.min(70, math.floor(humidity)))
-  return client:set_property(SIID_DERH, PIID_TARGET, humidity, "target")
+  return confirmed({ target = humidity },
+    client:set_property(SIID_DERH, PIID_TARGET, humidity, "target"))
 end
 
 function M.set_child_lock(client, state)
-  return client:set_property(SIID_LOCK, PIID_LOCK, state == "locked", "lock")
+  local value = state == "locked"
+  return confirmed({ lock = value },
+    client:set_property(SIID_LOCK, PIID_LOCK, value, "lock"))
 end
 
 function M.set_alarm_buzzer(client, state)
-  return client:set_property(SIID_ALARM, PIID_ALARM, state == "on", "alarm")
+  local value = state == "on"
+  return confirmed({ alarm = value },
+    client:set_property(SIID_ALARM, PIID_ALARM, value, "alarm"))
 end
 
 function M.set_indicator(client, mode)
   local code = LED_FROM_MODE[mode]
   if not code then return nil, "unknown indicator mode: " .. tostring(mode) end
-  return client:set_property(SIID_LED, PIID_LED_MODE, code, "led")
+  return confirmed({ led = code },
+    client:set_property(SIID_LED, PIID_LED_MODE, code, "led"))
+end
+
+function M.reset_filter(client)
+  return confirmed({}, client:action(SIID_WARMUP, 3, {}, "reset-filter"))
 end
 
 return M

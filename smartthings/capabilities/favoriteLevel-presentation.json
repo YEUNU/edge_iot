@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "states": [{ "label": "즐겨찾기 풍량 {{level.value}}" }],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "즐겨찾기 풍량",
+      "displayType": "slider",
+      "slider": {
+        "range": [1, 14],
+        "step": 1,
+        "command": "setFavoriteLevel",
+        "argumentType": "integer",
+        "value": "level.value",
+        "valueType": "integer"
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [
+      {
+        "label": "즐겨찾기 풍량",
+        "displayType": "slider",
+        "slider": {
+          "range": [0, 14],
+          "step": 1,
+          "value": "level.value",
+          "valueType": "integer"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "label": "즐겨찾기 풍량 설정",
+        "displayType": "slider",
+        "slider": {
+          "range": [1, 14],
+          "step": 1,
+          "command": "setFavoriteLevel",
+          "argumentType": "integer"
+        }
+      }
+    ]
+  }
+}

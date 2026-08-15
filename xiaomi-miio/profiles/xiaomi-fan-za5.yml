@@ -4,27 +4,24 @@ components:
     capabilities:
       - id: switch
         version: 1
-      - id: fanSpeed
-        version: 1
       - id: fanSpeedPercent
         version: 1
       - id: fanOscillationMode
         version: 1
       - id: mode
         version: 1
-      - id: switchLevel
-        version: 1
-      - id: relativeHumidityMeasurement
-        version: 1
-      - id: temperatureMeasurement
-        version: 1
-      - id: earthpanel38939.childLock
-        version: 1
-      - id: refresh
+      - id: earthpanel38939.powerOffTimer
         version: 1
     categories:
       - name: Fan
 preferences:
+  - name: showAdvanced
+    title: 고급 기능 표시
+    description: 회전각, 표시등, 부저, 잠금, 온습도를 표시합니다
+    required: true
+    preferenceType: boolean
+    definition:
+      default: false
   - name: deviceIp
     title: 기기 IP 주소
     description: 192.168.x.x 형식
@@ -41,7 +38,7 @@ preferences:
     required: true
     preferenceType: string
     definition:
-      stringType: text
+      stringType: password
       minLength: 32
       maxLength: 32
       default: "00000000000000000000000000000000"

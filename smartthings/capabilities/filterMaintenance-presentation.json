@@ -1,0 +1,23 @@
+{
+  "dashboard": {
+    "states": [
+      {
+        "label": "필터 관리",
+        "alternatives": [
+          { "key": "ready", "value": "준비", "type": "inactive" },
+          { "key": "resetting", "value": "초기화 중", "type": "active" }
+        ]
+      }
+    ],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "필터 청소 알림 초기화",
+      "displayType": "pushButton",
+      "pushButton": { "command": "resetFilter" }
+    }
+  ],
+  "automation": { "conditions": [], "actions": [] }
+}

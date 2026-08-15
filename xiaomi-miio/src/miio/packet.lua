@@ -87,6 +87,12 @@ function M.parse(token_bytes, raw)
   end
 
   local encrypted = raw:sub(33)
+  local received_checksum = raw:sub(17, 32)
+  local header_no_checksum = raw:sub(1, 16)
+  local expected_checksum = md5.sum(header_no_checksum .. token_bytes .. encrypted)
+  if received_checksum ~= expected_checksum then
+    return device_id, stamp, nil, "checksum mismatch"
+  end
   local key, iv = M.derive_key_iv(token_bytes)
   local ok, plaintext = pcall(aes.decrypt_cbc, key, iv, encrypted)
   if not ok then return device_id, stamp, nil, "decrypt error: " .. tostring(plaintext) end

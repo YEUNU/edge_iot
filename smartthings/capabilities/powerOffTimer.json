@@ -1,0 +1,30 @@
+{
+  "name": "Power Off Timer",
+  "attributes": {
+    "minutes": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": { "type": "integer", "minimum": 0, "maximum": 600 },
+          "unit": { "type": "string", "enum": ["min"], "default": "min" }
+        },
+        "additionalProperties": false,
+        "required": ["value"]
+      },
+      "setter": "setTimer",
+      "enumCommands": []
+    }
+  },
+  "commands": {
+    "setTimer": {
+      "name": "setTimer",
+      "arguments": [
+        {
+          "name": "minutes",
+          "optional": false,
+          "schema": { "type": "integer", "minimum": 0, "maximum": 600 }
+        }
+      ]
+    }
+  }
+}

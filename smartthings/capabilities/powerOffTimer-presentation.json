@@ -1,0 +1,74 @@
+{
+  "dashboard": {
+    "states": [{ "label": "꺼짐 예약 {{minutes.value}}분" }],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "꺼짐 예약",
+      "displayType": "list",
+      "list": {
+        "command": {
+          "name": "setTimer",
+          "alternatives": [
+            { "key": "0", "value": "해제", "type": "inactive" },
+            { "key": "30", "value": "30분", "type": "active" },
+            { "key": "60", "value": "1시간", "type": "active" },
+            { "key": "120", "value": "2시간", "type": "active" },
+            { "key": "240", "value": "4시간", "type": "active" }
+          ],
+          "argumentType": "integer"
+        },
+        "state": {
+          "value": "minutes.value",
+          "valueType": "integer",
+          "alternatives": [
+            { "key": "0", "value": "해제", "type": "inactive" },
+            { "key": "30", "value": "30분", "type": "active" },
+            { "key": "60", "value": "1시간", "type": "active" },
+            { "key": "120", "value": "2시간", "type": "active" },
+            { "key": "240", "value": "4시간", "type": "active" }
+          ]
+        }
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [
+      {
+        "label": "꺼짐 예약",
+        "displayType": "list",
+        "list": {
+          "alternatives": [
+            { "key": "0", "value": "해제", "type": "inactive" },
+            { "key": "30", "value": "30분", "type": "active" },
+            { "key": "60", "value": "1시간", "type": "active" },
+            { "key": "120", "value": "2시간", "type": "active" },
+            { "key": "240", "value": "4시간", "type": "active" }
+          ],
+          "value": "minutes.value",
+          "valueType": "integer",
+          "multiSelectable": false
+        }
+      }
+    ],
+    "actions": [
+      {
+        "label": "꺼짐 예약 설정",
+        "displayType": "list",
+        "list": {
+          "alternatives": [
+            { "key": "0", "value": "해제", "type": "inactive" },
+            { "key": "30", "value": "30분", "type": "active" },
+            { "key": "60", "value": "1시간", "type": "active" },
+            { "key": "120", "value": "2시간", "type": "active" },
+            { "key": "240", "value": "4시간", "type": "active" }
+          ],
+          "command": "setTimer",
+          "argumentType": "integer"
+        }
+      }
+    ]
+  }
+}
