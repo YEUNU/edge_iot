@@ -84,6 +84,11 @@ Enterprise의 `userUuids` 수신자 필드가 없습니다. 이번 시험은 사
 
 ## 지원 상태와 자동화에 남는 문제
 
+- **Mac에서 성공한 API 요청을 Edge 드라이버에서 그대로 실행할 수는 없습니다.**
+  SmartThings 개발자 지원팀은 2025-02-10에도 Edge 드라이버에 인터넷 접근이 없어
+  SmartThings REST API를 호출할 수 없다고 명시했습니다. LAN 권한은 사설 주소
+  범위 통신을 허용하며 인터넷 접근 권한이 아닙니다. HTTPS 모듈이나 OAuth
+  자동 갱신 코드를 추가하는 것만으로 이 실행 환경 제한이 해결되지는 않습니다.
 - SDK에 코드가 있고 이번 요청도 성공했으므로 **직접 전송이 불가능하다는
   설명은 부정확**합니다.
 - 2021년 개발자 지원팀은 SDK 기반의 예제를 안내했습니다. 그러나 2025년
@@ -95,9 +100,26 @@ Enterprise의 `userUuids` 수신자 필드가 없습니다. 이번 시험은 사
 - 직접 자동 전송을 제품 경로로 사용하려면 별도 인증/갱신 관리, 실패 재시도,
   수신 대상 관리가 필요합니다. CLI와 허브에 같은 refresh token을 복제하면
   토큰 갱신 주체가 충돌할 수 있으므로 독립 인증 설계를 검토해야 합니다.
-- 현재 배포된 드라이버의 자동 알림 경로는 `실제 기기 → Xiaomi 알림 버튼 이벤트
-  → 사용자가 연결한 루틴 → 본인 푸시`입니다. 직접 API 시험 성공과 이 자동화
-  경로의 완료 여부는 별도로 검증합니다.
+- 이전 배포는 `기기 → Xiaomi 알림 버튼 → 루틴 → 푸시`였습니다. 새 경로는
+  `기기 → 확정된 SmartThings 속성 → Mac의 Docker 서비스 → 직접 푸시`입니다.
+  드라이버는 이전 루틴의 버튼 이벤트를 더 이상 보내지 않습니다.
+
+## 루틴 없는 기기별 알림으로 변경할 때의 구조
+
+사용자에게 보이는 알림의 제목을 실제 기기 이름으로 하고 `deepLink.id`를 해당
+기기의 SmartThings ID로 지정할 수 있습니다. 다만 전송 프로그램은 Edge 밖의
+항상 실행되는 서버/NAS 또는 컴퓨터에서 동작해야 합니다. Mac에서 실행한다면
+종료·잠자기 동안 전송이 중단되므로 허브만으로 동작하는 구현이라고 설명해서는
+안 됩니다. Xiaomi 기기 자체의 펌웨어를 변경하는 작업도 아닙니다.
+
+사용자는 이 Mac을 서버로 사용한다고 확인했습니다. 독립 OAuth 세션과 갱신,
+확정된 상태 변화별 중복 억제, 복구된 경고의 취소, 전송 실패 재시도는
+[Mac 알림 서비스](../notification-service/README.md)에 구현했습니다. 새 경로를
+실제로 검증하기 전에 기존 루틴 경로를 제거하거나 새 경로의 완료를 선언하지
+않습니다. 전용 로그인과 OAuth 갱신, 갱신된 토큰의 재사용을 검증했습니다. 사용자는
+‘제습기’ 제목의 직접 푸시 수신과 제습기 화면 연결을 확인했습니다. Docker에서도
+갱신과 실제 필터 청소 경고 전송 성공을 확인했습니다. 구체적인 배포 검증은
+[VERIFICATION.md](VERIFICATION.md)에 기록합니다.
 
 ## 확인한 1차 자료
 
@@ -125,3 +147,8 @@ Enterprise의 `userUuids` 수신자 필드가 없습니다. 이번 시험은 사
 10. [최신 API Access App 설정](https://developer.smartthings.com/docs/service-integrations/app-setup),
     [릴리스 노트](https://developer.smartthings.com/docs/release-notes):
     새 API Access App의 이벤트 알림은 webhook 수신을 뜻하며 휴대폰 푸시와 다름.
+11. [개발자 지원팀의 2025년 Edge 인터넷 접근 제한 설명](https://community.smartthings.com/t/pointers-for-a-virtual-edge-device-connecting-to-physical-devices/295041/3).
+12. [SmartThings 엔지니어의 LAN 권한과 사설 주소 제한 설명](https://community.smartthings.com/t/edge-drivers-private-addresses-lan/257846):
+    외부 전송에는 LAN 프록시 등 허브 밖의 실행 환경이 필요함.
+13. [공식 CLI OAuth 구현](https://github.com/SmartThingsCommunity/smartthings-cli/blob/main/src/lib/login-authenticator.ts):
+    프로필별 인증 저장, PKCE 로그인, 만료 전 refresh token 갱신 확인.

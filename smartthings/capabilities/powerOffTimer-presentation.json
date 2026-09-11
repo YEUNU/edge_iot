@@ -1,36 +1,28 @@
 {
   "dashboard": {
-    "states": [{ "label": "꺼짐 예약 {{minutes.value}}분" }],
+    "states": [
+      {
+        "label": "꺼짐 예약 {{minutes.value}}분"
+      }
+    ],
     "actions": [],
     "panelItems": []
   },
   "detailView": [
     {
-      "label": "꺼짐 예약",
-      "displayType": "list",
-      "list": {
-        "command": {
-          "name": "setTimer",
-          "alternatives": [
-            { "key": "0", "value": "해제", "type": "inactive" },
-            { "key": "30", "value": "30분", "type": "active" },
-            { "key": "60", "value": "1시간", "type": "active" },
-            { "key": "120", "value": "2시간", "type": "active" },
-            { "key": "240", "value": "4시간", "type": "active" }
-          ],
-          "argumentType": "integer"
-        },
-        "state": {
-          "value": "minutes.value",
-          "valueType": "integer",
-          "alternatives": [
-            { "key": "0", "value": "해제", "type": "inactive" },
-            { "key": "30", "value": "30분", "type": "active" },
-            { "key": "60", "value": "1시간", "type": "active" },
-            { "key": "120", "value": "2시간", "type": "active" },
-            { "key": "240", "value": "4시간", "type": "active" }
-          ]
-        }
+      "label": "꺼짐 예약 (0분: 해제)",
+      "displayType": "slider",
+      "slider": {
+        "range": [
+          0,
+          600
+        ],
+        "step": 1,
+        "command": "setTimer",
+        "argumentType": "integer",
+        "value": "minutes.value",
+        "valueType": "integer",
+        "unit": "minutes.unit"
       }
     }
   ],
@@ -38,33 +30,29 @@
     "conditions": [
       {
         "label": "꺼짐 예약",
-        "displayType": "list",
-        "list": {
-          "alternatives": [
-            { "key": "0", "value": "해제", "type": "inactive" },
-            { "key": "30", "value": "30분", "type": "active" },
-            { "key": "60", "value": "1시간", "type": "active" },
-            { "key": "120", "value": "2시간", "type": "active" },
-            { "key": "240", "value": "4시간", "type": "active" }
+        "displayType": "slider",
+        "slider": {
+          "range": [
+            0,
+            600
           ],
+          "step": 1,
           "value": "minutes.value",
           "valueType": "integer",
-          "multiSelectable": false
+          "unit": "minutes.unit"
         }
       }
     ],
     "actions": [
       {
         "label": "꺼짐 예약 설정",
-        "displayType": "list",
-        "list": {
-          "alternatives": [
-            { "key": "0", "value": "해제", "type": "inactive" },
-            { "key": "30", "value": "30분", "type": "active" },
-            { "key": "60", "value": "1시간", "type": "active" },
-            { "key": "120", "value": "2시간", "type": "active" },
-            { "key": "240", "value": "4시간", "type": "active" }
+        "displayType": "slider",
+        "slider": {
+          "range": [
+            0,
+            600
           ],
+          "step": 1,
           "command": "setTimer",
           "argumentType": "integer"
         }

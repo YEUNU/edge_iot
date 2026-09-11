@@ -1,0 +1,32 @@
+name: xiaomi-notifications
+services:
+  notifier:
+    build: .
+    image: edge-iot/xiaomi-notifications:local
+    container_name: xiaomi-notifications
+    restart: unless-stopped
+    init: true
+    user: "${NOTIFIER_UID:-1000}:${NOTIFIER_GID:-1000}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      TZ: Asia/Seoul
+    volumes:
+      - type: bind
+        source: ${NOTIFIER_DATA_DIR:-./data}
+        target: /data
+    tmpfs:
+      - /tmp:size=1m,mode=1777
+    healthcheck:
+      test: [CMD, python, /app/healthcheck.py, /data/health.json]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "3"

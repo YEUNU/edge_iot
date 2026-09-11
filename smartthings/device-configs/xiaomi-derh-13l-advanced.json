@@ -1,0 +1,256 @@
+{
+  "type": "profile",
+  "dashboard": {
+    "states": [
+      {
+        "component": "main",
+        "capability": "relativeHumidityMeasurement",
+        "version": 1,
+        "values": [],
+        "patch": []
+      }
+    ],
+    "actions": [
+      {
+        "component": "main",
+        "capability": "switch",
+        "version": 1,
+        "values": [],
+        "patch": []
+      }
+    ]
+  },
+  "detailView": [
+    {
+      "component": "main",
+      "capability": "switch",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
+      "capability": "mode",
+      "version": 1,
+      "values": [],
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "운전 모드"
+        }
+      ]
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.targetHumidity",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
+      "capability": "relativeHumidityMeasurement",
+      "version": 1,
+      "values": [],
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0",
+          "value": {
+            "label": "현재 습도",
+            "displayType": "state",
+            "state": {
+              "label": "{{humidity.value}}%"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "component": "main",
+      "capability": "temperatureMeasurement",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.deviceFault",
+      "version": 1,
+      "values": [
+        {
+          "key": "fault.value",
+          "enabledValues": [
+            "noFault",
+            "waterFull",
+            "sensorFault1",
+            "sensorFault2",
+            "commFault1",
+            "filterClean",
+            "defrost",
+            "fanMotor",
+            "overload",
+            "lackOfRefrigerant"
+          ]
+        }
+      ],
+      "patch": []
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.indicatorLightMode",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.alarmBuzzer",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.childLock",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.filterMaintenance",
+      "version": 1,
+      "values": [],
+      "patch": []
+    }
+  ],
+  "automation": {
+    "conditions": [
+      {
+        "component": "main",
+        "capability": "switch",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "relativeHumidityMeasurement",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.targetHumidity",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "mode",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.deviceFault",
+        "version": 1,
+        "values": [
+          {
+            "key": "fault.value",
+            "enabledValues": [
+              "noFault",
+              "waterFull",
+              "sensorFault1",
+              "sensorFault2",
+              "commFault1",
+              "filterClean",
+              "defrost",
+              "fanMotor",
+              "overload",
+              "lackOfRefrigerant"
+            ]
+          }
+        ],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "temperatureMeasurement",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.indicatorLightMode",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.alarmBuzzer",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.childLock",
+        "version": 1,
+        "values": [],
+        "patch": []
+      }
+    ],
+    "actions": [
+      {
+        "component": "main",
+        "capability": "switch",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.targetHumidity",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "mode",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.indicatorLightMode",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.alarmBuzzer",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.childLock",
+        "version": 1,
+        "values": [],
+        "patch": []
+      }
+    ]
+  }
+}

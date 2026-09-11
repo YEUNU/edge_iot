@@ -52,3 +52,6 @@ preferences:
       minLength: 32
       maxLength: 32
       default: "00000000000000000000000000000000"
+metadata:
+  mnmn: SmartThingsCommunity
+  vid: 9917624b-41a5-3f6a-adb5-5c7ba3f3ec9f

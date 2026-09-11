@@ -8,3 +8,6 @@ components:
         version: 1
     categories:
       - name: RemoteController
+metadata:
+  mnmn: SmartThingsCommunity
+  vid: f7231374-26a4-34b4-9447-ee9b25adfa82

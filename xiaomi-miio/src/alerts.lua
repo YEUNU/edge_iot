@@ -1,6 +1,6 @@
--- One virtual LAN endpoint for all Xiaomi maintenance alerts. A single app
--- routine listens to its button events; device details hold the actual message.
--- Emission confirms a hub event, not delivery to a phone.
+-- Shared maintenance history and test requests. The Docker service delivers
+-- per-device push messages from confirmed fault/filter attributes. This module
+-- never triggers the legacy routine; a history event is not proof of delivery.
 local capabilities = require "st.capabilities"
 local log = require "log"
 local M = { MODEL = "xiaomi.alerts", PROFILE = "xiaomi-alerts.v1" }
@@ -38,23 +38,16 @@ end
 
 function M.initialize(_, device)
   device:online()
-  device:emit_event(capabilities.button.supportedButtonValues(
-    { "pushed" }, { visibility = { displayed = false } }))
-  device:emit_event(capabilities.button.numberOfButtons(
-    { value = 1 }, { visibility = { displayed = false } }))
   if cap_message and not device:get_latest_state("main", cap_message.ID, "message") then
-    device:emit_event(cap_message.message("알림 루틴을 연결한 뒤 테스트 알림을 보내 주세요."))
+    device:emit_event(cap_message.message("기기별 직접 알림을 사용합니다. 테스트 알림으로 연결을 확인하세요."))
   end
 end
 
 function M.emit(endpoint, message)
-  if not cap_message or not endpoint:supports_capability(cap_message)
-      or not endpoint:supports_capability(capabilities.button) then
+  if not cap_message or not endpoint:supports_capability(cap_message) then
     return false
   end
-  endpoint:emit_event(cap_message.message(message))
-  -- Button events must always be state changes, including consecutive alerts.
-  endpoint:emit_event(capabilities.button.button.pushed({ state_change = true }))
+  endpoint:emit_event(cap_message.message(message, { state_change = true }))
   return true
 end
 
@@ -82,14 +75,15 @@ function M.report(device, key, value, message)
     if not ok then log.warn("Xiaomi alert emission failed; retrying on next confirmed read") end
     if not ok or not emitted then return end
   end
-  -- Only mark warnings delivered after a real endpoint accepted the event.
+  -- Mark history recorded only after the endpoint accepts it. The companion
+  -- independently persists actual push acceptance, not this history marker.
   -- Healthy states rearm the next occurrence without emitting a notification.
   device:set_field(field, value, { persist = true })
 end
 
 function M.send_test(_, device)
   if not M.is_endpoint(device) then return end
-  M.emit(device, "테스트 알림입니다. 실제 기기 고장이 아닙니다.")
+  M.emit(device, "직접 알림 테스트 요청입니다. 실제 기기 고장이 아닙니다.")
 end
 
 return M

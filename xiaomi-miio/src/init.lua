@@ -168,6 +168,7 @@ end
 local function device_init(driver, device)
   device.log.info("init " .. device.device_network_id)
   if alerts.is_endpoint(device) then
+    device:try_update_metadata({ profile = alerts.PROFILE })
     alerts.initialize(driver, device)
     return
   end

@@ -602,19 +602,19 @@ local function routed_alert_fixture()
   return driver, endpoint, emitted, source, devices, function() return creations end
 end
 
-test("different appliances route distinct alerts to one button endpoint", function()
+test("different appliances record distinct history without routine triggers", function()
   local _, _, emitted, source = routed_alert_fixture()
   local derh = source("제습기")
   local purifier = source("공청기")
   dehumidifier.apply_state(derh, {fault = 1})
   airp.apply_state(purifier, {fault = 2, ["filter-life"] = 10})
-  assert(#emitted == 6)
+  assert(#emitted == 3)
   assert(emitted[1].args[1]:match("제습기") and emitted[1].args[1]:match("물통"))
-  assert(emitted[3].args[1]:match("공청기") and emitted[3].args[1]:match("필터"))
-  assert(emitted[5].args[1]:match("모터"))
-  for i = 2, 6, 2 do
-    assert(emitted[i].capability == "button" and emitted[i].method == "pushed")
-    assert(emitted[i].args[1].state_change == true)
+  assert(emitted[2].args[1]:match("공청기") and emitted[2].args[1]:match("필터"))
+  assert(emitted[3].args[1]:match("모터"))
+  for i = 1, 3 do
+    assert(emitted[i].capability == "earthpanel38939.latestAlert")
+    assert(emitted[i].args[2].state_change == true)
   end
 end)
 
@@ -625,10 +625,10 @@ test("routed alerts suppress polling and restart duplicates then rearm", functio
   for _ = 1, 100 do dehumidifier.apply_state(device, {fault = 5}) end
   local restarted = source("제습기", fields)
   dehumidifier.apply_state(restarted, {fault = 5})
-  assert(#emitted == 2)
+  assert(#emitted == 1)
   dehumidifier.apply_state(restarted, {fault = 0})
   dehumidifier.apply_state(restarted, {fault = 5})
-  assert(#emitted == 4)
+  assert(#emitted == 2)
 end)
 
 test("normal and defrost do not send alerts but rearm the next fault", function()
@@ -639,7 +639,7 @@ test("normal and defrost do not send alerts but rearm the next fault", function(
   dehumidifier.apply_state(device, {fault = 1})
   dehumidifier.apply_state(device, {fault = 6})
   dehumidifier.apply_state(device, {fault = 1})
-  assert(#emitted == 4)
+  assert(#emitted == 2)
 end)
 
 test("pending endpoint creation does not consume a real warning", function()
@@ -654,7 +654,7 @@ test("pending endpoint creation does not consume a real warning", function()
   assert(creations() == 2)
   devices[1] = endpoint
   dehumidifier.apply_state(device, {fault = 1})
-  assert(#emitted == 2 and fields.xiaomi_alert_v1_fault == "waterFull")
+  assert(#emitted == 1 and fields.xiaomi_alert_v1_fault == "waterFull")
 end)
 
 test("endpoint emit failure retries without marking the warning delivered", function()
@@ -666,7 +666,7 @@ test("endpoint emit failure retries without marking the warning delivered", func
   assert(fields.xiaomi_alert_v1_fault == nil)
   endpoint.emit_event = original
   dehumidifier.apply_state(device, {fault = 1})
-  assert(#emitted == 2 and fields.xiaomi_alert_v1_fault == "waterFull")
+  assert(#emitted == 1 and fields.xiaomi_alert_v1_fault == "waterFull")
 end)
 
 test("healthy repeated reads retry asynchronous endpoint provisioning", function()
@@ -686,27 +686,27 @@ test("filter hysteresis survives hidden profiles and restored source fields", fu
   device.supports_capability = function() return false end
   airp.apply_state(device, {["filter-life"] = 10})
   airp.apply_state(device, {["filter-life"] = 12})
-  assert(fields.xiaomi_filter_alert_status == "replace" and #emitted == 2)
+  assert(fields.xiaomi_filter_alert_status == "replace" and #emitted == 1)
   local restarted = source("공청기", fields)
   airp.apply_state(restarted, {["filter-life"] = 15})
-  assert(#emitted == 2)
+  assert(#emitted == 1)
   airp.apply_state(restarted, {["filter-life"] = 16})
   airp.apply_state(restarted, {["filter-life"] = 10})
-  assert(#emitted == 4)
+  assert(#emitted == 2)
 end)
 
-test("test button emits without changing physical appliance alert state", function()
+test("test command records a request without changing physical alert state", function()
   local driver, endpoint, emitted, source = routed_alert_fixture()
   local device, fields = source("제습기")
   dehumidifier.apply_state(device, {fault = 1})
   alerts.send_test(driver, device)
-  assert(#emitted == 2)
+  assert(#emitted == 1)
   alerts.send_test(driver, endpoint)
   alerts.send_test(driver, endpoint)
-  assert(#emitted == 6 and emitted[3].args[1]:match("테스트"))
+  assert(#emitted == 3 and emitted[2].args[1]:match("테스트"))
   assert(fields.xiaomi_alert_v1_fault == "waterFull")
   dehumidifier.apply_state(device, {fault = 1})
-  assert(#emitted == 6)
+  assert(#emitted == 3)
 end)
 
 test("alert endpoint initialization never sends a button push", function()
@@ -714,6 +714,17 @@ test("alert endpoint initialization never sends a button push", function()
   alerts.initialize(driver, endpoint)
   alerts.initialize(driver, endpoint)
   for _, event in ipairs(emitted) do assert(event.attribute ~= "button") end
+end)
+
+test("direct mode retains messages without firing the legacy routine", function()
+  local driver, endpoint, emitted, source = routed_alert_fixture()
+  local device = source("제습기")
+  dehumidifier.apply_state(device, {fault = 1})
+  alerts.send_test(driver, endpoint)
+  assert(#emitted == 2)
+  assert(emitted[1].args[1]:match("물통"))
+  assert(emitted[2].args[1] == "직접 알림 테스트 요청입니다. 실제 기기 고장이 아닙니다.")
+  for _, event in ipairs(emitted) do assert(event.capability ~= "button") end
 end)
 
 print(string.format("%d tests passed", passed))

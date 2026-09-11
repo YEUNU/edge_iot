@@ -1,0 +1,4 @@
+*
+!Dockerfile
+!notifier.py
+!healthcheck.py
