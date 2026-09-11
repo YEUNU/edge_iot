@@ -8,3 +8,4 @@
 
 # Build artifacts
 *.zip
+__pycache__/

@@ -42,11 +42,19 @@ the same preference names in both profiles and remain attached to the device.
 Fault events are emitted only when the confirmed fault changes. Both air
 purifier profiles expose fault status and a filter replacement condition:
 10% or less activates it, and a confirmed reading above 15% clears it.
-The driver automatically creates one **Xiaomi 알림** endpoint. Connect its
-button-pressed event to a single SmartThings notification routine to receive
-all maintenance alerts. The endpoint shows the latest detailed message and
-provides a test button; its events alone do not deliver phone push notifications.
+The optional [Docker notification service](notification-service/README.md) runs on
+the Mac server and sends per-device SmartThings push messages directly, with the
+physical device's name and link. It polls confirmed fault/filter attributes,
+refreshes OAuth credentials, persists duplicate suppression, and retries failures.
+The driver keeps **Xiaomi 알림** as a history and test-request endpoint; it no longer
+emits button events that trigger the old notification routine.
 See [notification conditions and verification](smartthings/ALERTS.md).
+
+Device-specific [UI configurations](smartthings/device-configs/) keep measured
+humidity read-only, restrict enums to the actual hardware, show the fan's remaining
+timer as one continuous control, and move filter reset to the advanced view.
+The purifier's automation-only filter warning remains available to the notifier
+without adding a duplicate status card.
 
 ### Xiaomi code flow
 
@@ -80,6 +88,8 @@ smartthings/
   capabilities/             # custom capability schemas and presentations
 tests/
   run.lua
+  test_notifier.py
+notification-service/       # Docker Compose direct push service and installer
 ```
 
 ## Development
@@ -94,6 +104,7 @@ Run the regression tests:
 
 ```bash
 lua tests/run.lua .
+python3 -m unittest discover -s tests -p 'test_notifier*.py'
 ```
 
 Build packages without uploading:
