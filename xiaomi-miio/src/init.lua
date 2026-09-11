@@ -16,6 +16,7 @@ local models = require "models"
 local Client = require "miio.client"
 local discovery = require "discovery"
 local cmds = require "command_handlers"
+local alerts = require "alerts"
 
 local handler_modules = {
   fan_za5   = require "devices.fan_za5",
@@ -166,6 +167,10 @@ end
 
 local function device_init(driver, device)
   device.log.info("init " .. device.device_network_id)
+  if alerts.is_endpoint(device) then
+    alerts.initialize(driver, device)
+    return
+  end
   local cfg = find_model_def(device)
   if device.model == "xiaomi.setup" and not cfg then
     device.log.info("waiting for Xiaomi model/IP/token settings")
@@ -174,13 +179,15 @@ local function device_init(driver, device)
   end
   if cfg then
     device:set_field("model_def", cfg)
-    -- A configured generic setup record may restart before its metadata update
-    -- reaches the hub. Re-submit the selected model/profile without recreating it.
-    if device.model == "xiaomi.setup" and prefs_complete(device.preferences or {}) then
+    -- Package updates can change a profile ID even when its name is stable.
+    -- Migrate existing physical devices too, so newly added alert capabilities
+    -- are available without deleting devices or losing their routines.
+    if prefs_complete(device.preferences or {}) then
       sync_device_metadata(device, cfg)
     end
   end
   if not attach(device) then return end
+  alerts.attach(driver, device)
   initialize_handler(device)
   cmds.refresh(driver, device)
   start_polling(driver, device)
@@ -188,6 +195,10 @@ end
 
 local function device_added(driver, device)
   device.log.info("added " .. device.device_network_id)
+  if alerts.is_endpoint(device) then
+    alerts.initialize(driver, device)
+    return
+  end
   -- Set the model_def regardless of preferences so we know which handler to use
   -- once the user fills them in.
   local cfg = find_model_def(device)
@@ -218,6 +229,7 @@ local function device_info_changed(driver, device, _, args)
   if connection_changed or model_changed then
     device.log.info("preferences changed, re-attaching")
     if attach(device) then
+      alerts.attach(driver, device)
       initialize_handler(device)
       cmds.refresh(driver, device)
       start_polling(driver, device)
@@ -261,6 +273,11 @@ local capability_handlers = {
     [capabilities.filterState.commands.resetFilter.NAME] = cmds.reset_filter,
   },
 }
+
+local cap_latestAlert = safe_cap("earthpanel38939.latestAlert")
+if cap_latestAlert then
+  capability_handlers[cap_latestAlert.ID] = { sendTest = alerts.send_test }
+end
 
 if cap_childLock then
   capability_handlers[cap_childLock.ID] = {

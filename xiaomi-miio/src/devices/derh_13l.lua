@@ -19,6 +19,7 @@
 
 local capabilities = require "st.capabilities"
 local events = require "devices.events"
+local alerts = require "alerts"
 
 local M = {}
 local NS = "earthpanel38939"
@@ -62,6 +63,17 @@ local FAULT_LABELS = {
   [0] = "noFault", [1] = "waterFull", [2] = "sensorFault1", [3] = "sensorFault2",
   [4] = "commFault1", [5] = "filterClean", [6] = "defrost", [7] = "fanMotor",
   [8] = "overload", [9] = "lackOfRefrigerant",
+}
+
+local FAULT_MESSAGES = {
+  [1] = "물통이 가득 찼어요. 물통을 비우고 다시 장착해 주세요.",
+  [2] = "센서 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
+  [3] = "두 번째 센서 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
+  [4] = "내부 통신 오류가 감지됐어요. 기기 상태를 확인해 주세요.",
+  [5] = "필터 청소가 필요해요. 필터를 확인해 주세요.",
+  [7] = "팬 모터 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
+  [8] = "과부하가 감지됐어요. 기기 상태를 확인해 주세요.",
+  [9] = "냉매 부족이 감지됐어요. 기기 점검이 필요해요.",
 }
 
 local LED_TO_MODE = { [0] = "off", [1] = "dim", [2] = "bright" }
@@ -126,10 +138,14 @@ function M.apply_state(device, p)
   end
 
   local fault = p["fault"]
+  if fault ~= nil and FAULT_LABELS[fault] then
+    alerts.report(device, "fault", FAULT_LABELS[fault], FAULT_MESSAGES[fault])
+  end
   if fault ~= nil and cap_deviceFault then
     local fault_label = FAULT_LABELS[fault]
     if fault_label then
-      events.emit(device, cap_deviceFault, cap_deviceFault.fault(fault_label))
+      events.emit_changed(device, cap_deviceFault, "fault", fault_label,
+        cap_deviceFault.fault(fault_label))
     else
       device.log.warn("unknown dehumidifier fault code: " .. tostring(fault))
     end

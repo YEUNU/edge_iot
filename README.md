@@ -39,6 +39,15 @@ device settings to add maintenance, indicator, buzzer, lock, sensor, and
 diagnostic controls without recreating the device. IP and token settings use
 the same preference names in both profiles and remain attached to the device.
 
+Fault events are emitted only when the confirmed fault changes. Both air
+purifier profiles expose fault status and a filter replacement condition:
+10% or less activates it, and a confirmed reading above 15% clears it.
+The driver automatically creates one **Xiaomi 알림** endpoint. Connect its
+button-pressed event to a single SmartThings notification routine to receive
+all maintenance alerts. The endpoint shows the latest detailed message and
+provides a test button; its events alone do not deliver phone push notifications.
+See [notification conditions and verification](smartthings/ALERTS.md).
+
 ### Xiaomi code flow
 
 ```text

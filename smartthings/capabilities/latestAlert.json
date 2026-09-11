@@ -1,0 +1,26 @@
+{
+  "name": "Latest Alert",
+  "attributes": {
+    "message": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "value"
+        ]
+      },
+      "enumCommands": []
+    }
+  },
+  "commands": {
+    "sendTest": {
+      "name": "sendTest",
+      "arguments": []
+    }
+  }
+}
