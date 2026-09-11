@@ -1,0 +1,70 @@
+{
+  "dashboard": {
+    "states": [
+      {
+        "label": "{{status.value}}",
+        "alternatives": [
+          {
+            "key": "normal",
+            "value": "정상",
+            "type": "inactive"
+          },
+          {
+            "key": "replace",
+            "value": "필터 교체 필요",
+            "type": "active"
+          }
+        ]
+      }
+    ],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "필터 교체 알림",
+      "displayType": "state",
+      "state": {
+        "label": "{{status.value}}",
+        "alternatives": [
+          {
+            "key": "normal",
+            "value": "정상",
+            "type": "inactive"
+          },
+          {
+            "key": "replace",
+            "value": "필터 교체 필요",
+            "type": "active"
+          }
+        ]
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [
+      {
+        "label": "필터 교체 알림",
+        "displayType": "list",
+        "list": {
+          "alternatives": [
+            {
+              "key": "normal",
+              "value": "정상",
+              "type": "inactive"
+            },
+            {
+              "key": "replace",
+              "value": "필터 교체 필요",
+              "type": "active"
+            }
+          ],
+          "value": "status.value",
+          "valueType": "string",
+          "multiSelectable": false
+        }
+      }
+    ],
+    "actions": []
+  }
+}

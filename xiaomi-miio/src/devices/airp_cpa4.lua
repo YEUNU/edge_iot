@@ -16,6 +16,7 @@
 
 local capabilities = require "st.capabilities"
 local events = require "devices.events"
+local alerts = require "alerts"
 
 local M = {}
 local NS = "earthpanel38939"
@@ -23,6 +24,7 @@ local cap_childLock     = capabilities[NS .. ".childLock"]
 local cap_alarmBuzzer   = capabilities[NS .. ".alarmBuzzer"]
 local cap_indicatorMode = capabilities[NS .. ".indicatorLightMode"]
 local cap_deviceFault   = capabilities[NS .. ".deviceFault"]
+local cap_filterAlert = capabilities[NS .. ".filterAlert"]
 local cap_favoriteLevel = capabilities[NS .. ".airPurifierFavoriteLevel"]
 
 local SIID_AIRP = 2
@@ -129,16 +131,46 @@ function M.apply_state(device, p)
   end
 
   local life = p["filter-life"]
-  if life ~= nil then
+  if type(life) == "number" and life >= 0 and life <= 100 then
     events.emit(device, capabilities.filterState,
       capabilities.filterState.filterLifeRemaining({ value = life, unit = "%" }))
+    -- A latched maintenance condition avoids repeat alerts as the reported
+    -- percentage fluctuates near the threshold. Missing/invalid reads cannot
+    -- clear it; only a confirmed reading above 15% rearms the notification.
+    local previous
+    if type(device.get_field) == "function" then
+      previous = device:get_field("xiaomi_filter_alert_status")
+    end
+    if previous == nil and cap_filterAlert and type(device.get_latest_state) == "function" then
+      previous = device:get_latest_state("main", cap_filterAlert.ID, "status")
+    end
+    local status = "normal"
+    if life <= 10 or (previous == "replace" and life <= 15) then
+      status = "replace"
+    end
+    if previous ~= status and type(device.set_field) == "function" then
+      device:set_field("xiaomi_filter_alert_status", status, { persist = true })
+    end
+    if cap_filterAlert then
+      events.emit_changed(device, cap_filterAlert, "status", status,
+        cap_filterAlert.status(status))
+    end
+    alerts.report(device, "filter", status, status == "replace"
+      and "필터 수명이 10% 이하예요. 교체할 필터를 준비해 주세요." or nil)
   end
 
   local fault = p["fault"]
+  if fault ~= nil and FAULT_LABELS[fault] then
+    local message
+    if fault == 2 then message = "모터 막힘이 감지됐어요. 기기 상태를 확인해 주세요." end
+    if fault == 3 then message = "센서 연결 오류가 감지됐어요. 기기 상태를 확인해 주세요." end
+    alerts.report(device, "fault", FAULT_LABELS[fault], message)
+  end
   if fault ~= nil and cap_deviceFault then
     local fault_label = FAULT_LABELS[fault]
     if fault_label then
-      events.emit(device, cap_deviceFault, cap_deviceFault.fault(fault_label))
+      events.emit_changed(device, cap_deviceFault, "fault", fault_label,
+        cap_deviceFault.fault(fault_label))
     else
       device.log.warn("unknown air purifier fault code: " .. tostring(fault))
     end

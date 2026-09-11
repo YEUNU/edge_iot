@@ -10,6 +10,8 @@ components:
         version: 1
       - id: filterState
         version: 1
+      - id: earthpanel38939.filterAlert
+        version: 1
       - id: earthpanel38939.airPurifierFavoriteLevel
         version: 1
       - id: earthpanel38939.indicatorLightMode
@@ -25,7 +27,7 @@ components:
 preferences:
   - name: showAdvanced
     title: 고급 기능 표시
-    description: 표시등, 부저, 잠금, 상세 오류를 표시합니다
+    description: 표시등, 부저, 잠금 기능을 표시합니다
     required: true
     preferenceType: boolean
     definition:

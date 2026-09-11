@@ -1,0 +1,31 @@
+{
+  "dashboard": {
+    "states": [
+      {
+        "label": "Xiaomi 알림"
+      }
+    ],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "최근 알림",
+      "displayType": "state",
+      "state": {
+        "label": "{{message.value}}"
+      }
+    },
+    {
+      "label": "테스트 알림 보내기",
+      "displayType": "pushButton",
+      "pushButton": {
+        "command": "sendTest"
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [],
+    "actions": []
+  }
+}

@@ -1,0 +1,10 @@
+name: xiaomi-alerts.v1
+components:
+  - id: main
+    capabilities:
+      - id: button
+        version: 1
+      - id: earthpanel38939.latestAlert
+        version: 1
+    categories:
+      - name: RemoteController
