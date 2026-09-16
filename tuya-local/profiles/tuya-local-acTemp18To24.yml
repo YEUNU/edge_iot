@@ -1,0 +1,34 @@
+name: tuya-local-ac.acTemp18To24.v1
+components:
+  - id: main
+    capabilities:
+      - id: switch
+        version: 1
+      - id: earthpanel38939.acTemp18To24
+        version: 1
+      - id: thermostatCoolingSetpoint
+        version: 1
+      - id: earthpanel38939.acModeControl
+        version: 1
+      - id: airConditionerMode
+        version: 1
+      - id: airConditionerFanMode
+        version: 1
+      - id: earthpanel38939.acLocalLink
+        version: 1
+      - id: refresh
+        version: 1
+    categories:
+      - name: AirConditioner
+preferences:
+  - name: changeModel
+    title: 에어컨 기종 변경
+    description: 제조사와 기종을 선택하고 시험합니다. 저장하면 기본 화면으로 돌아갑니다. 다시 변경하려면 껐다 켜세요.
+    required: true
+    preferenceType: boolean
+    definition:
+      default: false
+
+metadata:
+  mnmn: SmartThingsCommunity
+  vid: 1470e06d-7ee2-3aa9-bc91-26c116515253

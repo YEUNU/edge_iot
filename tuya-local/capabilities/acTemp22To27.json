@@ -1,0 +1,76 @@
+{
+  "name": "AC Temp 22 To 27",
+  "attributes": {
+    "temperature": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "minimum": 22,
+            "maximum": 27
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "C"
+            ],
+            "default": "C"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "setter": "setTemperature"
+    },
+    "temperatureRange": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "object",
+            "properties": {
+              "minimum": {
+                "type": "number"
+              },
+              "maximum": {
+                "type": "number"
+              },
+              "step": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "minimum",
+              "maximum",
+              "step"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "commands": {
+    "setTemperature": {
+      "name": "setTemperature",
+      "arguments": [
+        {
+          "name": "temperature",
+          "optional": false,
+          "schema": {
+            "type": "number",
+            "minimum": 22,
+            "maximum": 27
+          }
+        }
+      ]
+    }
+  }
+}

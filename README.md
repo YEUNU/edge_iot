@@ -1,6 +1,6 @@
 # edge_iot — SmartThings Edge driver
 
-Lua-based SmartThings Edge driver for Xiaomi MiIO/MiOT LAN devices.
+SmartThings Edge drivers for Xiaomi MiIO/MiOT devices and Tuya IR air conditioners, with local control paths.
 
 ## Xiaomi MiIO LAN
 
@@ -143,9 +143,25 @@ print(info and info.model or request_err)
 - Keep Xiaomi tokens out of source control and logs.
 - Xiaomi tokens use password-style SmartThings preferences.
 - Reserve Xiaomi device IPs in DHCP so control does not move to another host.
+- Follow [publication privacy checks](PRIVACY.md) before committing configuration or deployment changes.
 
 ## References
 
 - [SmartThings Edge driver documentation](https://developer.smartthings.com/docs/devices/hub-connected/edge-drivers)
 - [python-miio](https://github.com/rytilahti/python-miio)
 - [MiOT specification API](https://miot-spec.org/miot-spec-v2/instances?status=all)
+
+## Tuya IR 에어컨
+
+[Tuya 로컬 제어](tuya-local/README.md): 313개 사전 코드셋, 인증된 자동 연결, 스마트싱스 기종 선택·온도·모드·풍량 시험 UI, LAN 브리지. 모드와 풍량은 드롭다운으로 고릅니다. 실행 서비스는 지정한 IR 허브로만 발신 연결을 허용합니다. 실제 호환 여부는 기종별 확인이 필요합니다.
+
+Tuya 허브용 목록 1,325개와 API 코드 레코드 163,693개는 일회성 수집을 완료했습니다. 이 추가 데이터의 로컬 송신 형식 변환은 미완료이며, 전체 Tuya 기종을 로컬에서 지원한다는 의미는 아닙니다. [수집 범위와 남은 작업](tuya-local/commissioning/README.md)을 참고하세요.
+
+Tuya 검증:
+
+```sh
+python3 -m unittest discover -s tests -p 'test_tuya*.py'
+lua tests/test_tuya_client.lua
+lua tests/test_tuya_ux.lua
+python3 scripts/check_public_data.py
+```

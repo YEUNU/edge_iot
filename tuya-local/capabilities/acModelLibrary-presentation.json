@@ -1,0 +1,3542 @@
+{
+  "dashboard": {
+    "states": [],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "제조사",
+      "displayType": "list",
+      "list": {
+        "command": {
+          "name": "setBrand",
+          "alternatives": [
+            {
+              "key": " Toshiba",
+              "value": " Toshiba"
+            },
+            {
+              "key": "AEG",
+              "value": "AEG"
+            },
+            {
+              "key": "AUX",
+              "value": "AUX"
+            },
+            {
+              "key": "Actron",
+              "value": "Actron"
+            },
+            {
+              "key": "Aeronik",
+              "value": "Aeronik"
+            },
+            {
+              "key": "Agratto",
+              "value": "Agratto"
+            },
+            {
+              "key": "Akai",
+              "value": "Akai"
+            },
+            {
+              "key": "Alliance",
+              "value": "Alliance"
+            },
+            {
+              "key": "Aokesi",
+              "value": "Aokesi"
+            },
+            {
+              "key": "AquaThermal",
+              "value": "AquaThermal"
+            },
+            {
+              "key": "Argo",
+              "value": "Argo"
+            },
+            {
+              "key": "Ariston",
+              "value": "Ariston"
+            },
+            {
+              "key": "Audinac",
+              "value": "Audinac"
+            },
+            {
+              "key": "BAXI",
+              "value": "BAXI"
+            },
+            {
+              "key": "Ballu",
+              "value": "Ballu"
+            },
+            {
+              "key": "Beko",
+              "value": "Beko"
+            },
+            {
+              "key": "Best",
+              "value": "Best"
+            },
+            {
+              "key": "Bora",
+              "value": "Bora"
+            },
+            {
+              "key": "Bosch",
+              "value": "Bosch"
+            },
+            {
+              "key": "Carrier",
+              "value": "Carrier"
+            },
+            {
+              "key": "Casper",
+              "value": "Casper"
+            },
+            {
+              "key": "Cecotec",
+              "value": "Cecotec"
+            },
+            {
+              "key": "Chigo",
+              "value": "Chigo"
+            },
+            {
+              "key": "Chunlan",
+              "value": "Chunlan"
+            },
+            {
+              "key": "Consul",
+              "value": "Consul"
+            },
+            {
+              "key": "Cooper & Hunter",
+              "value": "Cooper & Hunter"
+            },
+            {
+              "key": "Daikin",
+              "value": "Daikin"
+            },
+            {
+              "key": "Daitsu",
+              "value": "Daitsu"
+            },
+            {
+              "key": "DeLonghi",
+              "value": "DeLonghi"
+            },
+            {
+              "key": "Devanti",
+              "value": "Devanti"
+            },
+            {
+              "key": "Dimplex",
+              "value": "Dimplex"
+            },
+            {
+              "key": "ELGIN",
+              "value": "ELGIN"
+            },
+            {
+              "key": "EcoAir",
+              "value": "EcoAir"
+            },
+            {
+              "key": "Electra",
+              "value": "Electra"
+            },
+            {
+              "key": "Electrolux",
+              "value": "Electrolux"
+            },
+            {
+              "key": "Endesa",
+              "value": "Endesa"
+            },
+            {
+              "key": "Equation",
+              "value": "Equation"
+            },
+            {
+              "key": "Erisson",
+              "value": "Erisson"
+            },
+            {
+              "key": "FUJIKO",
+              "value": "FUJIKO"
+            },
+            {
+              "key": "Family",
+              "value": "Family"
+            },
+            {
+              "key": "FanWorld",
+              "value": "FanWorld"
+            },
+            {
+              "key": "Fisher",
+              "value": "Fisher"
+            },
+            {
+              "key": "Flouu",
+              "value": "Flouu"
+            },
+            {
+              "key": "Friedrich",
+              "value": "Friedrich"
+            },
+            {
+              "key": "Fuji",
+              "value": "Fuji"
+            },
+            {
+              "key": "Fujitsu",
+              "value": "Fujitsu"
+            },
+            {
+              "key": "Galanz",
+              "value": "Galanz"
+            },
+            {
+              "key": "General Electric",
+              "value": "General Electric"
+            },
+            {
+              "key": "Ggeneral Electric",
+              "value": "Ggeneral Electric"
+            },
+            {
+              "key": "Goodman",
+              "value": "Goodman"
+            },
+            {
+              "key": "Gree",
+              "value": "Gree"
+            },
+            {
+              "key": "HTW",
+              "value": "HTW"
+            },
+            {
+              "key": "Haier",
+              "value": "Haier"
+            },
+            {
+              "key": "Hantech",
+              "value": "Hantech"
+            },
+            {
+              "key": "HappyTree",
+              "value": "HappyTree"
+            },
+            {
+              "key": "Hisense",
+              "value": "Hisense"
+            },
+            {
+              "key": "Hitachi",
+              "value": "Hitachi"
+            },
+            {
+              "key": "Hokkaido",
+              "value": "Hokkaido"
+            },
+            {
+              "key": "Hualing",
+              "value": "Hualing"
+            },
+            {
+              "key": "Hyndai",
+              "value": "Hyndai"
+            },
+            {
+              "key": "Hyundai",
+              "value": "Hyundai"
+            },
+            {
+              "key": "IGC",
+              "value": "IGC"
+            },
+            {
+              "key": "Junkers",
+              "value": "Junkers"
+            },
+            {
+              "key": "KOREL",
+              "value": "KOREL"
+            },
+            {
+              "key": "Kaden",
+              "value": "Kaden"
+            },
+            {
+              "key": "Kelvinator",
+              "value": "Kelvinator"
+            },
+            {
+              "key": "Klasse",
+              "value": "Klasse"
+            },
+            {
+              "key": "Kolin",
+              "value": "Kolin"
+            },
+            {
+              "key": "Komeco",
+              "value": "Komeco"
+            },
+            {
+              "key": "LG",
+              "value": "LG"
+            },
+            {
+              "key": "Lennox",
+              "value": "Lennox"
+            },
+            {
+              "key": "Midea",
+              "value": "Midea"
+            },
+            {
+              "key": "Mirage",
+              "value": "Mirage"
+            },
+            {
+              "key": "Mistral",
+              "value": "Mistral"
+            },
+            {
+              "key": "Mitsubishi",
+              "value": "Mitsubishi"
+            },
+            {
+              "key": "Mitsubishi Electric",
+              "value": "Mitsubishi Electric"
+            },
+            {
+              "key": "Mitsubishi Electric ",
+              "value": "Mitsubishi Electric "
+            },
+            {
+              "key": "Mitsubishi Electric Starmex",
+              "value": "Mitsubishi Electric Starmex"
+            },
+            {
+              "key": "Mitsubishi Heavy",
+              "value": "Mitsubishi Heavy"
+            },
+            {
+              "key": "Mitsubishi Heavy Industries",
+              "value": "Mitsubishi Heavy Industries"
+            },
+            {
+              "key": "Mundoclima",
+              "value": "Mundoclima"
+            },
+            {
+              "key": "PARKAIR",
+              "value": "PARKAIR"
+            },
+            {
+              "key": "Panasonic",
+              "value": "Panasonic"
+            },
+            {
+              "key": "Pearl",
+              "value": "Pearl"
+            },
+            {
+              "key": "Philco",
+              "value": "Philco"
+            },
+            {
+              "key": "Profio",
+              "value": "Profio"
+            },
+            {
+              "key": "ROYAL",
+              "value": "ROYAL"
+            },
+            {
+              "key": "Riello",
+              "value": "Riello"
+            },
+            {
+              "key": "Rotenso",
+              "value": "Rotenso"
+            },
+            {
+              "key": "SAGA",
+              "value": "SAGA"
+            },
+            {
+              "key": "SHARP",
+              "value": "SHARP"
+            },
+            {
+              "key": "Samsung",
+              "value": "Samsung"
+            },
+            {
+              "key": "Sanyo",
+              "value": "Sanyo"
+            },
+            {
+              "key": "Saunier Duval",
+              "value": "Saunier Duval"
+            },
+            {
+              "key": "Senville",
+              "value": "Senville"
+            },
+            {
+              "key": "Sharp",
+              "value": "Sharp"
+            },
+            {
+              "key": "Sigma",
+              "value": "Sigma"
+            },
+            {
+              "key": "Simbio",
+              "value": "Simbio"
+            },
+            {
+              "key": "Sintech",
+              "value": "Sintech"
+            },
+            {
+              "key": "Springer",
+              "value": "Springer"
+            },
+            {
+              "key": "TCL",
+              "value": "TCL"
+            },
+            {
+              "key": "Tadiran",
+              "value": "Tadiran"
+            },
+            {
+              "key": "Technibel",
+              "value": "Technibel"
+            },
+            {
+              "key": "Tornado",
+              "value": "Tornado"
+            },
+            {
+              "key": "Toshiba",
+              "value": "Toshiba"
+            },
+            {
+              "key": "Tosot",
+              "value": "Tosot"
+            },
+            {
+              "key": "Toyotomi",
+              "value": "Toyotomi"
+            },
+            {
+              "key": "Tristar",
+              "value": "Tristar"
+            },
+            {
+              "key": "Trotec",
+              "value": "Trotec"
+            },
+            {
+              "key": "Unionaire",
+              "value": "Unionaire"
+            },
+            {
+              "key": "VS",
+              "value": "VS"
+            },
+            {
+              "key": "Vaillant",
+              "value": "Vaillant"
+            },
+            {
+              "key": "Viomi",
+              "value": "Viomi"
+            },
+            {
+              "key": "Voltas",
+              "value": "Voltas"
+            },
+            {
+              "key": "Vortex",
+              "value": "Vortex"
+            },
+            {
+              "key": "Whirlpool",
+              "value": "Whirlpool"
+            },
+            {
+              "key": "Whynter",
+              "value": "Whynter"
+            },
+            {
+              "key": "Wide",
+              "value": "Wide"
+            },
+            {
+              "key": "Xiaomi",
+              "value": "Xiaomi"
+            },
+            {
+              "key": "Yamatsu",
+              "value": "Yamatsu"
+            },
+            {
+              "key": "Zanussi",
+              "value": "Zanussi"
+            },
+            {
+              "key": "Zephir",
+              "value": "Zephir"
+            }
+          ],
+          "argumentType": "string"
+        },
+        "state": {
+          "value": "brand.value",
+          "alternatives": [
+            {
+              "key": " Toshiba",
+              "value": " Toshiba"
+            },
+            {
+              "key": "AEG",
+              "value": "AEG"
+            },
+            {
+              "key": "AUX",
+              "value": "AUX"
+            },
+            {
+              "key": "Actron",
+              "value": "Actron"
+            },
+            {
+              "key": "Aeronik",
+              "value": "Aeronik"
+            },
+            {
+              "key": "Agratto",
+              "value": "Agratto"
+            },
+            {
+              "key": "Akai",
+              "value": "Akai"
+            },
+            {
+              "key": "Alliance",
+              "value": "Alliance"
+            },
+            {
+              "key": "Aokesi",
+              "value": "Aokesi"
+            },
+            {
+              "key": "AquaThermal",
+              "value": "AquaThermal"
+            },
+            {
+              "key": "Argo",
+              "value": "Argo"
+            },
+            {
+              "key": "Ariston",
+              "value": "Ariston"
+            },
+            {
+              "key": "Audinac",
+              "value": "Audinac"
+            },
+            {
+              "key": "BAXI",
+              "value": "BAXI"
+            },
+            {
+              "key": "Ballu",
+              "value": "Ballu"
+            },
+            {
+              "key": "Beko",
+              "value": "Beko"
+            },
+            {
+              "key": "Best",
+              "value": "Best"
+            },
+            {
+              "key": "Bora",
+              "value": "Bora"
+            },
+            {
+              "key": "Bosch",
+              "value": "Bosch"
+            },
+            {
+              "key": "Carrier",
+              "value": "Carrier"
+            },
+            {
+              "key": "Casper",
+              "value": "Casper"
+            },
+            {
+              "key": "Cecotec",
+              "value": "Cecotec"
+            },
+            {
+              "key": "Chigo",
+              "value": "Chigo"
+            },
+            {
+              "key": "Chunlan",
+              "value": "Chunlan"
+            },
+            {
+              "key": "Consul",
+              "value": "Consul"
+            },
+            {
+              "key": "Cooper & Hunter",
+              "value": "Cooper & Hunter"
+            },
+            {
+              "key": "Daikin",
+              "value": "Daikin"
+            },
+            {
+              "key": "Daitsu",
+              "value": "Daitsu"
+            },
+            {
+              "key": "DeLonghi",
+              "value": "DeLonghi"
+            },
+            {
+              "key": "Devanti",
+              "value": "Devanti"
+            },
+            {
+              "key": "Dimplex",
+              "value": "Dimplex"
+            },
+            {
+              "key": "ELGIN",
+              "value": "ELGIN"
+            },
+            {
+              "key": "EcoAir",
+              "value": "EcoAir"
+            },
+            {
+              "key": "Electra",
+              "value": "Electra"
+            },
+            {
+              "key": "Electrolux",
+              "value": "Electrolux"
+            },
+            {
+              "key": "Endesa",
+              "value": "Endesa"
+            },
+            {
+              "key": "Equation",
+              "value": "Equation"
+            },
+            {
+              "key": "Erisson",
+              "value": "Erisson"
+            },
+            {
+              "key": "FUJIKO",
+              "value": "FUJIKO"
+            },
+            {
+              "key": "Family",
+              "value": "Family"
+            },
+            {
+              "key": "FanWorld",
+              "value": "FanWorld"
+            },
+            {
+              "key": "Fisher",
+              "value": "Fisher"
+            },
+            {
+              "key": "Flouu",
+              "value": "Flouu"
+            },
+            {
+              "key": "Friedrich",
+              "value": "Friedrich"
+            },
+            {
+              "key": "Fuji",
+              "value": "Fuji"
+            },
+            {
+              "key": "Fujitsu",
+              "value": "Fujitsu"
+            },
+            {
+              "key": "Galanz",
+              "value": "Galanz"
+            },
+            {
+              "key": "General Electric",
+              "value": "General Electric"
+            },
+            {
+              "key": "Ggeneral Electric",
+              "value": "Ggeneral Electric"
+            },
+            {
+              "key": "Goodman",
+              "value": "Goodman"
+            },
+            {
+              "key": "Gree",
+              "value": "Gree"
+            },
+            {
+              "key": "HTW",
+              "value": "HTW"
+            },
+            {
+              "key": "Haier",
+              "value": "Haier"
+            },
+            {
+              "key": "Hantech",
+              "value": "Hantech"
+            },
+            {
+              "key": "HappyTree",
+              "value": "HappyTree"
+            },
+            {
+              "key": "Hisense",
+              "value": "Hisense"
+            },
+            {
+              "key": "Hitachi",
+              "value": "Hitachi"
+            },
+            {
+              "key": "Hokkaido",
+              "value": "Hokkaido"
+            },
+            {
+              "key": "Hualing",
+              "value": "Hualing"
+            },
+            {
+              "key": "Hyndai",
+              "value": "Hyndai"
+            },
+            {
+              "key": "Hyundai",
+              "value": "Hyundai"
+            },
+            {
+              "key": "IGC",
+              "value": "IGC"
+            },
+            {
+              "key": "Junkers",
+              "value": "Junkers"
+            },
+            {
+              "key": "KOREL",
+              "value": "KOREL"
+            },
+            {
+              "key": "Kaden",
+              "value": "Kaden"
+            },
+            {
+              "key": "Kelvinator",
+              "value": "Kelvinator"
+            },
+            {
+              "key": "Klasse",
+              "value": "Klasse"
+            },
+            {
+              "key": "Kolin",
+              "value": "Kolin"
+            },
+            {
+              "key": "Komeco",
+              "value": "Komeco"
+            },
+            {
+              "key": "LG",
+              "value": "LG"
+            },
+            {
+              "key": "Lennox",
+              "value": "Lennox"
+            },
+            {
+              "key": "Midea",
+              "value": "Midea"
+            },
+            {
+              "key": "Mirage",
+              "value": "Mirage"
+            },
+            {
+              "key": "Mistral",
+              "value": "Mistral"
+            },
+            {
+              "key": "Mitsubishi",
+              "value": "Mitsubishi"
+            },
+            {
+              "key": "Mitsubishi Electric",
+              "value": "Mitsubishi Electric"
+            },
+            {
+              "key": "Mitsubishi Electric ",
+              "value": "Mitsubishi Electric "
+            },
+            {
+              "key": "Mitsubishi Electric Starmex",
+              "value": "Mitsubishi Electric Starmex"
+            },
+            {
+              "key": "Mitsubishi Heavy",
+              "value": "Mitsubishi Heavy"
+            },
+            {
+              "key": "Mitsubishi Heavy Industries",
+              "value": "Mitsubishi Heavy Industries"
+            },
+            {
+              "key": "Mundoclima",
+              "value": "Mundoclima"
+            },
+            {
+              "key": "PARKAIR",
+              "value": "PARKAIR"
+            },
+            {
+              "key": "Panasonic",
+              "value": "Panasonic"
+            },
+            {
+              "key": "Pearl",
+              "value": "Pearl"
+            },
+            {
+              "key": "Philco",
+              "value": "Philco"
+            },
+            {
+              "key": "Profio",
+              "value": "Profio"
+            },
+            {
+              "key": "ROYAL",
+              "value": "ROYAL"
+            },
+            {
+              "key": "Riello",
+              "value": "Riello"
+            },
+            {
+              "key": "Rotenso",
+              "value": "Rotenso"
+            },
+            {
+              "key": "SAGA",
+              "value": "SAGA"
+            },
+            {
+              "key": "SHARP",
+              "value": "SHARP"
+            },
+            {
+              "key": "Samsung",
+              "value": "Samsung"
+            },
+            {
+              "key": "Sanyo",
+              "value": "Sanyo"
+            },
+            {
+              "key": "Saunier Duval",
+              "value": "Saunier Duval"
+            },
+            {
+              "key": "Senville",
+              "value": "Senville"
+            },
+            {
+              "key": "Sharp",
+              "value": "Sharp"
+            },
+            {
+              "key": "Sigma",
+              "value": "Sigma"
+            },
+            {
+              "key": "Simbio",
+              "value": "Simbio"
+            },
+            {
+              "key": "Sintech",
+              "value": "Sintech"
+            },
+            {
+              "key": "Springer",
+              "value": "Springer"
+            },
+            {
+              "key": "TCL",
+              "value": "TCL"
+            },
+            {
+              "key": "Tadiran",
+              "value": "Tadiran"
+            },
+            {
+              "key": "Technibel",
+              "value": "Technibel"
+            },
+            {
+              "key": "Tornado",
+              "value": "Tornado"
+            },
+            {
+              "key": "Toshiba",
+              "value": "Toshiba"
+            },
+            {
+              "key": "Tosot",
+              "value": "Tosot"
+            },
+            {
+              "key": "Toyotomi",
+              "value": "Toyotomi"
+            },
+            {
+              "key": "Tristar",
+              "value": "Tristar"
+            },
+            {
+              "key": "Trotec",
+              "value": "Trotec"
+            },
+            {
+              "key": "Unionaire",
+              "value": "Unionaire"
+            },
+            {
+              "key": "VS",
+              "value": "VS"
+            },
+            {
+              "key": "Vaillant",
+              "value": "Vaillant"
+            },
+            {
+              "key": "Viomi",
+              "value": "Viomi"
+            },
+            {
+              "key": "Voltas",
+              "value": "Voltas"
+            },
+            {
+              "key": "Vortex",
+              "value": "Vortex"
+            },
+            {
+              "key": "Whirlpool",
+              "value": "Whirlpool"
+            },
+            {
+              "key": "Whynter",
+              "value": "Whynter"
+            },
+            {
+              "key": "Wide",
+              "value": "Wide"
+            },
+            {
+              "key": "Xiaomi",
+              "value": "Xiaomi"
+            },
+            {
+              "key": "Yamatsu",
+              "value": "Yamatsu"
+            },
+            {
+              "key": "Zanussi",
+              "value": "Zanussi"
+            },
+            {
+              "key": "Zephir",
+              "value": "Zephir"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "기종",
+      "displayType": "list",
+      "list": {
+        "command": {
+          "name": "setCandidate",
+          "alternatives": [
+            {
+              "key": " Toshiba · WH-TA05NE, WH-TA11EJ · 1261",
+              "value": "WH-TA05NE, WH-TA11EJ · 1261"
+            },
+            {
+              "key": "AEG · AXP35U538CW · 2720",
+              "value": "AXP35U538CW · 2720"
+            },
+            {
+              "key": "AUX · Unknown · 1960",
+              "value": "호환 코드 · 1960"
+            },
+            {
+              "key": "AUX · AUX FREEDOM AUX-09FH · 1961",
+              "value": "AUX FREEDOM AUX-09FH · 1961"
+            },
+            {
+              "key": "AUX · iClima ICI-09A · 1962",
+              "value": "iClima ICI-09A · 1962"
+            },
+            {
+              "key": "AUX · Kendal Split Inverter · 1963",
+              "value": "Kendal Split Inverter · 1963"
+            },
+            {
+              "key": "Actron · Unknown · 1140",
+              "value": "호환 코드 · 1140"
+            },
+            {
+              "key": "Aeronik · ASO-12IL, ASI-12IL · 2000",
+              "value": "ASO-12IL, ASI-12IL · 2000"
+            },
+            {
+              "key": "Agratto · ECST12FR4-02, ECST19QFIR4-02 · 2980",
+              "value": "ECST12FR4-02, ECST19QFIR4-02 · 2980"
+            },
+            {
+              "key": "Akai · Unknown · 1440",
+              "value": "호환 코드 · 1440"
+            },
+            {
+              "key": "Akai · TEM-26CHSAAK5, TEM-70CHSAAK5, TEM-26CHSAKA5, TEM-35CHSAKA, TEM-50CHSAKA, TEM-35CHSABH, TEM-35CHSF · 1441",
+              "value": "TEM-26CHSAAK5, TEM-70CHSAAK5, TEM-26CHSAKA5, TEM-35CHSAKA, TEM-50 · 1441"
+            },
+            {
+              "key": "Alliance · Unknown · 1460",
+              "value": "호환 코드 · 1460"
+            },
+            {
+              "key": "Aokesi · Unknown · 1920",
+              "value": "호환 코드 · 1920"
+            },
+            {
+              "key": "AquaThermal · LM AURI-12 · 3160",
+              "value": "LM AURI-12 · 3160"
+            },
+            {
+              "key": "Argo · Ulisse13 · 3140",
+              "value": "Ulisse13 · 3140"
+            },
+            {
+              "key": "Ariston · A-IFWHxx-IGX · 2020",
+              "value": "A-IFWHxx-IGX · 2020"
+            },
+            {
+              "key": "Audinac · SP3500 · 2540",
+              "value": "SP3500 · 2540"
+            },
+            {
+              "key": "BAXI · Unknow · 2380",
+              "value": "Unknow · 2380"
+            },
+            {
+              "key": "Ballu · YKR-K/002E · 1800",
+              "value": "YKR-K/002E · 1800"
+            },
+            {
+              "key": "Beko · BEVCA 120 · 1600",
+              "value": "BEVCA 120 · 1600"
+            },
+            {
+              "key": "Beko · BPAK 120 · 1601",
+              "value": "BPAK 120 · 1601"
+            },
+            {
+              "key": "Beko · BXK 120 · 1602",
+              "value": "BXK 120 · 1602"
+            },
+            {
+              "key": "Beko · BXEU 090 · 1603",
+              "value": "BXEU 090 · 1603"
+            },
+            {
+              "key": "Beko · BPEU 120 · 1604",
+              "value": "BPEU 120 · 1604"
+            },
+            {
+              "key": "Best · BSTS18CNE2 · 2920",
+              "value": "BSTS18CNE2 · 2920"
+            },
+            {
+              "key": "Bora · 18SRA-HE · 2880",
+              "value": "18SRA-HE · 2880"
+            },
+            {
+              "key": "Bosch · 5000i · 2740",
+              "value": "5000i · 2740"
+            },
+            {
+              "key": "Carrier · Unknown · 1160",
+              "value": "호환 코드 · 1160"
+            },
+            {
+              "key": "Carrier · 40GKX-024RB · 1161",
+              "value": "40GKX-024RB · 1161"
+            },
+            {
+              "key": "Carrier · 42TVGS024-703 · 1162",
+              "value": "42TVGS024-703 · 1162"
+            },
+            {
+              "key": "Carrier · 42LUVH025N-1 · 1164",
+              "value": "42LUVH025N-1 · 1164"
+            },
+            {
+              "key": "Carrier · 42P250HX, 53P250HX · 1165",
+              "value": "42P250HX, 53P250HX · 1165"
+            },
+            {
+              "key": "Carrier · CS-A121N · 1166",
+              "value": "CS-A121N · 1166"
+            },
+            {
+              "key": "Carrier · Tuya 104800501",
+              "value": "기존 Carrier 리모컨"
+            },
+            {
+              "key": "Casper · SC-09FS32 · 3240",
+              "value": "SC-09FS32 · 3240"
+            },
+            {
+              "key": "Cecotec · EnergySilence 12000 AirClima (05290) · 3100",
+              "value": "EnergySilence 12000 AirClima (05290) · 3100"
+            },
+            {
+              "key": "Chigo · Unknown · 1580",
+              "value": "호환 코드 · 1580"
+            },
+            {
+              "key": "Chigo · ZH/TY-01 · 1581",
+              "value": "ZH/TY-01 · 1581"
+            },
+            {
+              "key": "Chigo · ZH/TT-14 · 1582",
+              "value": "ZH/TT-14 · 1582"
+            },
+            {
+              "key": "Chunlan · KFR-25GW/VW (CH-9) · 3320",
+              "value": "KFR-25GW/VW (CH-9) · 3320"
+            },
+            {
+              "key": "Consul · Unknown · 1240",
+              "value": "호환 코드 · 1240"
+            },
+            {
+              "key": "Consul · CBV12CBBNA, CBY12DBBNA · 1241",
+              "value": "CBV12CBBNA, CBY12DBBNA · 1241"
+            },
+            {
+              "key": "Cooper & Hunter · Unknown · 3120",
+              "value": "호환 코드 · 3120"
+            },
+            {
+              "key": "Daikin · FTXS25CVMB, FTXS35CVMB, FTXS60BVMB, FVXS25BVMB · 1100",
+              "value": "FTXS25CVMB, FTXS35CVMB, FTXS60BVMB, FVXS25BVMB · 1100"
+            },
+            {
+              "key": "Daikin · FTXS20LVMA, FTXS25LVMA, FTXS35LVMA, FTXS46LVMA, FTXS50LVMA, FTXS60LVMA, FTXS71LVMA, FTXS85LVMA, FTXS95LVMA, FVXS50FV1B, FTXL35J2V1B, FTXM25U · 1101",
+              "value": "FTXS20LVMA, FTXS25LVMA, FTXS35LVMA, FTXS46LVMA, FTXS50LVMA, FTXS6 · 1101"
+            },
+            {
+              "key": "Daikin · FTV20AXV14 · 1102",
+              "value": "FTV20AXV14 · 1102"
+            },
+            {
+              "key": "Daikin · Unknown · 1103",
+              "value": "호환 코드 · 1103"
+            },
+            {
+              "key": "Daikin · TF25DVM · 1104",
+              "value": "TF25DVM · 1104"
+            },
+            {
+              "key": "Daikin · ATX20KV1B, ATX25KV1B, ATX35KV1B · 1106",
+              "value": "ATX20KV1B, ATX25KV1B, ATX35KV1B · 1106"
+            },
+            {
+              "key": "Daikin · FTX25JAV1NB · 1107",
+              "value": "FTX25JAV1NB · 1107"
+            },
+            {
+              "key": "Daikin · FTXG25EV1BS, FTXG35EV1BS, FTXG35EV1BW · 1108",
+              "value": "FTXG25EV1BS, FTXG35EV1BS, FTXG35EV1BW · 1108"
+            },
+            {
+              "key": "Daikin · BRC4C158 · 1109",
+              "value": "BRC4C158 · 1109"
+            },
+            {
+              "key": "Daikin · FTC15NV14, FTC20NV14, FTC25NV14, FTC35NV14 · 1110",
+              "value": "FTC15NV14, FTC20NV14, FTC25NV14, FTC35NV14 · 1110"
+            },
+            {
+              "key": "Daikin · FTE09NV25 · 1111",
+              "value": "FTE09NV25 · 1111"
+            },
+            {
+              "key": "Daikin · ATKC09TV2S, FTKQ12TV2S · 1112",
+              "value": "ATKC09TV2S, FTKQ12TV2S · 1112"
+            },
+            {
+              "key": "Daikin · FTXV35AV1B · 1113",
+              "value": "FTXV35AV1B · 1113"
+            },
+            {
+              "key": "Daikin · FTXM35UVMZ · 1114",
+              "value": "FTXM35UVMZ · 1114"
+            },
+            {
+              "key": "Daikin · ftxb-c · 1115",
+              "value": "ftxb-c · 1115"
+            },
+            {
+              "key": "Daikin · FCQ100KAVEA · 1116",
+              "value": "FCQ100KAVEA · 1116"
+            },
+            {
+              "key": "Daikin · DTXF35TVMA · 1117",
+              "value": "DTXF35TVMA · 1117"
+            },
+            {
+              "key": "Daikin · ARC452A21, FTXS09LVJU, FTXS12LVJU, FTXS15LVJU, FTXS18LVJU, FTXS24LVJU · 1118",
+              "value": "ARC452A21, FTXS09LVJU, FTXS12LVJU, FTXS15LVJU, FTXS18LVJU, FTXS24 · 1118"
+            },
+            {
+              "key": "Daikin · FTXS60FVMA · 1119",
+              "value": "FTXS60FVMA · 1119"
+            },
+            {
+              "key": "Daikin · ARC433B51 · 5120",
+              "value": "ARC433B51 · 5120"
+            },
+            {
+              "key": "Daitsu · DS12U-RV · 1760",
+              "value": "DS12U-RV · 1760"
+            },
+            {
+              "key": "Daitsu · DS-9KIDT · 1761",
+              "value": "DS-9KIDT · 1761"
+            },
+            {
+              "key": "Daitsu · ASD9KI-DT · 1762",
+              "value": "ASD9KI-DT · 1762"
+            },
+            {
+              "key": "Daitsu · DOS12KIDB · 1763",
+              "value": "DOS12KIDB · 1763"
+            },
+            {
+              "key": "Daitsu · DS-12KIDC(WD) · 1764",
+              "value": "DS-12KIDC(WD) · 1764"
+            },
+            {
+              "key": "DeLonghi · PAC N82ECO, PAC AN111 · 2240",
+              "value": "PAC N82ECO, PAC AN111 · 2240"
+            },
+            {
+              "key": "DeLonghi · PAC EM77 · 2241",
+              "value": "PAC EM77 · 2241"
+            },
+            {
+              "key": "DeLonghi · PAC AN140HPEW · 2242",
+              "value": "PAC AN140HPEW · 2242"
+            },
+            {
+              "key": "DeLonghi · DL3000 · 2243",
+              "value": "DL3000 · 2243"
+            },
+            {
+              "key": "Devanti · WAC-05C-WH · 3180",
+              "value": "WAC-05C-WH · 3180"
+            },
+            {
+              "key": "Dimplex · GDPAC12RC · 2060",
+              "value": "GDPAC12RC · 2060"
+            },
+            {
+              "key": "ELGIN · HVQI18B2IA · 2800",
+              "value": "HVQI18B2IA · 2800"
+            },
+            {
+              "key": "ELGIN · HVQI12B2FB · 2801",
+              "value": "HVQI12B2FB · 2801"
+            },
+            {
+              "key": "EcoAir · Split Type Wall Air Conditioner · 2960",
+              "value": "Split Type Wall Air Conditioner · 2960"
+            },
+            {
+              "key": "Electra · Unknown · 1940",
+              "value": "호환 코드 · 1940"
+            },
+            {
+              "key": "Electra · Electra Classic · 1942",
+              "value": "Electra Classic · 1942"
+            },
+            {
+              "key": "Electra · Electra · 1945",
+              "value": "Electra · 1945"
+            },
+            {
+              "key": "Electra · RC-3 · 1946",
+              "value": "RC-3 · 1946"
+            },
+            {
+              "key": "Electra · Electra · 1947",
+              "value": "Electra · 1947"
+            },
+            {
+              "key": "Electra · Classic 10 · 1948",
+              "value": "Classic 10 · 1948"
+            },
+            {
+              "key": "Electrolux · EACS/I-HAT/N3 · 1700",
+              "value": "EACS/I-HAT/N3 · 1700"
+            },
+            {
+              "key": "Electrolux · EACS-HA · 1701",
+              "value": "EACS-HA · 1701"
+            },
+            {
+              "key": "Electrolux · QI/QE09F, QI/QE09R, QI/QE12F, QI/QE12R, QI/QE18F, QI/QE18R, QI/QE22F, QI/QE22R, XI/XE09F, XI/XE09R, XI/XE12F, XI/XE12R, XI/XE18F, XI/XE18R,  · 1702",
+              "value": "QI/QE09F, QI/QE09R, QI/QE12F, QI/QE12R, QI/QE18F, QI/QE18R, QI/QE · 1702"
+            },
+            {
+              "key": "Electrolux · EXP26U758CW · 1703",
+              "value": "EXP26U758CW · 1703"
+            },
+            {
+              "key": "Electrolux · EPI12LEIWI · 1704",
+              "value": "EPI12LEIWI · 1704"
+            },
+            {
+              "key": "Electrolux · EACM-10 HR/N3 · 1705",
+              "value": "EACM-10 HR/N3 · 1705"
+            },
+            {
+              "key": "Endesa · DGR11 · 2500",
+              "value": "DGR11 · 2500"
+            },
+            {
+              "key": "Equation · RCH-143 · 2600",
+              "value": "RCH-143 · 2600"
+            },
+            {
+              "key": "Erisson · EC-S07T2 · 1720",
+              "value": "EC-S07T2 · 1720"
+            },
+            {
+              "key": "FUJIKO · Unknown · 1640",
+              "value": "호환 코드 · 1640"
+            },
+            {
+              "key": "Family · 12WIFI · 7741",
+              "value": "12WIFI · 7741"
+            },
+            {
+              "key": "FanWorld · FW6-3000 · 2460",
+              "value": "FW6-3000 · 2460"
+            },
+            {
+              "key": "Fisher · FPR-91DE4-R, FPR-121DE4-R, FPR-141DE4-R · 2640",
+              "value": "FPR-91DE4-R, FPR-121DE4-R, FPR-141DE4-R · 2640"
+            },
+            {
+              "key": "Fisher · FSOAI-SU-90AE2 · 2641",
+              "value": "FSOAI-SU-90AE2 · 2641"
+            },
+            {
+              "key": "Flouu · Unknown · 2360",
+              "value": "호환 코드 · 2360"
+            },
+            {
+              "key": "Friedrich · CP12G10B · 3200",
+              "value": "CP12G10B · 3200"
+            },
+            {
+              "key": "Fuji · Unknown · 1980",
+              "value": "호환 코드 · 1980"
+            },
+            {
+              "key": "Fujitsu · AR-RBE1E · 1280",
+              "value": "AR-RBE1E · 1280"
+            },
+            {
+              "key": "Fujitsu · AR-JW11 · 1282",
+              "value": "AR-JW11 · 1282"
+            },
+            {
+              "key": "Fujitsu · AR-AB5 · 1283",
+              "value": "AR-AB5 · 1283"
+            },
+            {
+              "key": "Fujitsu · AR-JE5 · 1286",
+              "value": "AR-JE5 · 1286"
+            },
+            {
+              "key": "Fujitsu · AR-AB8 · 1288",
+              "value": "AR-AB8 · 1288"
+            },
+            {
+              "key": "Fujitsu · AR-REW1E · 1289",
+              "value": "AR-REW1E · 1289"
+            },
+            {
+              "key": "Fujitsu · AR-RFL7J · 1290",
+              "value": "AR-RFL7J · 1290"
+            },
+            {
+              "key": "Fujitsu · AR-REF1E · 1291",
+              "value": "AR-REF1E · 1291"
+            },
+            {
+              "key": "Fujitsu · AR-RY4 · 1294",
+              "value": "AR-RY4 · 1294"
+            },
+            {
+              "key": "Fujitsu · AR-RCE1E · 7285",
+              "value": "AR-RCE1E · 7285"
+            },
+            {
+              "key": "Galanz · GZ-1002B-E3 · 2520",
+              "value": "GZ-1002B-E3 · 2520"
+            },
+            {
+              "key": "General Electric · ASWX09LECA · 1043",
+              "value": "ASWX09LECA · 1043"
+            },
+            {
+              "key": "Ggeneral Electric · Unknown · 1040",
+              "value": "호환 코드 · 1040"
+            },
+            {
+              "key": "Ggeneral Electric · AE1PH09IWF, AE0PH09IWO, AE1PH12IWF, AE0PH12IWO, AE4PH18IWF, AE4PH18IWF, AE5PH18IWO · 1041",
+              "value": "AE1PH09IWF, AE0PH09IWO, AE1PH12IWF, AE0PH12IWO, AE4PH18IWF, AE4PH · 1041"
+            },
+            {
+              "key": "Ggeneral Electric · ASHA09LCC · 1042",
+              "value": "ASHA09LCC · 1042"
+            },
+            {
+              "key": "Goodman · MSH123E21AXAA, MST183E20ACAA, RG57E1/BGEU1 (remote) · 2900",
+              "value": "MSH123E21AXAA, MST183E20ACAA, RG57E1/BGEU1 (remote) · 2900"
+            },
+            {
+              "key": "Gree · GWH12-KF-K3DNA5G-I · 1180",
+              "value": "GWH12-KF-K3DNA5G-I · 1180"
+            },
+            {
+              "key": "Gree · Unknown · 1181",
+              "value": "호환 코드 · 1181"
+            },
+            {
+              "key": "Gree · GMV-R45G/NaB-K · 1182",
+              "value": "GMV-R45G/NaB-K · 1182"
+            },
+            {
+              "key": "Gree · Gree Smart inverter models. WiFi off. Health on. Swing modes: [swing]_[led] · 1183",
+              "value": "Gree Smart inverter models. WiFi off. Health on. Swing modes: [sw · 1183"
+            },
+            {
+              "key": "Gree · GWH09KF, GC-EAF09HR · 1184",
+              "value": "GWH09KF, GC-EAF09HR · 1184"
+            },
+            {
+              "key": "Gree · KFR-50LW, YAP1F2 · 1185",
+              "value": "KFR-50LW, YAP1F2 · 1185"
+            },
+            {
+              "key": "Gree · GWH18ACD-D3DNA 1M · 1186",
+              "value": "GWH18ACD-D3DNA 1M · 1186"
+            },
+            {
+              "key": "Gree · Unknown model · 1187",
+              "value": "Unknown model · 1187"
+            },
+            {
+              "key": "HTW · HTWS035IX21D2-R32-I · 2840",
+              "value": "HTWS035IX21D2-R32-I · 2840"
+            },
+            {
+              "key": "Haier · Unknown · 1320",
+              "value": "호환 코드 · 1320"
+            },
+            {
+              "key": "Haier · Top-Tech 14 · 1321",
+              "value": "Top-Tech 14 · 1321"
+            },
+            {
+              "key": "Haier · HSU-09HPL03/R03 · 1322",
+              "value": "HSU-09HPL03/R03 · 1322"
+            },
+            {
+              "key": "Hantech · A018-12KR2 · 2280",
+              "value": "A018-12KR2 · 2280"
+            },
+            {
+              "key": "Hantech · A016-09KR2/A · 2281",
+              "value": "A016-09KR2/A · 2281"
+            },
+            {
+              "key": "HappyTree · TAC-12CHSD/XA81 · 3060",
+              "value": "TAC-12CHSD/XA81 · 3060"
+            },
+            {
+              "key": "Hisense · Unknown · 1520",
+              "value": "호환 코드 · 1520"
+            },
+            {
+              "key": "Hisense · Unknown · 1521",
+              "value": "호환 코드 · 1521"
+            },
+            {
+              "key": "Hisense · DGR11R2 · 1522",
+              "value": "DGR11R2 · 1522"
+            },
+            {
+              "key": "Hisense · AS-07UR4SYDD815G · 5520",
+              "value": "AS-07UR4SYDD815G · 5520"
+            },
+            {
+              "key": "Hitachi · RAC-50HK1 · 1080",
+              "value": "RAC-50HK1 · 1080"
+            },
+            {
+              "key": "Hitachi · RAC-10EH1, RAC-18EH1, RAS-10EH1, RAS-10EH3, RAS-18EH1 · 1081",
+              "value": "RAC-10EH1, RAC-18EH1, RAS-10EH1, RAS-10EH3, RAS-18EH1 · 1081"
+            },
+            {
+              "key": "Hitachi · RAS-25YHA, RAS-35YHA · 1082",
+              "value": "RAS-25YHA, RAS-35YHA · 1082"
+            },
+            {
+              "key": "Hitachi · RAS-DX18HDK, RAK-35RPC · 1084",
+              "value": "RAS-DX18HDK, RAK-35RPC · 1084"
+            },
+            {
+              "key": "Hitachi · RPA24B3BL · 1085",
+              "value": "RPA24B3BL · 1085"
+            },
+            {
+              "key": "Hitachi · RAS-E25YHAB, RAS-E35YHAB, RAS-E50YHAB · 1087",
+              "value": "RAS-E25YHAB, RAS-E35YHAB, RAS-E50YHAB · 1087"
+            },
+            {
+              "key": "Hitachi · RAF-25REX, RAF-35REX, RAF-50REX · 1088",
+              "value": "RAF-25REX, RAF-35REX, RAF-50REX · 1088"
+            },
+            {
+              "key": "Hitachi · RAK-35RXE · 1089",
+              "value": "RAK-35RXE · 1089"
+            },
+            {
+              "key": "Hitachi · HSPE2700FCINV, HSPE3200FCINV, HSPE5400FCINV, HSPE6400FCINV · 1091",
+              "value": "HSPE2700FCINV, HSPE3200FCINV, HSPE5400FCINV, HSPE6400FCINV · 1091"
+            },
+            {
+              "key": "Hitachi · RAS-E14HB · 1092",
+              "value": "RAS-E14HB · 1092"
+            },
+            {
+              "key": "Hokkaido · LA09-DUAL H1 · 2180",
+              "value": "LA09-DUAL H1 · 2180"
+            },
+            {
+              "key": "Hualing · KFR-45GW/JNV, KFR-45G/JNV · 1840",
+              "value": "KFR-45GW/JNV, KFR-45G/JNV · 1840"
+            },
+            {
+              "key": "Hyndai · H-ARI22-09H · 2662",
+              "value": "H-ARI22-09H · 2662"
+            },
+            {
+              "key": "Hyundai · HSE09PH5V · 2660",
+              "value": "HSE09PH5V · 2660"
+            },
+            {
+              "key": "Hyundai · HY6INV · 2661",
+              "value": "HY6INV · 2661"
+            },
+            {
+              "key": "IGC · RAK-12NH, RAK-18NH · 2200",
+              "value": "RAK-12NH, RAK-18NH · 2200"
+            },
+            {
+              "key": "Junkers · Excellence · 1480",
+              "value": "Excellence · 1480"
+            },
+            {
+              "key": "Junkers · Excellence · 1481",
+              "value": "Excellence · 1481"
+            },
+            {
+              "key": "KOREL · KSAL2-09DCEH · 2580",
+              "value": "KSAL2-09DCEH · 2580"
+            },
+            {
+              "key": "Kaden · KS09, KS12, KS18, KS24, KS28 · 3360",
+              "value": "KS09, KS12, KS18, KS24, KS28 · 3360"
+            },
+            {
+              "key": "Kelvinator · KSV26CRC, KSV26HRC, KSV35CRC, KSV35HRC, KSV53HRC, KSV62HRC, KSV70CRC, KCV70HRC, KSV80HRC · 1741",
+              "value": "KSV26CRC, KSV26HRC, KSV35CRC, KSV35HRC, KSV53HRC, KSV62HRC, KSV70 · 1741"
+            },
+            {
+              "key": "Kelvinator · KSV25HWH · 7740",
+              "value": "KSV25HWH · 7740"
+            },
+            {
+              "key": "Klasse · DOZ-S06JT · 3020",
+              "value": "DOZ-S06JT · 3020"
+            },
+            {
+              "key": "Kolin · KAG-145RSINV · 8700",
+              "value": "KAG-145RSINV · 8700"
+            },
+            {
+              "key": "Komeco · Unknown · 2620",
+              "value": "호환 코드 · 2620"
+            },
+            {
+              "key": "LG · R09AWN, R24AWN, E09EK · 1060",
+              "value": "R09AWN, R24AWN, E09EK · 1060"
+            },
+            {
+              "key": "LG · Unknown · 1061",
+              "value": "호환 코드 · 1061"
+            },
+            {
+              "key": "LG · P12RK, A06AWV · 1062",
+              "value": "P12RK, A06AWV · 1062"
+            },
+            {
+              "key": "LG · P12EP1 · 1063",
+              "value": "P12EP1 · 1063"
+            },
+            {
+              "key": "LG · Unknown · 1064",
+              "value": "호환 코드 · 1064"
+            },
+            {
+              "key": "LG · LG080EC, LG100EC, LG150EC, LG200EC · 1065",
+              "value": "LG080EC, LG100EC, LG150EC, LG200EC · 1065"
+            },
+            {
+              "key": "LG · LA090HYV, LA120HYV, LAN090HYV, LAN120HYV · 1066",
+              "value": "LA090HYV, LA120HYV, LAN090HYV, LAN120HYV · 1066"
+            },
+            {
+              "key": "LG · W12TCM · 1067",
+              "value": "W12TCM · 1067"
+            },
+            {
+              "key": "LG · AKB74295303 · 1068",
+              "value": "AKB74295303 · 1068"
+            },
+            {
+              "key": "LG · AKB74295304 · 1069",
+              "value": "AKB74295304 · 1069"
+            },
+            {
+              "key": "LG · PC09SQ NSJ · 1070",
+              "value": "PC09SQ NSJ · 1070"
+            },
+            {
+              "key": "LG · RAS-32CNH2 · 1083",
+              "value": "RAS-32CNH2 · 1083"
+            },
+            {
+              "key": "LG · P12RK · 7062",
+              "value": "P12RK · 7062"
+            },
+            {
+              "key": "LG · LG080EC, LG100EC, LG150EC, LG200EC · 7065",
+              "value": "LG080EC, LG100EC, LG150EC, LG200EC · 7065"
+            },
+            {
+              "key": "Lennox · 2018, 2019 · 2160",
+              "value": "2018, 2019 · 2160"
+            },
+            {
+              "key": "Lennox · LNMTE026V2 · 2161",
+              "value": "LNMTE026V2 · 2161"
+            },
+            {
+              "key": "Lennox · LNINVE052, LNINVC052 · 2162",
+              "value": "LNINVE052, LNINVC052 · 2162"
+            },
+            {
+              "key": "Midea · Unknown · 1380",
+              "value": "호환 코드 · 1380"
+            },
+            {
+              "key": "Midea · Unknown · 1381",
+              "value": "호환 코드 · 1381"
+            },
+            {
+              "key": "Midea · MSY-12HRDN1 · 1382",
+              "value": "MSY-12HRDN1 · 1382"
+            },
+            {
+              "key": "Midea · KFR-35G · 1383",
+              "value": "KFR-35G · 1383"
+            },
+            {
+              "key": "Midea · MSMACU-18HRFN1-QRD0GW · 1384",
+              "value": "MSMACU-18HRFN1-QRD0GW · 1384"
+            },
+            {
+              "key": "Midea · KFR-32GW · 1386",
+              "value": "KFR-32GW · 1386"
+            },
+            {
+              "key": "Midea · RG70E/BGEF (Remote) · 1387",
+              "value": "RG70E/BGEF (Remote) · 1387"
+            },
+            {
+              "key": "Midea · 42MAQA09S5 · 1388",
+              "value": "42MAQA09S5 · 1388"
+            },
+            {
+              "key": "Midea · RG52C1/BGE (Remote) · 1390",
+              "value": "RG52C1/BGE (Remote) · 1390"
+            },
+            {
+              "key": "Midea · RG58E3/BGEF · 1391",
+              "value": "RG58E3/BGEF · 1391"
+            },
+            {
+              "key": "Midea · MPD-12CRN7 · 1392",
+              "value": "MPD-12CRN7 · 1392"
+            },
+            {
+              "key": "Midea · MPPHB-09CRN7-QB6-N · 1393",
+              "value": "MPPHB-09CRN7-QB6-N · 1393"
+            },
+            {
+              "key": "Midea · RG70C/BGEF (Remote) · 1394",
+              "value": "RG70C/BGEF (Remote) · 1394"
+            },
+            {
+              "key": "Midea · RG10B(D1)/BGEFU1 (Remote) · 1395",
+              "value": "RG10B(D1)/BGEFU1 (Remote) · 1395"
+            },
+            {
+              "key": "Midea · KFR-32GW · 7386",
+              "value": "KFR-32GW · 7386"
+            },
+            {
+              "key": "Mirage · Magnum Inverter 19 · 2100",
+              "value": "Magnum Inverter 19 · 2100"
+            },
+            {
+              "key": "Mistral · MPAC15CY28 · 2560",
+              "value": "MPAC15CY28 · 2560"
+            },
+            {
+              "key": "Mitsubishi · MSZ-AP50VGKD · 1122",
+              "value": "MSZ-AP50VGKD · 1122"
+            },
+            {
+              "key": "Mitsubishi · MSZ-SF25VE3, MSZ-SF35VE3, MSZ-SF42VE3, MSZ-SF50VE3, MSZ-AP20VG, MSZ-AP25VGD · 1124",
+              "value": "MSZ-SF25VE3, MSZ-SF35VE3, MSZ-SF42VE3, MSZ-SF50VE3, MSZ-AP20VG, M · 1124"
+            },
+            {
+              "key": "Mitsubishi · MSZ-GE60VAD, MSZ-GE71VAD, MSZ-GE80VAD · 1135",
+              "value": "MSZ-GE60VAD, MSZ-GE71VAD, MSZ-GE80VAD · 1135"
+            },
+            {
+              "key": "Mitsubishi · MSZ-SF25VE3, MSZ-SF35VE3, MSZ-SF42VE3, MSZ-SF50VE3, MSZ-AP20VG, MSZ-AP25VGD · 7124",
+              "value": "MSZ-SF25VE3, MSZ-SF35VE3, MSZ-SF42VE3, MSZ-SF50VE3, MSZ-AP20VG, M · 7124"
+            },
+            {
+              "key": "Mitsubishi Electric · MSZ-GL25VGD, MSZ-GL35VGD, MSZ-GL42VGD, MSZ-GL50VGD, MSZ-GL60VGD, MSZ-GL71VGD, MSZ-GL80VGD · 1120",
+              "value": "MSZ-GL25VGD, MSZ-GL35VGD, MSZ-GL42VGD, MSZ-GL50VGD, MSZ-GL60VGD,  · 1120"
+            },
+            {
+              "key": "Mitsubishi Electric · MSZ-GA35VA · 1121",
+              "value": "MSZ-GA35VA · 1121"
+            },
+            {
+              "key": "Mitsubishi Electric · SRK25ZSX-SRC25ZSX · 1123",
+              "value": "SRK25ZSX-SRC25ZSX · 1123"
+            },
+            {
+              "key": "Mitsubishi Electric · MLZ-KP25VF, MLZ-KP35VF, MLZ-KP50VF · 1125",
+              "value": "MLZ-KP25VF, MLZ-KP35VF, MLZ-KP50VF · 1125"
+            },
+            {
+              "key": "Mitsubishi Electric · MSX09-NV II, MSH-07RV, MSH-12RV, MS-24RV · 1126",
+              "value": "MSX09-NV II, MSH-07RV, MSH-12RV, MS-24RV · 1126"
+            },
+            {
+              "key": "Mitsubishi Electric · MSZ-HJ25VA · 1127",
+              "value": "MSZ-HJ25VA · 1127"
+            },
+            {
+              "key": "Mitsubishi Electric · MSZ-HJ25VA, MSZ-HJ35VA · 1128",
+              "value": "MSZ-HJ25VA, MSZ-HJ35VA · 1128"
+            },
+            {
+              "key": "Mitsubishi Electric · MS-SGD18VC · 1130",
+              "value": "MS-SGD18VC · 1130"
+            },
+            {
+              "key": "Mitsubishi Electric · PAR-FL32MA · 1131",
+              "value": "PAR-FL32MA · 1131"
+            },
+            {
+              "key": "Mitsubishi Electric · MSC-A12YV · 1132",
+              "value": "MSC-A12YV · 1132"
+            },
+            {
+              "key": "Mitsubishi Electric · MG-GN18VF, MS-GN18VF, MS-GN13VF · 1134",
+              "value": "MG-GN18VF, MS-GN18VF, MS-GN13VF · 1134"
+            },
+            {
+              "key": "Mitsubishi Electric · MSXY-FP10VG, MSXY-FP13VG, MSXY-FP18VG · 1136",
+              "value": "MSXY-FP10VG, MSXY-FP13VG, MSXY-FP18VG · 1136"
+            },
+            {
+              "key": "Mitsubishi Electric · MSZ-HR35VF · 1137",
+              "value": "MSZ-HR35VF · 1137"
+            },
+            {
+              "key": "Mitsubishi Electric · Remote KM09D/166901 · 1138",
+              "value": "Remote KM09D/166901 · 1138"
+            },
+            {
+              "key": "Mitsubishi Electric · MSC-A12WV · 5140",
+              "value": "MSC-A12WV · 5140"
+            },
+            {
+              "key": "Mitsubishi Electric  · MSZ-GE22VA · 1129",
+              "value": "MSZ-GE22VA · 1129"
+            },
+            {
+              "key": "Mitsubishi Electric Starmex · MSXY-FN10VE, MSXY-FN07VE, MSXY-FN13VE, MSXY-FN18VE · 1133",
+              "value": "MSXY-FN10VE, MSXY-FN07VE, MSXY-FN13VE, MSXY-FN18VE · 1133"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK25ZJ-S1, SRK13CRV-S1 · 1680",
+              "value": "SRK25ZJ-S1, SRK13CRV-S1 · 1680"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK71ZK-S · 1681",
+              "value": "SRK71ZK-S · 1681"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRKM25H, SRK40HBE, RKS502A502, RKS502A503 · 1682",
+              "value": "SRKM25H, SRK40HBE, RKS502A502, RKS502A503 · 1682"
+            },
+            {
+              "key": "Mitsubishi Heavy · DXK12ZMA-S · 1683",
+              "value": "DXK12ZMA-S · 1683"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK50ZS-S · 1685",
+              "value": "SRK50ZS-S · 1685"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK20ZSA-W, SRK25ZSA-W, SRK35ZSA-W, SRK50ZSA-W · 1686",
+              "value": "SRK20ZSA-W, SRK25ZSA-W, SRK35ZSA-W, SRK50ZSA-W · 1686"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK35ZJX-S, SRK20ZJX-S · 1687",
+              "value": "SRK35ZJX-S, SRK20ZJX-S · 1687"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK25ZSP-W, SRK35ZSP-W, SRK45ZSP-W · 1688",
+              "value": "SRK25ZSP-W, SRK35ZSP-W, SRK45ZSP-W · 1688"
+            },
+            {
+              "key": "Mitsubishi Heavy · DXK12ZSA-W · 1689",
+              "value": "DXK12ZSA-W · 1689"
+            },
+            {
+              "key": "Mitsubishi Heavy · FDUM VF2 · 1690",
+              "value": "FDUM VF2 · 1690"
+            },
+            {
+              "key": "Mitsubishi Heavy · DXK12Z3-S, DXK09Z5-S, DXK15Z5-S · 1692",
+              "value": "DXK12Z3-S, DXK09Z5-S, DXK15Z5-S · 1692"
+            },
+            {
+              "key": "Mitsubishi Heavy Industries · DXK24ZRA · 1684",
+              "value": "DXK24ZRA · 1684"
+            },
+            {
+              "key": "Mundoclima · MUPR-09-H9A, MUPR-12-H9A, MUPR-18-H9A, MUPR-24-H9A, MUPR-09-H5A, MUPR-12-H5A, MUPR-18-H5A, MUPR-24-H5A · 3220",
+              "value": "MUPR-09-H9A, MUPR-12-H9A, MUPR-18-H9A, MUPR-24-H9A, MUPR-09-H5A,  · 3220"
+            },
+            {
+              "key": "PARKAIR · DI-A · 3300",
+              "value": "DI-A · 3300"
+            },
+            {
+              "key": "Panasonic · CS-CE7HKEW, CS-CE9HKEW, CS-CE12HKEW, CS-PC24MKF, CS-C24PKF · 1020",
+              "value": "CS-CE7HKEW, CS-CE9HKEW, CS-CE12HKEW, CS-PC24MKF, CS-C24PKF · 1020"
+            },
+            {
+              "key": "Panasonic · CS-RE9GKE, CS-RE12GKE, CS-RE9PKR, CSCU-Z25TKR · 1021",
+              "value": "CS-RE9GKE, CS-RE12GKE, CS-RE9PKR, CSCU-Z25TKR · 1021"
+            },
+            {
+              "key": "Panasonic · CS-Z25TK · 1022",
+              "value": "CS-Z25TK · 1022"
+            },
+            {
+              "key": "Panasonic · CS-HE9JKE, CS-HE12JKE, CS-HE9LKE · 1023",
+              "value": "CS-HE9JKE, CS-HE12JKE, CS-HE9LKE · 1023"
+            },
+            {
+              "key": "Panasonic · CS-MRE7MKE · 1024",
+              "value": "CS-MRE7MKE · 1024"
+            },
+            {
+              "key": "Panasonic · CS-E18FKR · 1025",
+              "value": "CS-E18FKR · 1025"
+            },
+            {
+              "key": "Panasonic · CS-PC12QKT · 1026",
+              "value": "CS-PC12QKT · 1026"
+            },
+            {
+              "key": "Panasonic · CS-SA9CKP · 1027",
+              "value": "CS-SA9CKP · 1027"
+            },
+            {
+              "key": "Panasonic · CS-U9RKR, CS-U12RKR · 1028",
+              "value": "CS-U9RKR, CS-U12RKR · 1028"
+            },
+            {
+              "key": "Panasonic · CS-LJ22~LJ90BA2(YA2) · 1029",
+              "value": "CS-LJ22~LJ90BA2(YA2) · 1029"
+            },
+            {
+              "key": "Panasonic · CS-E12JKDW · 1030",
+              "value": "CS-E12JKDW · 1030"
+            },
+            {
+              "key": "Panasonic · SRK25ZMP-S, SRK35ZMP-S, SRK45ZMP-S · 1031",
+              "value": "SRK25ZMP-S, SRK35ZMP-S, SRK45ZMP-S · 1031"
+            },
+            {
+              "key": "Panasonic · CS-CU-HU18YKYF · 1032",
+              "value": "CS-CU-HU18YKYF · 1032"
+            },
+            {
+              "key": "Pearl · EXGC24FCBC1 · 2820",
+              "value": "EXGC24FCBC1 · 2820"
+            },
+            {
+              "key": "Philco · Philco AC · 3000",
+              "value": "Philco AC · 3000"
+            },
+            {
+              "key": "Profio · Unknown · 2260",
+              "value": "호환 코드 · 2260"
+            },
+            {
+              "key": "ROYAL · 08HPN1T1 · 1660",
+              "value": "08HPN1T1 · 1660"
+            },
+            {
+              "key": "ROYAL · RC-G25HN · 1661",
+              "value": "RC-G25HN · 1661"
+            },
+            {
+              "key": "Riello · WSI XN, RAR-3U4 · 1820",
+              "value": "WSI XN, RAR-3U4 · 1820"
+            },
+            {
+              "key": "Rotenso · Ukura, Maze (remote) · 2480",
+              "value": "Ukura, Maze (remote) · 2480"
+            },
+            {
+              "key": "SAGA · SAGA-A-22(CH) · 2940",
+              "value": "SAGA-A-22(CH) · 2940"
+            },
+            {
+              "key": "SHARP · AH-AP9GMY · 7300",
+              "value": "AH-AP9GMY · 7300"
+            },
+            {
+              "key": "Samsung · Unknown · 1400",
+              "value": "호환 코드 · 1400"
+            },
+            {
+              "key": "Samsung · AR**HSF/JFS** · 1401",
+              "value": "AR**HSF/JFS** · 1401"
+            },
+            {
+              "key": "Samsung · AR**TSHGAWK · 1402",
+              "value": "AR**TSHGAWK · 1402"
+            },
+            {
+              "key": "Samsung · AR**TXHZ*** · 1403",
+              "value": "AR**TXHZ*** · 1403"
+            },
+            {
+              "key": "Samsung · AR**TSHZ**** · 1404",
+              "value": "AR**TSHZ**** · 1404"
+            },
+            {
+              "key": "Samsung · AR**TSHQBURN · 1405",
+              "value": "AR**TSHQBURN · 1405"
+            },
+            {
+              "key": "Samsung · AR**NXWS*** · 1407",
+              "value": "AR**NXWS*** · 1407"
+            },
+            {
+              "key": "Samsung · AR18HSFSAWKNEU Ver.01 · 1408",
+              "value": "AR18HSFSAWKNEU Ver.01 · 1408"
+            },
+            {
+              "key": "Sanyo · Unknown · 1500",
+              "value": "호환 코드 · 1500"
+            },
+            {
+              "key": "Sanyo · SAP-KR124EHEA · 1501",
+              "value": "SAP-KR124EHEA · 1501"
+            },
+            {
+              "key": "Saunier Duval · 1 · 1880",
+              "value": "1 · 1880"
+            },
+            {
+              "key": "Senville · SENA/12HF/IZ · 2860",
+              "value": "SENA/12HF/IZ · 2860"
+            },
+            {
+              "key": "Sharp · AY-B22DM · 1300",
+              "value": "AY-B22DM · 1300"
+            },
+            {
+              "key": "Sharp · AY-X13BE · 1301",
+              "value": "AY-X13BE · 1301"
+            },
+            {
+              "key": "Sigma · SGS32H13NE · 8800",
+              "value": "SGS32H13NE · 8800"
+            },
+            {
+              "key": "Simbio · Unknown · 1860",
+              "value": "호환 코드 · 1860"
+            },
+            {
+              "key": "Sintech · KFR-34GW · 1420",
+              "value": "KFR-34GW · 1420"
+            },
+            {
+              "key": "Springer · Split Hi Wall Maxiflex · 1360",
+              "value": "Split Hi Wall Maxiflex · 1360"
+            },
+            {
+              "key": "TCL · TAC-12CHSD/XA21I · 1900",
+              "value": "TAC-12CHSD/XA21I · 1900"
+            },
+            {
+              "key": "TCL · TAC-12CHSD/XA71IN · 1901",
+              "value": "TAC-12CHSD/XA71IN · 1901"
+            },
+            {
+              "key": "Tadiran · Unknown · 1340",
+              "value": "호환 코드 · 1340"
+            },
+            {
+              "key": "Tadiran · TAC490 · 1341",
+              "value": "TAC490 · 1341"
+            },
+            {
+              "key": "Tadiran · Tadiran-10i/15i/inv220a · 1342",
+              "value": "Tadiran-10i/15i/inv220a · 1342"
+            },
+            {
+              "key": "Tadiran · Alpha Series · 1343",
+              "value": "Alpha Series · 1343"
+            },
+            {
+              "key": "Tadiran · Remote Control YB1FA, Tadiran Inverter · 1344",
+              "value": "Remote Control YB1FA, Tadiran Inverter · 1344"
+            },
+            {
+              "key": "Tadiran · TAC 297 · 1345",
+              "value": "TAC 297 · 1345"
+            },
+            {
+              "key": "Tadiran · TAC 297H V3.2 · 1346",
+              "value": "TAC 297H V3.2 · 1346"
+            },
+            {
+              "key": "Tadiran · WIND 3P · 1560",
+              "value": "WIND 3P · 1560"
+            },
+            {
+              "key": "Technibel · MPAF13A0R5IAA · 2120",
+              "value": "MPAF13A0R5IAA · 2120"
+            },
+            {
+              "key": "Tornado · Super - Inverter A, i, Inverter, Inverter A, Super Design, Super Plasma, Gold i, Multi ON-OFF, Multi Inverter, Super Gold i, Plasma Gold · 1620",
+              "value": "Super - Inverter A, i, Inverter, Inverter A, Super Design, Super  · 1620"
+            },
+            {
+              "key": "Tornado · Super Legend 40 · 1621",
+              "value": "Super Legend 40 · 1621"
+            },
+            {
+              "key": "Tornado · Master-22 X · 1622",
+              "value": "Master-22 X · 1622"
+            },
+            {
+              "key": "Tornado · Inverter VRF · 1623",
+              "value": "Inverter VRF · 1623"
+            },
+            {
+              "key": "Tornado · Super Legend 40 · 1624",
+              "value": "Super Legend 40 · 1624"
+            },
+            {
+              "key": "Tornado · Inverter VRF BOX · 1625",
+              "value": "Inverter VRF BOX · 1625"
+            },
+            {
+              "key": "Tornado · MASTER-35 X 1PH · 1626",
+              "value": "MASTER-35 X 1PH · 1626"
+            },
+            {
+              "key": "Tornado · MASTER-12A PLUS · 1627",
+              "value": "MASTER-12A PLUS · 1627"
+            },
+            {
+              "key": "Toshiba · RAS-13NKV-E / RAS-13NAV-E, RAS-13NKV-A / RAS-13NAV-A, RAS-16NKV-E / RAS-16NAV-E, RAS-16NKV-A / RAS-16NAV-A, RAS-M10SKV-E · 1260",
+              "value": "RAS-13NKV-E / RAS-13NAV-E, RAS-13NKV-A / RAS-13NAV-A, RAS-16NKV-E · 1260"
+            },
+            {
+              "key": "Toshiba · RAS-B07J2KVSG-E, RAS-B10J2KVSG-E, RAS-B13J2KVSG-E, RAS-B10SKVP-E · 1263",
+              "value": "RAS-B07J2KVSG-E, RAS-B10J2KVSG-E, RAS-B13J2KVSG-E, RAS-B10SKVP-E · 1263"
+            },
+            {
+              "key": "Toshiba · RAS-13SKVR-A · 1264",
+              "value": "RAS-13SKVR-A · 1264"
+            },
+            {
+              "key": "Toshiba · RAS-25SKVP2-ND, RAS-35SKVP2-ND · 1265",
+              "value": "RAS-25SKVP2-ND, RAS-35SKVP2-ND · 1265"
+            },
+            {
+              "key": "Toshiba · RAS-18NKV-E / RAS-18NAV-E · 7260",
+              "value": "RAS-18NKV-E / RAS-18NAV-E · 7260"
+            },
+            {
+              "key": "Tosot · T09H-SJ · 1200",
+              "value": "T09H-SJ · 1200"
+            },
+            {
+              "key": "Toyotomi · AKIRA GAN/GAG-A128 VL · 1000",
+              "value": "AKIRA GAN/GAG-A128 VL · 1000"
+            },
+            {
+              "key": "Toyotomi · AKIRA GAN/GAG-A135FW-M · 1001",
+              "value": "AKIRA GAN/GAG-A135FW-M · 1001"
+            },
+            {
+              "key": "Tristar · AC-5400 · 2760",
+              "value": "AC-5400 · 2760"
+            },
+            {
+              "key": "Trotec · YX1F6 · 1780",
+              "value": "YX1F6 · 1780"
+            },
+            {
+              "key": "Trotec · YX1F · 1781",
+              "value": "YX1F · 1781"
+            },
+            {
+              "key": "Unionaire · Artify · 2140",
+              "value": "Artify · 2140"
+            },
+            {
+              "key": "VS · Unknown · 2420",
+              "value": "호환 코드 · 2420"
+            },
+            {
+              "key": "Vaillant · ClimaVair VAI 8-025 · 2440",
+              "value": "ClimaVair VAI 8-025 · 2440"
+            },
+            {
+              "key": "Viomi · KF-26GW/Y4PF5-A5 · 8720",
+              "value": "KF-26GW/Y4PF5-A5 · 8720"
+            },
+            {
+              "key": "Voltas · VOLTAS INV/AC 1.5T 183V MZJ3 3S · 3080",
+              "value": "VOLTAS INV/AC 1.5T 183V MZJ3 3S · 3080"
+            },
+            {
+              "key": "Vortex · VOR-12C3/407 · 2340",
+              "value": "VOR-12C3/407 · 2340"
+            },
+            {
+              "key": "Whirlpool · SPIS412L · 1540",
+              "value": "SPIS412L · 1540"
+            },
+            {
+              "key": "Whynter · ARC-12S, ARC-12SD, ARC-122DS, ARC-14S, ARC-141BG, ARC-143MX, ARC-101CW · 2321",
+              "value": "ARC-12S, ARC-12SD, ARC-122DS, ARC-14S, ARC-141BG, ARC-143MX, ARC- · 2321"
+            },
+            {
+              "key": "Wide · WDS12ECO · 3340",
+              "value": "WDS12ECO · 3340"
+            },
+            {
+              "key": "Xiaomi · KFR-35G/F3C1 · 2780",
+              "value": "KFR-35G/F3C1 · 2780"
+            },
+            {
+              "key": "Yamatsu · YAM-12KDA, AUS-07C53R013L24 · 2400",
+              "value": "YAM-12KDA, AUS-07C53R013L24 · 2400"
+            },
+            {
+              "key": "Zanussi · ZH/TT-02 · 2300",
+              "value": "ZH/TT-02 · 2300"
+            },
+            {
+              "key": "Zanussi · ZACS/I-07 HPF/A17/N1 · 2301",
+              "value": "ZACS/I-07 HPF/A17/N1 · 2301"
+            },
+            {
+              "key": "Zephir · DualSplit · 3380",
+              "value": "DualSplit · 3380"
+            }
+          ],
+          "argumentType": "string",
+          "supportedValues": "supportedCandidates.value"
+        },
+        "state": {
+          "value": "candidate.value",
+          "alternatives": [
+            {
+              "key": " Toshiba · WH-TA05NE, WH-TA11EJ · 1261",
+              "value": "WH-TA05NE, WH-TA11EJ · 1261"
+            },
+            {
+              "key": "AEG · AXP35U538CW · 2720",
+              "value": "AXP35U538CW · 2720"
+            },
+            {
+              "key": "AUX · Unknown · 1960",
+              "value": "호환 코드 · 1960"
+            },
+            {
+              "key": "AUX · AUX FREEDOM AUX-09FH · 1961",
+              "value": "AUX FREEDOM AUX-09FH · 1961"
+            },
+            {
+              "key": "AUX · iClima ICI-09A · 1962",
+              "value": "iClima ICI-09A · 1962"
+            },
+            {
+              "key": "AUX · Kendal Split Inverter · 1963",
+              "value": "Kendal Split Inverter · 1963"
+            },
+            {
+              "key": "Actron · Unknown · 1140",
+              "value": "호환 코드 · 1140"
+            },
+            {
+              "key": "Aeronik · ASO-12IL, ASI-12IL · 2000",
+              "value": "ASO-12IL, ASI-12IL · 2000"
+            },
+            {
+              "key": "Agratto · ECST12FR4-02, ECST19QFIR4-02 · 2980",
+              "value": "ECST12FR4-02, ECST19QFIR4-02 · 2980"
+            },
+            {
+              "key": "Akai · Unknown · 1440",
+              "value": "호환 코드 · 1440"
+            },
+            {
+              "key": "Akai · TEM-26CHSAAK5, TEM-70CHSAAK5, TEM-26CHSAKA5, TEM-35CHSAKA, TEM-50CHSAKA, TEM-35CHSABH, TEM-35CHSF · 1441",
+              "value": "TEM-26CHSAAK5, TEM-70CHSAAK5, TEM-26CHSAKA5, TEM-35CHSAKA, TEM-50 · 1441"
+            },
+            {
+              "key": "Alliance · Unknown · 1460",
+              "value": "호환 코드 · 1460"
+            },
+            {
+              "key": "Aokesi · Unknown · 1920",
+              "value": "호환 코드 · 1920"
+            },
+            {
+              "key": "AquaThermal · LM AURI-12 · 3160",
+              "value": "LM AURI-12 · 3160"
+            },
+            {
+              "key": "Argo · Ulisse13 · 3140",
+              "value": "Ulisse13 · 3140"
+            },
+            {
+              "key": "Ariston · A-IFWHxx-IGX · 2020",
+              "value": "A-IFWHxx-IGX · 2020"
+            },
+            {
+              "key": "Audinac · SP3500 · 2540",
+              "value": "SP3500 · 2540"
+            },
+            {
+              "key": "BAXI · Unknow · 2380",
+              "value": "Unknow · 2380"
+            },
+            {
+              "key": "Ballu · YKR-K/002E · 1800",
+              "value": "YKR-K/002E · 1800"
+            },
+            {
+              "key": "Beko · BEVCA 120 · 1600",
+              "value": "BEVCA 120 · 1600"
+            },
+            {
+              "key": "Beko · BPAK 120 · 1601",
+              "value": "BPAK 120 · 1601"
+            },
+            {
+              "key": "Beko · BXK 120 · 1602",
+              "value": "BXK 120 · 1602"
+            },
+            {
+              "key": "Beko · BXEU 090 · 1603",
+              "value": "BXEU 090 · 1603"
+            },
+            {
+              "key": "Beko · BPEU 120 · 1604",
+              "value": "BPEU 120 · 1604"
+            },
+            {
+              "key": "Best · BSTS18CNE2 · 2920",
+              "value": "BSTS18CNE2 · 2920"
+            },
+            {
+              "key": "Bora · 18SRA-HE · 2880",
+              "value": "18SRA-HE · 2880"
+            },
+            {
+              "key": "Bosch · 5000i · 2740",
+              "value": "5000i · 2740"
+            },
+            {
+              "key": "Carrier · Unknown · 1160",
+              "value": "호환 코드 · 1160"
+            },
+            {
+              "key": "Carrier · 40GKX-024RB · 1161",
+              "value": "40GKX-024RB · 1161"
+            },
+            {
+              "key": "Carrier · 42TVGS024-703 · 1162",
+              "value": "42TVGS024-703 · 1162"
+            },
+            {
+              "key": "Carrier · 42LUVH025N-1 · 1164",
+              "value": "42LUVH025N-1 · 1164"
+            },
+            {
+              "key": "Carrier · 42P250HX, 53P250HX · 1165",
+              "value": "42P250HX, 53P250HX · 1165"
+            },
+            {
+              "key": "Carrier · CS-A121N · 1166",
+              "value": "CS-A121N · 1166"
+            },
+            {
+              "key": "Carrier · Tuya 104800501",
+              "value": "기존 Carrier 리모컨"
+            },
+            {
+              "key": "Casper · SC-09FS32 · 3240",
+              "value": "SC-09FS32 · 3240"
+            },
+            {
+              "key": "Cecotec · EnergySilence 12000 AirClima (05290) · 3100",
+              "value": "EnergySilence 12000 AirClima (05290) · 3100"
+            },
+            {
+              "key": "Chigo · Unknown · 1580",
+              "value": "호환 코드 · 1580"
+            },
+            {
+              "key": "Chigo · ZH/TY-01 · 1581",
+              "value": "ZH/TY-01 · 1581"
+            },
+            {
+              "key": "Chigo · ZH/TT-14 · 1582",
+              "value": "ZH/TT-14 · 1582"
+            },
+            {
+              "key": "Chunlan · KFR-25GW/VW (CH-9) · 3320",
+              "value": "KFR-25GW/VW (CH-9) · 3320"
+            },
+            {
+              "key": "Consul · Unknown · 1240",
+              "value": "호환 코드 · 1240"
+            },
+            {
+              "key": "Consul · CBV12CBBNA, CBY12DBBNA · 1241",
+              "value": "CBV12CBBNA, CBY12DBBNA · 1241"
+            },
+            {
+              "key": "Cooper & Hunter · Unknown · 3120",
+              "value": "호환 코드 · 3120"
+            },
+            {
+              "key": "Daikin · FTXS25CVMB, FTXS35CVMB, FTXS60BVMB, FVXS25BVMB · 1100",
+              "value": "FTXS25CVMB, FTXS35CVMB, FTXS60BVMB, FVXS25BVMB · 1100"
+            },
+            {
+              "key": "Daikin · FTXS20LVMA, FTXS25LVMA, FTXS35LVMA, FTXS46LVMA, FTXS50LVMA, FTXS60LVMA, FTXS71LVMA, FTXS85LVMA, FTXS95LVMA, FVXS50FV1B, FTXL35J2V1B, FTXM25U · 1101",
+              "value": "FTXS20LVMA, FTXS25LVMA, FTXS35LVMA, FTXS46LVMA, FTXS50LVMA, FTXS6 · 1101"
+            },
+            {
+              "key": "Daikin · FTV20AXV14 · 1102",
+              "value": "FTV20AXV14 · 1102"
+            },
+            {
+              "key": "Daikin · Unknown · 1103",
+              "value": "호환 코드 · 1103"
+            },
+            {
+              "key": "Daikin · TF25DVM · 1104",
+              "value": "TF25DVM · 1104"
+            },
+            {
+              "key": "Daikin · ATX20KV1B, ATX25KV1B, ATX35KV1B · 1106",
+              "value": "ATX20KV1B, ATX25KV1B, ATX35KV1B · 1106"
+            },
+            {
+              "key": "Daikin · FTX25JAV1NB · 1107",
+              "value": "FTX25JAV1NB · 1107"
+            },
+            {
+              "key": "Daikin · FTXG25EV1BS, FTXG35EV1BS, FTXG35EV1BW · 1108",
+              "value": "FTXG25EV1BS, FTXG35EV1BS, FTXG35EV1BW · 1108"
+            },
+            {
+              "key": "Daikin · BRC4C158 · 1109",
+              "value": "BRC4C158 · 1109"
+            },
+            {
+              "key": "Daikin · FTC15NV14, FTC20NV14, FTC25NV14, FTC35NV14 · 1110",
+              "value": "FTC15NV14, FTC20NV14, FTC25NV14, FTC35NV14 · 1110"
+            },
+            {
+              "key": "Daikin · FTE09NV25 · 1111",
+              "value": "FTE09NV25 · 1111"
+            },
+            {
+              "key": "Daikin · ATKC09TV2S, FTKQ12TV2S · 1112",
+              "value": "ATKC09TV2S, FTKQ12TV2S · 1112"
+            },
+            {
+              "key": "Daikin · FTXV35AV1B · 1113",
+              "value": "FTXV35AV1B · 1113"
+            },
+            {
+              "key": "Daikin · FTXM35UVMZ · 1114",
+              "value": "FTXM35UVMZ · 1114"
+            },
+            {
+              "key": "Daikin · ftxb-c · 1115",
+              "value": "ftxb-c · 1115"
+            },
+            {
+              "key": "Daikin · FCQ100KAVEA · 1116",
+              "value": "FCQ100KAVEA · 1116"
+            },
+            {
+              "key": "Daikin · DTXF35TVMA · 1117",
+              "value": "DTXF35TVMA · 1117"
+            },
+            {
+              "key": "Daikin · ARC452A21, FTXS09LVJU, FTXS12LVJU, FTXS15LVJU, FTXS18LVJU, FTXS24LVJU · 1118",
+              "value": "ARC452A21, FTXS09LVJU, FTXS12LVJU, FTXS15LVJU, FTXS18LVJU, FTXS24 · 1118"
+            },
+            {
+              "key": "Daikin · FTXS60FVMA · 1119",
+              "value": "FTXS60FVMA · 1119"
+            },
+            {
+              "key": "Daikin · ARC433B51 · 5120",
+              "value": "ARC433B51 · 5120"
+            },
+            {
+              "key": "Daitsu · DS12U-RV · 1760",
+              "value": "DS12U-RV · 1760"
+            },
+            {
+              "key": "Daitsu · DS-9KIDT · 1761",
+              "value": "DS-9KIDT · 1761"
+            },
+            {
+              "key": "Daitsu · ASD9KI-DT · 1762",
+              "value": "ASD9KI-DT · 1762"
+            },
+            {
+              "key": "Daitsu · DOS12KIDB · 1763",
+              "value": "DOS12KIDB · 1763"
+            },
+            {
+              "key": "Daitsu · DS-12KIDC(WD) · 1764",
+              "value": "DS-12KIDC(WD) · 1764"
+            },
+            {
+              "key": "DeLonghi · PAC N82ECO, PAC AN111 · 2240",
+              "value": "PAC N82ECO, PAC AN111 · 2240"
+            },
+            {
+              "key": "DeLonghi · PAC EM77 · 2241",
+              "value": "PAC EM77 · 2241"
+            },
+            {
+              "key": "DeLonghi · PAC AN140HPEW · 2242",
+              "value": "PAC AN140HPEW · 2242"
+            },
+            {
+              "key": "DeLonghi · DL3000 · 2243",
+              "value": "DL3000 · 2243"
+            },
+            {
+              "key": "Devanti · WAC-05C-WH · 3180",
+              "value": "WAC-05C-WH · 3180"
+            },
+            {
+              "key": "Dimplex · GDPAC12RC · 2060",
+              "value": "GDPAC12RC · 2060"
+            },
+            {
+              "key": "ELGIN · HVQI18B2IA · 2800",
+              "value": "HVQI18B2IA · 2800"
+            },
+            {
+              "key": "ELGIN · HVQI12B2FB · 2801",
+              "value": "HVQI12B2FB · 2801"
+            },
+            {
+              "key": "EcoAir · Split Type Wall Air Conditioner · 2960",
+              "value": "Split Type Wall Air Conditioner · 2960"
+            },
+            {
+              "key": "Electra · Unknown · 1940",
+              "value": "호환 코드 · 1940"
+            },
+            {
+              "key": "Electra · Electra Classic · 1942",
+              "value": "Electra Classic · 1942"
+            },
+            {
+              "key": "Electra · Electra · 1945",
+              "value": "Electra · 1945"
+            },
+            {
+              "key": "Electra · RC-3 · 1946",
+              "value": "RC-3 · 1946"
+            },
+            {
+              "key": "Electra · Electra · 1947",
+              "value": "Electra · 1947"
+            },
+            {
+              "key": "Electra · Classic 10 · 1948",
+              "value": "Classic 10 · 1948"
+            },
+            {
+              "key": "Electrolux · EACS/I-HAT/N3 · 1700",
+              "value": "EACS/I-HAT/N3 · 1700"
+            },
+            {
+              "key": "Electrolux · EACS-HA · 1701",
+              "value": "EACS-HA · 1701"
+            },
+            {
+              "key": "Electrolux · QI/QE09F, QI/QE09R, QI/QE12F, QI/QE12R, QI/QE18F, QI/QE18R, QI/QE22F, QI/QE22R, XI/XE09F, XI/XE09R, XI/XE12F, XI/XE12R, XI/XE18F, XI/XE18R,  · 1702",
+              "value": "QI/QE09F, QI/QE09R, QI/QE12F, QI/QE12R, QI/QE18F, QI/QE18R, QI/QE · 1702"
+            },
+            {
+              "key": "Electrolux · EXP26U758CW · 1703",
+              "value": "EXP26U758CW · 1703"
+            },
+            {
+              "key": "Electrolux · EPI12LEIWI · 1704",
+              "value": "EPI12LEIWI · 1704"
+            },
+            {
+              "key": "Electrolux · EACM-10 HR/N3 · 1705",
+              "value": "EACM-10 HR/N3 · 1705"
+            },
+            {
+              "key": "Endesa · DGR11 · 2500",
+              "value": "DGR11 · 2500"
+            },
+            {
+              "key": "Equation · RCH-143 · 2600",
+              "value": "RCH-143 · 2600"
+            },
+            {
+              "key": "Erisson · EC-S07T2 · 1720",
+              "value": "EC-S07T2 · 1720"
+            },
+            {
+              "key": "FUJIKO · Unknown · 1640",
+              "value": "호환 코드 · 1640"
+            },
+            {
+              "key": "Family · 12WIFI · 7741",
+              "value": "12WIFI · 7741"
+            },
+            {
+              "key": "FanWorld · FW6-3000 · 2460",
+              "value": "FW6-3000 · 2460"
+            },
+            {
+              "key": "Fisher · FPR-91DE4-R, FPR-121DE4-R, FPR-141DE4-R · 2640",
+              "value": "FPR-91DE4-R, FPR-121DE4-R, FPR-141DE4-R · 2640"
+            },
+            {
+              "key": "Fisher · FSOAI-SU-90AE2 · 2641",
+              "value": "FSOAI-SU-90AE2 · 2641"
+            },
+            {
+              "key": "Flouu · Unknown · 2360",
+              "value": "호환 코드 · 2360"
+            },
+            {
+              "key": "Friedrich · CP12G10B · 3200",
+              "value": "CP12G10B · 3200"
+            },
+            {
+              "key": "Fuji · Unknown · 1980",
+              "value": "호환 코드 · 1980"
+            },
+            {
+              "key": "Fujitsu · AR-RBE1E · 1280",
+              "value": "AR-RBE1E · 1280"
+            },
+            {
+              "key": "Fujitsu · AR-JW11 · 1282",
+              "value": "AR-JW11 · 1282"
+            },
+            {
+              "key": "Fujitsu · AR-AB5 · 1283",
+              "value": "AR-AB5 · 1283"
+            },
+            {
+              "key": "Fujitsu · AR-JE5 · 1286",
+              "value": "AR-JE5 · 1286"
+            },
+            {
+              "key": "Fujitsu · AR-AB8 · 1288",
+              "value": "AR-AB8 · 1288"
+            },
+            {
+              "key": "Fujitsu · AR-REW1E · 1289",
+              "value": "AR-REW1E · 1289"
+            },
+            {
+              "key": "Fujitsu · AR-RFL7J · 1290",
+              "value": "AR-RFL7J · 1290"
+            },
+            {
+              "key": "Fujitsu · AR-REF1E · 1291",
+              "value": "AR-REF1E · 1291"
+            },
+            {
+              "key": "Fujitsu · AR-RY4 · 1294",
+              "value": "AR-RY4 · 1294"
+            },
+            {
+              "key": "Fujitsu · AR-RCE1E · 7285",
+              "value": "AR-RCE1E · 7285"
+            },
+            {
+              "key": "Galanz · GZ-1002B-E3 · 2520",
+              "value": "GZ-1002B-E3 · 2520"
+            },
+            {
+              "key": "General Electric · ASWX09LECA · 1043",
+              "value": "ASWX09LECA · 1043"
+            },
+            {
+              "key": "Ggeneral Electric · Unknown · 1040",
+              "value": "호환 코드 · 1040"
+            },
+            {
+              "key": "Ggeneral Electric · AE1PH09IWF, AE0PH09IWO, AE1PH12IWF, AE0PH12IWO, AE4PH18IWF, AE4PH18IWF, AE5PH18IWO · 1041",
+              "value": "AE1PH09IWF, AE0PH09IWO, AE1PH12IWF, AE0PH12IWO, AE4PH18IWF, AE4PH · 1041"
+            },
+            {
+              "key": "Ggeneral Electric · ASHA09LCC · 1042",
+              "value": "ASHA09LCC · 1042"
+            },
+            {
+              "key": "Goodman · MSH123E21AXAA, MST183E20ACAA, RG57E1/BGEU1 (remote) · 2900",
+              "value": "MSH123E21AXAA, MST183E20ACAA, RG57E1/BGEU1 (remote) · 2900"
+            },
+            {
+              "key": "Gree · GWH12-KF-K3DNA5G-I · 1180",
+              "value": "GWH12-KF-K3DNA5G-I · 1180"
+            },
+            {
+              "key": "Gree · Unknown · 1181",
+              "value": "호환 코드 · 1181"
+            },
+            {
+              "key": "Gree · GMV-R45G/NaB-K · 1182",
+              "value": "GMV-R45G/NaB-K · 1182"
+            },
+            {
+              "key": "Gree · Gree Smart inverter models. WiFi off. Health on. Swing modes: [swing]_[led] · 1183",
+              "value": "Gree Smart inverter models. WiFi off. Health on. Swing modes: [sw · 1183"
+            },
+            {
+              "key": "Gree · GWH09KF, GC-EAF09HR · 1184",
+              "value": "GWH09KF, GC-EAF09HR · 1184"
+            },
+            {
+              "key": "Gree · KFR-50LW, YAP1F2 · 1185",
+              "value": "KFR-50LW, YAP1F2 · 1185"
+            },
+            {
+              "key": "Gree · GWH18ACD-D3DNA 1M · 1186",
+              "value": "GWH18ACD-D3DNA 1M · 1186"
+            },
+            {
+              "key": "Gree · Unknown model · 1187",
+              "value": "Unknown model · 1187"
+            },
+            {
+              "key": "HTW · HTWS035IX21D2-R32-I · 2840",
+              "value": "HTWS035IX21D2-R32-I · 2840"
+            },
+            {
+              "key": "Haier · Unknown · 1320",
+              "value": "호환 코드 · 1320"
+            },
+            {
+              "key": "Haier · Top-Tech 14 · 1321",
+              "value": "Top-Tech 14 · 1321"
+            },
+            {
+              "key": "Haier · HSU-09HPL03/R03 · 1322",
+              "value": "HSU-09HPL03/R03 · 1322"
+            },
+            {
+              "key": "Hantech · A018-12KR2 · 2280",
+              "value": "A018-12KR2 · 2280"
+            },
+            {
+              "key": "Hantech · A016-09KR2/A · 2281",
+              "value": "A016-09KR2/A · 2281"
+            },
+            {
+              "key": "HappyTree · TAC-12CHSD/XA81 · 3060",
+              "value": "TAC-12CHSD/XA81 · 3060"
+            },
+            {
+              "key": "Hisense · Unknown · 1520",
+              "value": "호환 코드 · 1520"
+            },
+            {
+              "key": "Hisense · Unknown · 1521",
+              "value": "호환 코드 · 1521"
+            },
+            {
+              "key": "Hisense · DGR11R2 · 1522",
+              "value": "DGR11R2 · 1522"
+            },
+            {
+              "key": "Hisense · AS-07UR4SYDD815G · 5520",
+              "value": "AS-07UR4SYDD815G · 5520"
+            },
+            {
+              "key": "Hitachi · RAC-50HK1 · 1080",
+              "value": "RAC-50HK1 · 1080"
+            },
+            {
+              "key": "Hitachi · RAC-10EH1, RAC-18EH1, RAS-10EH1, RAS-10EH3, RAS-18EH1 · 1081",
+              "value": "RAC-10EH1, RAC-18EH1, RAS-10EH1, RAS-10EH3, RAS-18EH1 · 1081"
+            },
+            {
+              "key": "Hitachi · RAS-25YHA, RAS-35YHA · 1082",
+              "value": "RAS-25YHA, RAS-35YHA · 1082"
+            },
+            {
+              "key": "Hitachi · RAS-DX18HDK, RAK-35RPC · 1084",
+              "value": "RAS-DX18HDK, RAK-35RPC · 1084"
+            },
+            {
+              "key": "Hitachi · RPA24B3BL · 1085",
+              "value": "RPA24B3BL · 1085"
+            },
+            {
+              "key": "Hitachi · RAS-E25YHAB, RAS-E35YHAB, RAS-E50YHAB · 1087",
+              "value": "RAS-E25YHAB, RAS-E35YHAB, RAS-E50YHAB · 1087"
+            },
+            {
+              "key": "Hitachi · RAF-25REX, RAF-35REX, RAF-50REX · 1088",
+              "value": "RAF-25REX, RAF-35REX, RAF-50REX · 1088"
+            },
+            {
+              "key": "Hitachi · RAK-35RXE · 1089",
+              "value": "RAK-35RXE · 1089"
+            },
+            {
+              "key": "Hitachi · HSPE2700FCINV, HSPE3200FCINV, HSPE5400FCINV, HSPE6400FCINV · 1091",
+              "value": "HSPE2700FCINV, HSPE3200FCINV, HSPE5400FCINV, HSPE6400FCINV · 1091"
+            },
+            {
+              "key": "Hitachi · RAS-E14HB · 1092",
+              "value": "RAS-E14HB · 1092"
+            },
+            {
+              "key": "Hokkaido · LA09-DUAL H1 · 2180",
+              "value": "LA09-DUAL H1 · 2180"
+            },
+            {
+              "key": "Hualing · KFR-45GW/JNV, KFR-45G/JNV · 1840",
+              "value": "KFR-45GW/JNV, KFR-45G/JNV · 1840"
+            },
+            {
+              "key": "Hyndai · H-ARI22-09H · 2662",
+              "value": "H-ARI22-09H · 2662"
+            },
+            {
+              "key": "Hyundai · HSE09PH5V · 2660",
+              "value": "HSE09PH5V · 2660"
+            },
+            {
+              "key": "Hyundai · HY6INV · 2661",
+              "value": "HY6INV · 2661"
+            },
+            {
+              "key": "IGC · RAK-12NH, RAK-18NH · 2200",
+              "value": "RAK-12NH, RAK-18NH · 2200"
+            },
+            {
+              "key": "Junkers · Excellence · 1480",
+              "value": "Excellence · 1480"
+            },
+            {
+              "key": "Junkers · Excellence · 1481",
+              "value": "Excellence · 1481"
+            },
+            {
+              "key": "KOREL · KSAL2-09DCEH · 2580",
+              "value": "KSAL2-09DCEH · 2580"
+            },
+            {
+              "key": "Kaden · KS09, KS12, KS18, KS24, KS28 · 3360",
+              "value": "KS09, KS12, KS18, KS24, KS28 · 3360"
+            },
+            {
+              "key": "Kelvinator · KSV26CRC, KSV26HRC, KSV35CRC, KSV35HRC, KSV53HRC, KSV62HRC, KSV70CRC, KCV70HRC, KSV80HRC · 1741",
+              "value": "KSV26CRC, KSV26HRC, KSV35CRC, KSV35HRC, KSV53HRC, KSV62HRC, KSV70 · 1741"
+            },
+            {
+              "key": "Kelvinator · KSV25HWH · 7740",
+              "value": "KSV25HWH · 7740"
+            },
+            {
+              "key": "Klasse · DOZ-S06JT · 3020",
+              "value": "DOZ-S06JT · 3020"
+            },
+            {
+              "key": "Kolin · KAG-145RSINV · 8700",
+              "value": "KAG-145RSINV · 8700"
+            },
+            {
+              "key": "Komeco · Unknown · 2620",
+              "value": "호환 코드 · 2620"
+            },
+            {
+              "key": "LG · R09AWN, R24AWN, E09EK · 1060",
+              "value": "R09AWN, R24AWN, E09EK · 1060"
+            },
+            {
+              "key": "LG · Unknown · 1061",
+              "value": "호환 코드 · 1061"
+            },
+            {
+              "key": "LG · P12RK, A06AWV · 1062",
+              "value": "P12RK, A06AWV · 1062"
+            },
+            {
+              "key": "LG · P12EP1 · 1063",
+              "value": "P12EP1 · 1063"
+            },
+            {
+              "key": "LG · Unknown · 1064",
+              "value": "호환 코드 · 1064"
+            },
+            {
+              "key": "LG · LG080EC, LG100EC, LG150EC, LG200EC · 1065",
+              "value": "LG080EC, LG100EC, LG150EC, LG200EC · 1065"
+            },
+            {
+              "key": "LG · LA090HYV, LA120HYV, LAN090HYV, LAN120HYV · 1066",
+              "value": "LA090HYV, LA120HYV, LAN090HYV, LAN120HYV · 1066"
+            },
+            {
+              "key": "LG · W12TCM · 1067",
+              "value": "W12TCM · 1067"
+            },
+            {
+              "key": "LG · AKB74295303 · 1068",
+              "value": "AKB74295303 · 1068"
+            },
+            {
+              "key": "LG · AKB74295304 · 1069",
+              "value": "AKB74295304 · 1069"
+            },
+            {
+              "key": "LG · PC09SQ NSJ · 1070",
+              "value": "PC09SQ NSJ · 1070"
+            },
+            {
+              "key": "LG · RAS-32CNH2 · 1083",
+              "value": "RAS-32CNH2 · 1083"
+            },
+            {
+              "key": "LG · P12RK · 7062",
+              "value": "P12RK · 7062"
+            },
+            {
+              "key": "LG · LG080EC, LG100EC, LG150EC, LG200EC · 7065",
+              "value": "LG080EC, LG100EC, LG150EC, LG200EC · 7065"
+            },
+            {
+              "key": "Lennox · 2018, 2019 · 2160",
+              "value": "2018, 2019 · 2160"
+            },
+            {
+              "key": "Lennox · LNMTE026V2 · 2161",
+              "value": "LNMTE026V2 · 2161"
+            },
+            {
+              "key": "Lennox · LNINVE052, LNINVC052 · 2162",
+              "value": "LNINVE052, LNINVC052 · 2162"
+            },
+            {
+              "key": "Midea · Unknown · 1380",
+              "value": "호환 코드 · 1380"
+            },
+            {
+              "key": "Midea · Unknown · 1381",
+              "value": "호환 코드 · 1381"
+            },
+            {
+              "key": "Midea · MSY-12HRDN1 · 1382",
+              "value": "MSY-12HRDN1 · 1382"
+            },
+            {
+              "key": "Midea · KFR-35G · 1383",
+              "value": "KFR-35G · 1383"
+            },
+            {
+              "key": "Midea · MSMACU-18HRFN1-QRD0GW · 1384",
+              "value": "MSMACU-18HRFN1-QRD0GW · 1384"
+            },
+            {
+              "key": "Midea · KFR-32GW · 1386",
+              "value": "KFR-32GW · 1386"
+            },
+            {
+              "key": "Midea · RG70E/BGEF (Remote) · 1387",
+              "value": "RG70E/BGEF (Remote) · 1387"
+            },
+            {
+              "key": "Midea · 42MAQA09S5 · 1388",
+              "value": "42MAQA09S5 · 1388"
+            },
+            {
+              "key": "Midea · RG52C1/BGE (Remote) · 1390",
+              "value": "RG52C1/BGE (Remote) · 1390"
+            },
+            {
+              "key": "Midea · RG58E3/BGEF · 1391",
+              "value": "RG58E3/BGEF · 1391"
+            },
+            {
+              "key": "Midea · MPD-12CRN7 · 1392",
+              "value": "MPD-12CRN7 · 1392"
+            },
+            {
+              "key": "Midea · MPPHB-09CRN7-QB6-N · 1393",
+              "value": "MPPHB-09CRN7-QB6-N · 1393"
+            },
+            {
+              "key": "Midea · RG70C/BGEF (Remote) · 1394",
+              "value": "RG70C/BGEF (Remote) · 1394"
+            },
+            {
+              "key": "Midea · RG10B(D1)/BGEFU1 (Remote) · 1395",
+              "value": "RG10B(D1)/BGEFU1 (Remote) · 1395"
+            },
+            {
+              "key": "Midea · KFR-32GW · 7386",
+              "value": "KFR-32GW · 7386"
+            },
+            {
+              "key": "Mirage · Magnum Inverter 19 · 2100",
+              "value": "Magnum Inverter 19 · 2100"
+            },
+            {
+              "key": "Mistral · MPAC15CY28 · 2560",
+              "value": "MPAC15CY28 · 2560"
+            },
+            {
+              "key": "Mitsubishi · MSZ-AP50VGKD · 1122",
+              "value": "MSZ-AP50VGKD · 1122"
+            },
+            {
+              "key": "Mitsubishi · MSZ-SF25VE3, MSZ-SF35VE3, MSZ-SF42VE3, MSZ-SF50VE3, MSZ-AP20VG, MSZ-AP25VGD · 1124",
+              "value": "MSZ-SF25VE3, MSZ-SF35VE3, MSZ-SF42VE3, MSZ-SF50VE3, MSZ-AP20VG, M · 1124"
+            },
+            {
+              "key": "Mitsubishi · MSZ-GE60VAD, MSZ-GE71VAD, MSZ-GE80VAD · 1135",
+              "value": "MSZ-GE60VAD, MSZ-GE71VAD, MSZ-GE80VAD · 1135"
+            },
+            {
+              "key": "Mitsubishi · MSZ-SF25VE3, MSZ-SF35VE3, MSZ-SF42VE3, MSZ-SF50VE3, MSZ-AP20VG, MSZ-AP25VGD · 7124",
+              "value": "MSZ-SF25VE3, MSZ-SF35VE3, MSZ-SF42VE3, MSZ-SF50VE3, MSZ-AP20VG, M · 7124"
+            },
+            {
+              "key": "Mitsubishi Electric · MSZ-GL25VGD, MSZ-GL35VGD, MSZ-GL42VGD, MSZ-GL50VGD, MSZ-GL60VGD, MSZ-GL71VGD, MSZ-GL80VGD · 1120",
+              "value": "MSZ-GL25VGD, MSZ-GL35VGD, MSZ-GL42VGD, MSZ-GL50VGD, MSZ-GL60VGD,  · 1120"
+            },
+            {
+              "key": "Mitsubishi Electric · MSZ-GA35VA · 1121",
+              "value": "MSZ-GA35VA · 1121"
+            },
+            {
+              "key": "Mitsubishi Electric · SRK25ZSX-SRC25ZSX · 1123",
+              "value": "SRK25ZSX-SRC25ZSX · 1123"
+            },
+            {
+              "key": "Mitsubishi Electric · MLZ-KP25VF, MLZ-KP35VF, MLZ-KP50VF · 1125",
+              "value": "MLZ-KP25VF, MLZ-KP35VF, MLZ-KP50VF · 1125"
+            },
+            {
+              "key": "Mitsubishi Electric · MSX09-NV II, MSH-07RV, MSH-12RV, MS-24RV · 1126",
+              "value": "MSX09-NV II, MSH-07RV, MSH-12RV, MS-24RV · 1126"
+            },
+            {
+              "key": "Mitsubishi Electric · MSZ-HJ25VA · 1127",
+              "value": "MSZ-HJ25VA · 1127"
+            },
+            {
+              "key": "Mitsubishi Electric · MSZ-HJ25VA, MSZ-HJ35VA · 1128",
+              "value": "MSZ-HJ25VA, MSZ-HJ35VA · 1128"
+            },
+            {
+              "key": "Mitsubishi Electric · MS-SGD18VC · 1130",
+              "value": "MS-SGD18VC · 1130"
+            },
+            {
+              "key": "Mitsubishi Electric · PAR-FL32MA · 1131",
+              "value": "PAR-FL32MA · 1131"
+            },
+            {
+              "key": "Mitsubishi Electric · MSC-A12YV · 1132",
+              "value": "MSC-A12YV · 1132"
+            },
+            {
+              "key": "Mitsubishi Electric · MG-GN18VF, MS-GN18VF, MS-GN13VF · 1134",
+              "value": "MG-GN18VF, MS-GN18VF, MS-GN13VF · 1134"
+            },
+            {
+              "key": "Mitsubishi Electric · MSXY-FP10VG, MSXY-FP13VG, MSXY-FP18VG · 1136",
+              "value": "MSXY-FP10VG, MSXY-FP13VG, MSXY-FP18VG · 1136"
+            },
+            {
+              "key": "Mitsubishi Electric · MSZ-HR35VF · 1137",
+              "value": "MSZ-HR35VF · 1137"
+            },
+            {
+              "key": "Mitsubishi Electric · Remote KM09D/166901 · 1138",
+              "value": "Remote KM09D/166901 · 1138"
+            },
+            {
+              "key": "Mitsubishi Electric · MSC-A12WV · 5140",
+              "value": "MSC-A12WV · 5140"
+            },
+            {
+              "key": "Mitsubishi Electric  · MSZ-GE22VA · 1129",
+              "value": "MSZ-GE22VA · 1129"
+            },
+            {
+              "key": "Mitsubishi Electric Starmex · MSXY-FN10VE, MSXY-FN07VE, MSXY-FN13VE, MSXY-FN18VE · 1133",
+              "value": "MSXY-FN10VE, MSXY-FN07VE, MSXY-FN13VE, MSXY-FN18VE · 1133"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK25ZJ-S1, SRK13CRV-S1 · 1680",
+              "value": "SRK25ZJ-S1, SRK13CRV-S1 · 1680"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK71ZK-S · 1681",
+              "value": "SRK71ZK-S · 1681"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRKM25H, SRK40HBE, RKS502A502, RKS502A503 · 1682",
+              "value": "SRKM25H, SRK40HBE, RKS502A502, RKS502A503 · 1682"
+            },
+            {
+              "key": "Mitsubishi Heavy · DXK12ZMA-S · 1683",
+              "value": "DXK12ZMA-S · 1683"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK50ZS-S · 1685",
+              "value": "SRK50ZS-S · 1685"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK20ZSA-W, SRK25ZSA-W, SRK35ZSA-W, SRK50ZSA-W · 1686",
+              "value": "SRK20ZSA-W, SRK25ZSA-W, SRK35ZSA-W, SRK50ZSA-W · 1686"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK35ZJX-S, SRK20ZJX-S · 1687",
+              "value": "SRK35ZJX-S, SRK20ZJX-S · 1687"
+            },
+            {
+              "key": "Mitsubishi Heavy · SRK25ZSP-W, SRK35ZSP-W, SRK45ZSP-W · 1688",
+              "value": "SRK25ZSP-W, SRK35ZSP-W, SRK45ZSP-W · 1688"
+            },
+            {
+              "key": "Mitsubishi Heavy · DXK12ZSA-W · 1689",
+              "value": "DXK12ZSA-W · 1689"
+            },
+            {
+              "key": "Mitsubishi Heavy · FDUM VF2 · 1690",
+              "value": "FDUM VF2 · 1690"
+            },
+            {
+              "key": "Mitsubishi Heavy · DXK12Z3-S, DXK09Z5-S, DXK15Z5-S · 1692",
+              "value": "DXK12Z3-S, DXK09Z5-S, DXK15Z5-S · 1692"
+            },
+            {
+              "key": "Mitsubishi Heavy Industries · DXK24ZRA · 1684",
+              "value": "DXK24ZRA · 1684"
+            },
+            {
+              "key": "Mundoclima · MUPR-09-H9A, MUPR-12-H9A, MUPR-18-H9A, MUPR-24-H9A, MUPR-09-H5A, MUPR-12-H5A, MUPR-18-H5A, MUPR-24-H5A · 3220",
+              "value": "MUPR-09-H9A, MUPR-12-H9A, MUPR-18-H9A, MUPR-24-H9A, MUPR-09-H5A,  · 3220"
+            },
+            {
+              "key": "PARKAIR · DI-A · 3300",
+              "value": "DI-A · 3300"
+            },
+            {
+              "key": "Panasonic · CS-CE7HKEW, CS-CE9HKEW, CS-CE12HKEW, CS-PC24MKF, CS-C24PKF · 1020",
+              "value": "CS-CE7HKEW, CS-CE9HKEW, CS-CE12HKEW, CS-PC24MKF, CS-C24PKF · 1020"
+            },
+            {
+              "key": "Panasonic · CS-RE9GKE, CS-RE12GKE, CS-RE9PKR, CSCU-Z25TKR · 1021",
+              "value": "CS-RE9GKE, CS-RE12GKE, CS-RE9PKR, CSCU-Z25TKR · 1021"
+            },
+            {
+              "key": "Panasonic · CS-Z25TK · 1022",
+              "value": "CS-Z25TK · 1022"
+            },
+            {
+              "key": "Panasonic · CS-HE9JKE, CS-HE12JKE, CS-HE9LKE · 1023",
+              "value": "CS-HE9JKE, CS-HE12JKE, CS-HE9LKE · 1023"
+            },
+            {
+              "key": "Panasonic · CS-MRE7MKE · 1024",
+              "value": "CS-MRE7MKE · 1024"
+            },
+            {
+              "key": "Panasonic · CS-E18FKR · 1025",
+              "value": "CS-E18FKR · 1025"
+            },
+            {
+              "key": "Panasonic · CS-PC12QKT · 1026",
+              "value": "CS-PC12QKT · 1026"
+            },
+            {
+              "key": "Panasonic · CS-SA9CKP · 1027",
+              "value": "CS-SA9CKP · 1027"
+            },
+            {
+              "key": "Panasonic · CS-U9RKR, CS-U12RKR · 1028",
+              "value": "CS-U9RKR, CS-U12RKR · 1028"
+            },
+            {
+              "key": "Panasonic · CS-LJ22~LJ90BA2(YA2) · 1029",
+              "value": "CS-LJ22~LJ90BA2(YA2) · 1029"
+            },
+            {
+              "key": "Panasonic · CS-E12JKDW · 1030",
+              "value": "CS-E12JKDW · 1030"
+            },
+            {
+              "key": "Panasonic · SRK25ZMP-S, SRK35ZMP-S, SRK45ZMP-S · 1031",
+              "value": "SRK25ZMP-S, SRK35ZMP-S, SRK45ZMP-S · 1031"
+            },
+            {
+              "key": "Panasonic · CS-CU-HU18YKYF · 1032",
+              "value": "CS-CU-HU18YKYF · 1032"
+            },
+            {
+              "key": "Pearl · EXGC24FCBC1 · 2820",
+              "value": "EXGC24FCBC1 · 2820"
+            },
+            {
+              "key": "Philco · Philco AC · 3000",
+              "value": "Philco AC · 3000"
+            },
+            {
+              "key": "Profio · Unknown · 2260",
+              "value": "호환 코드 · 2260"
+            },
+            {
+              "key": "ROYAL · 08HPN1T1 · 1660",
+              "value": "08HPN1T1 · 1660"
+            },
+            {
+              "key": "ROYAL · RC-G25HN · 1661",
+              "value": "RC-G25HN · 1661"
+            },
+            {
+              "key": "Riello · WSI XN, RAR-3U4 · 1820",
+              "value": "WSI XN, RAR-3U4 · 1820"
+            },
+            {
+              "key": "Rotenso · Ukura, Maze (remote) · 2480",
+              "value": "Ukura, Maze (remote) · 2480"
+            },
+            {
+              "key": "SAGA · SAGA-A-22(CH) · 2940",
+              "value": "SAGA-A-22(CH) · 2940"
+            },
+            {
+              "key": "SHARP · AH-AP9GMY · 7300",
+              "value": "AH-AP9GMY · 7300"
+            },
+            {
+              "key": "Samsung · Unknown · 1400",
+              "value": "호환 코드 · 1400"
+            },
+            {
+              "key": "Samsung · AR**HSF/JFS** · 1401",
+              "value": "AR**HSF/JFS** · 1401"
+            },
+            {
+              "key": "Samsung · AR**TSHGAWK · 1402",
+              "value": "AR**TSHGAWK · 1402"
+            },
+            {
+              "key": "Samsung · AR**TXHZ*** · 1403",
+              "value": "AR**TXHZ*** · 1403"
+            },
+            {
+              "key": "Samsung · AR**TSHZ**** · 1404",
+              "value": "AR**TSHZ**** · 1404"
+            },
+            {
+              "key": "Samsung · AR**TSHQBURN · 1405",
+              "value": "AR**TSHQBURN · 1405"
+            },
+            {
+              "key": "Samsung · AR**NXWS*** · 1407",
+              "value": "AR**NXWS*** · 1407"
+            },
+            {
+              "key": "Samsung · AR18HSFSAWKNEU Ver.01 · 1408",
+              "value": "AR18HSFSAWKNEU Ver.01 · 1408"
+            },
+            {
+              "key": "Sanyo · Unknown · 1500",
+              "value": "호환 코드 · 1500"
+            },
+            {
+              "key": "Sanyo · SAP-KR124EHEA · 1501",
+              "value": "SAP-KR124EHEA · 1501"
+            },
+            {
+              "key": "Saunier Duval · 1 · 1880",
+              "value": "1 · 1880"
+            },
+            {
+              "key": "Senville · SENA/12HF/IZ · 2860",
+              "value": "SENA/12HF/IZ · 2860"
+            },
+            {
+              "key": "Sharp · AY-B22DM · 1300",
+              "value": "AY-B22DM · 1300"
+            },
+            {
+              "key": "Sharp · AY-X13BE · 1301",
+              "value": "AY-X13BE · 1301"
+            },
+            {
+              "key": "Sigma · SGS32H13NE · 8800",
+              "value": "SGS32H13NE · 8800"
+            },
+            {
+              "key": "Simbio · Unknown · 1860",
+              "value": "호환 코드 · 1860"
+            },
+            {
+              "key": "Sintech · KFR-34GW · 1420",
+              "value": "KFR-34GW · 1420"
+            },
+            {
+              "key": "Springer · Split Hi Wall Maxiflex · 1360",
+              "value": "Split Hi Wall Maxiflex · 1360"
+            },
+            {
+              "key": "TCL · TAC-12CHSD/XA21I · 1900",
+              "value": "TAC-12CHSD/XA21I · 1900"
+            },
+            {
+              "key": "TCL · TAC-12CHSD/XA71IN · 1901",
+              "value": "TAC-12CHSD/XA71IN · 1901"
+            },
+            {
+              "key": "Tadiran · Unknown · 1340",
+              "value": "호환 코드 · 1340"
+            },
+            {
+              "key": "Tadiran · TAC490 · 1341",
+              "value": "TAC490 · 1341"
+            },
+            {
+              "key": "Tadiran · Tadiran-10i/15i/inv220a · 1342",
+              "value": "Tadiran-10i/15i/inv220a · 1342"
+            },
+            {
+              "key": "Tadiran · Alpha Series · 1343",
+              "value": "Alpha Series · 1343"
+            },
+            {
+              "key": "Tadiran · Remote Control YB1FA, Tadiran Inverter · 1344",
+              "value": "Remote Control YB1FA, Tadiran Inverter · 1344"
+            },
+            {
+              "key": "Tadiran · TAC 297 · 1345",
+              "value": "TAC 297 · 1345"
+            },
+            {
+              "key": "Tadiran · TAC 297H V3.2 · 1346",
+              "value": "TAC 297H V3.2 · 1346"
+            },
+            {
+              "key": "Tadiran · WIND 3P · 1560",
+              "value": "WIND 3P · 1560"
+            },
+            {
+              "key": "Technibel · MPAF13A0R5IAA · 2120",
+              "value": "MPAF13A0R5IAA · 2120"
+            },
+            {
+              "key": "Tornado · Super - Inverter A, i, Inverter, Inverter A, Super Design, Super Plasma, Gold i, Multi ON-OFF, Multi Inverter, Super Gold i, Plasma Gold · 1620",
+              "value": "Super - Inverter A, i, Inverter, Inverter A, Super Design, Super  · 1620"
+            },
+            {
+              "key": "Tornado · Super Legend 40 · 1621",
+              "value": "Super Legend 40 · 1621"
+            },
+            {
+              "key": "Tornado · Master-22 X · 1622",
+              "value": "Master-22 X · 1622"
+            },
+            {
+              "key": "Tornado · Inverter VRF · 1623",
+              "value": "Inverter VRF · 1623"
+            },
+            {
+              "key": "Tornado · Super Legend 40 · 1624",
+              "value": "Super Legend 40 · 1624"
+            },
+            {
+              "key": "Tornado · Inverter VRF BOX · 1625",
+              "value": "Inverter VRF BOX · 1625"
+            },
+            {
+              "key": "Tornado · MASTER-35 X 1PH · 1626",
+              "value": "MASTER-35 X 1PH · 1626"
+            },
+            {
+              "key": "Tornado · MASTER-12A PLUS · 1627",
+              "value": "MASTER-12A PLUS · 1627"
+            },
+            {
+              "key": "Toshiba · RAS-13NKV-E / RAS-13NAV-E, RAS-13NKV-A / RAS-13NAV-A, RAS-16NKV-E / RAS-16NAV-E, RAS-16NKV-A / RAS-16NAV-A, RAS-M10SKV-E · 1260",
+              "value": "RAS-13NKV-E / RAS-13NAV-E, RAS-13NKV-A / RAS-13NAV-A, RAS-16NKV-E · 1260"
+            },
+            {
+              "key": "Toshiba · RAS-B07J2KVSG-E, RAS-B10J2KVSG-E, RAS-B13J2KVSG-E, RAS-B10SKVP-E · 1263",
+              "value": "RAS-B07J2KVSG-E, RAS-B10J2KVSG-E, RAS-B13J2KVSG-E, RAS-B10SKVP-E · 1263"
+            },
+            {
+              "key": "Toshiba · RAS-13SKVR-A · 1264",
+              "value": "RAS-13SKVR-A · 1264"
+            },
+            {
+              "key": "Toshiba · RAS-25SKVP2-ND, RAS-35SKVP2-ND · 1265",
+              "value": "RAS-25SKVP2-ND, RAS-35SKVP2-ND · 1265"
+            },
+            {
+              "key": "Toshiba · RAS-18NKV-E / RAS-18NAV-E · 7260",
+              "value": "RAS-18NKV-E / RAS-18NAV-E · 7260"
+            },
+            {
+              "key": "Tosot · T09H-SJ · 1200",
+              "value": "T09H-SJ · 1200"
+            },
+            {
+              "key": "Toyotomi · AKIRA GAN/GAG-A128 VL · 1000",
+              "value": "AKIRA GAN/GAG-A128 VL · 1000"
+            },
+            {
+              "key": "Toyotomi · AKIRA GAN/GAG-A135FW-M · 1001",
+              "value": "AKIRA GAN/GAG-A135FW-M · 1001"
+            },
+            {
+              "key": "Tristar · AC-5400 · 2760",
+              "value": "AC-5400 · 2760"
+            },
+            {
+              "key": "Trotec · YX1F6 · 1780",
+              "value": "YX1F6 · 1780"
+            },
+            {
+              "key": "Trotec · YX1F · 1781",
+              "value": "YX1F · 1781"
+            },
+            {
+              "key": "Unionaire · Artify · 2140",
+              "value": "Artify · 2140"
+            },
+            {
+              "key": "VS · Unknown · 2420",
+              "value": "호환 코드 · 2420"
+            },
+            {
+              "key": "Vaillant · ClimaVair VAI 8-025 · 2440",
+              "value": "ClimaVair VAI 8-025 · 2440"
+            },
+            {
+              "key": "Viomi · KF-26GW/Y4PF5-A5 · 8720",
+              "value": "KF-26GW/Y4PF5-A5 · 8720"
+            },
+            {
+              "key": "Voltas · VOLTAS INV/AC 1.5T 183V MZJ3 3S · 3080",
+              "value": "VOLTAS INV/AC 1.5T 183V MZJ3 3S · 3080"
+            },
+            {
+              "key": "Vortex · VOR-12C3/407 · 2340",
+              "value": "VOR-12C3/407 · 2340"
+            },
+            {
+              "key": "Whirlpool · SPIS412L · 1540",
+              "value": "SPIS412L · 1540"
+            },
+            {
+              "key": "Whynter · ARC-12S, ARC-12SD, ARC-122DS, ARC-14S, ARC-141BG, ARC-143MX, ARC-101CW · 2321",
+              "value": "ARC-12S, ARC-12SD, ARC-122DS, ARC-14S, ARC-141BG, ARC-143MX, ARC- · 2321"
+            },
+            {
+              "key": "Wide · WDS12ECO · 3340",
+              "value": "WDS12ECO · 3340"
+            },
+            {
+              "key": "Xiaomi · KFR-35G/F3C1 · 2780",
+              "value": "KFR-35G/F3C1 · 2780"
+            },
+            {
+              "key": "Yamatsu · YAM-12KDA, AUS-07C53R013L24 · 2400",
+              "value": "YAM-12KDA, AUS-07C53R013L24 · 2400"
+            },
+            {
+              "key": "Zanussi · ZH/TT-02 · 2300",
+              "value": "ZH/TT-02 · 2300"
+            },
+            {
+              "key": "Zanussi · ZACS/I-07 HPF/A17/N1 · 2301",
+              "value": "ZACS/I-07 HPF/A17/N1 · 2301"
+            },
+            {
+              "key": "Zephir · DualSplit · 3380",
+              "value": "DualSplit · 3380"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "반응 확인 · 기종 저장",
+      "displayType": "pushButton",
+      "pushButton": {
+        "command": "applyCode"
+      }
+    },
+    {
+      "label": "설정 안내",
+      "displayType": "state",
+      "state": {
+        "label": "{{status.value}}"
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [],
+    "actions": []
+  }
+}

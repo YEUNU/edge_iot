@@ -1,0 +1,10 @@
+{
+  "ip": "192.168.1.101",
+  "device_id": "PHYSICAL_IR_HUB_ID",
+  "local_key": "REPLACE_ME",
+  "version": 3.3,
+  "control_type": 1,
+  "api_token": "REPLACE_WITH_RANDOM_TOKEN",
+  "remote_index": 104800501,
+  "name": "Carrier 104800501"
+}

@@ -9,3 +9,51 @@
 # Build artifacts
 *.zip
 __pycache__/
+
+# Tuya commissioning credentials and local runtime
+**/devices.json
+**/tinytuya.json
+**/tuya-raw.json
+**/snapshot.json
+tuya-local/bridge/data/
+tuya-local/bridge/.venv/
+
+tuya-local/bridge/.env
+
+tuya-local/bridge/state/
+
+# Xiaomi one-time onboarding: local environment and ephemeral QR/session state
+xiaomi-miio/onboarding/.venv/
+xiaomi-miio/onboarding/.state/
+
+# Credentials, local deployment state and private exports (all components)
+.env
+.env.*
+!.env.example
+!.env.template
+.venv/
+venv/
+**/data/
+**/state/
+**/.state/
+*.local.json
+*.local.yml
+*.local.yaml
+credentials*.json
+cloud.json
+secrets.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.log
+*.pcap
+*.pcapng
+*.har
+*.sqlite
+*.sqlite3
+*.db
+.pytest_cache/
+.coverage
+htmlcov/
+node_modules/
