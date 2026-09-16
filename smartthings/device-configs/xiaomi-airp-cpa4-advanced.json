@@ -73,15 +73,8 @@
           "value": "필터 잔량"
         },
         {
-          "op": "replace",
-          "path": "/1",
-          "value": {
-            "label": "필터 교체 후 초기화",
-            "displayType": "pushButton",
-            "pushButton": {
-              "command": "resetFilter"
-            }
-          }
+          "op": "remove",
+          "path": "/1"
         }
       ]
     },
@@ -106,21 +99,113 @@
       "capability": "earthpanel38939.indicatorLightMode",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "표시등"
+        }
+      ]
     },
     {
       "component": "main",
       "capability": "earthpanel38939.alarmBuzzer",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0",
+          "value": {
+            "label": "조작음",
+            "displayType": "toggleSwitch",
+            "toggleSwitch": {
+              "command": {
+                "on": "buzzerOn",
+                "off": "buzzerOff"
+              },
+              "state": {
+                "value": "buzzer.value",
+                "on": "on",
+                "off": "off",
+                "valueType": "string",
+                "label": "{{buzzer.value}}",
+                "alternatives": [
+                  {
+                    "key": "on",
+                    "value": "켜짐",
+                    "type": "active"
+                  },
+                  {
+                    "key": "off",
+                    "value": "꺼짐",
+                    "type": "inactive"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "component": "main",
       "capability": "earthpanel38939.childLock",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0",
+          "value": {
+            "label": "버튼 잠금",
+            "displayType": "toggleSwitch",
+            "toggleSwitch": {
+              "command": {
+                "on": "lock",
+                "off": "unlock"
+              },
+              "state": {
+                "value": "lock.value",
+                "on": "locked",
+                "off": "unlocked",
+                "valueType": "string",
+                "label": "{{lock.value}}",
+                "alternatives": [
+                  {
+                    "key": "locked",
+                    "value": "잠김",
+                    "type": "active"
+                  },
+                  {
+                    "key": "unlocked",
+                    "value": "잠금 해제",
+                    "type": "inactive"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.filterMaintenance",
+      "version": 1,
+      "values": [],
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "필터 교체 후 초기화"
+        },
+        {
+          "op": "replace",
+          "path": "/0/state/label",
+          "value": "교체 후 실행"
+        }
+      ]
     }
   ],
   "automation": {

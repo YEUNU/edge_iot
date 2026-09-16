@@ -53,7 +53,13 @@
       "capability": "earthpanel38939.currentHumidity",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/state/label",
+          "value": "{{humidity.value}} %"
+        }
+      ]
     },
     {
       "component": "main",

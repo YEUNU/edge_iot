@@ -4,8 +4,16 @@
       {
         "label": "필터 관리",
         "alternatives": [
-          { "key": "ready", "value": "준비", "type": "inactive" },
-          { "key": "resetting", "value": "초기화 중", "type": "active" }
+          {
+            "key": "ready",
+            "value": "준비",
+            "type": "inactive"
+          },
+          {
+            "key": "resetting",
+            "value": "초기화 중",
+            "type": "active"
+          }
         ]
       }
     ],
@@ -16,8 +24,16 @@
     {
       "label": "필터 청소 알림 초기화",
       "displayType": "pushButton",
-      "pushButton": { "command": "resetFilter" }
+      "pushButton": {
+        "command": "resetFilter"
+      },
+      "state": {
+        "label": "필터 작업 후 실행"
+      }
     }
   ],
-  "automation": { "conditions": [], "actions": [] }
+  "automation": {
+    "conditions": [],
+    "actions": []
+  }
 }

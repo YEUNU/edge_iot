@@ -22,7 +22,12 @@
         {
           "op": "replace",
           "path": "/0/label",
-          "value": "{{i18n.label}}"
+          "value": "최근 메시지"
+        },
+        {
+          "op": "replace",
+          "path": "/1/state/label",
+          "value": "테스트 보내기"
         }
       ]
     }

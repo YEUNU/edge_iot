@@ -1,6 +1,6 @@
 {
   "tag": "ko",
-  "label": "필터 관리",
+  "label": "필터 알림 초기화",
   "attributes": {
     "status": {
       "label": "필터 관리",

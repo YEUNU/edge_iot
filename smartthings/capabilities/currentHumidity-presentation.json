@@ -13,7 +13,7 @@
       "label": "{{i18n.label}}",
       "displayType": "state",
       "state": {
-        "label": "{{humidity.value}}%"
+        "label": "{{humidity.value}} %"
       }
     }
   ],

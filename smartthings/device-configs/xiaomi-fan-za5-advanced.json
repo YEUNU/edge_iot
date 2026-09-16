@@ -63,17 +63,23 @@
     },
     {
       "component": "main",
-      "capability": "earthpanel38939.fanOscillationDegrees",
+      "capability": "earthpanel38939.powerOffTimer",
       "version": 1,
       "values": [],
       "patch": []
     },
     {
       "component": "main",
-      "capability": "earthpanel38939.powerOffTimer",
+      "capability": "earthpanel38939.fanOscillationDegrees",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "회전 각도 (°)"
+        }
+      ]
     },
     {
       "component": "main",
@@ -106,21 +112,95 @@
       "capability": "earthpanel38939.indicatorLightMode",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "표시등"
+        }
+      ]
     },
     {
       "component": "main",
       "capability": "earthpanel38939.alarmBuzzer",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0",
+          "value": {
+            "label": "조작음",
+            "displayType": "toggleSwitch",
+            "toggleSwitch": {
+              "command": {
+                "on": "buzzerOn",
+                "off": "buzzerOff"
+              },
+              "state": {
+                "value": "buzzer.value",
+                "on": "on",
+                "off": "off",
+                "valueType": "string",
+                "label": "{{buzzer.value}}",
+                "alternatives": [
+                  {
+                    "key": "on",
+                    "value": "켜짐",
+                    "type": "active"
+                  },
+                  {
+                    "key": "off",
+                    "value": "꺼짐",
+                    "type": "inactive"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     },
     {
       "component": "main",
       "capability": "earthpanel38939.childLock",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0",
+          "value": {
+            "label": "버튼 잠금",
+            "displayType": "toggleSwitch",
+            "toggleSwitch": {
+              "command": {
+                "on": "lock",
+                "off": "unlock"
+              },
+              "state": {
+                "value": "lock.value",
+                "on": "locked",
+                "off": "unlocked",
+                "valueType": "string",
+                "label": "{{lock.value}}",
+                "alternatives": [
+                  {
+                    "key": "locked",
+                    "value": "잠김",
+                    "type": "active"
+                  },
+                  {
+                    "key": "unlocked",
+                    "value": "잠금 해제",
+                    "type": "inactive"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
   ],
   "automation": {

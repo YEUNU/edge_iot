@@ -40,8 +40,28 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
         if is_derh and cap == ('relativeHumidityMeasurement' if not advanced else NS + 'currentHumidity'):
             continue
         item = entry(cap)
-        if cap in (NS + 'airPurifierFavoriteLevel', NS + 'latestAlert'):
+        if cap == NS + 'airPurifierFavoriteLevel':
             item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '{{i18n.label}}'}]
+        if cap == NS + 'latestAlert':
+            item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '최근 메시지'},
+                             {'op': 'replace', 'path': '/1/state/label', 'value': '테스트 보내기'}]
+        labels = {NS + 'alarmBuzzer': '조작음', NS + 'indicatorLightMode': '표시등',
+                  NS + 'childLock': '버튼 잠금', NS + 'fanOscillationDegrees': '회전 각도 (°)'}
+        if cap in labels:
+            item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': labels[cap]}]
+        # Binary settings should be one-tap toggles, not two-option dialogs.
+        if cap in (NS + 'alarmBuzzer', NS + 'childLock'):
+            buzzer = cap == NS + 'alarmBuzzer'
+            attr, on, off = ('buzzer', 'on', 'off') if buzzer else ('lock', 'locked', 'unlocked')
+            patch_row(item, {'label': labels[cap], 'displayType': 'toggleSwitch',
+                            'toggleSwitch': {
+                                'command': {'on': 'buzzerOn' if buzzer else 'lock',
+                                            'off': 'buzzerOff' if buzzer else 'unlock'},
+                                'state': {'value': attr + '.value', 'on': on, 'off': off,
+                                          'valueType': 'string', 'label': '{{' + attr + '.value}}',
+                                          'alternatives': [
+                                              {'key': on, 'value': '켜짐' if buzzer else '잠김', 'type': 'active'},
+                                              {'key': off, 'value': '꺼짐' if buzzer else '잠금 해제', 'type': 'inactive'}]}}})
         if cap == 'relativeHumidityMeasurement':
             patch_row(item, {'label': '현재 습도', 'displayType': 'state',
                              'state': {'label': '{{humidity.value}}%'}})
@@ -52,17 +72,19 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
             item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '바람 세기'}]
         if cap == 'filterState':
             item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '필터 잔량'}]
-            if advanced:
-                item['patch'].append({'op': 'replace', 'path': '/1', 'value': {
-                    'label': '필터 교체 후 초기화', 'displayType': 'pushButton',
-                    'pushButton': {'command': 'resetFilter'}}})
-            else:
-                item['patch'].append({'op': 'remove', 'path': '/1'})
+            item['patch'].append({'op': 'remove', 'path': '/1'})
+        if cap == NS + 'filterMaintenance':
+            item['patch'] = [{'op': 'replace', 'path': '/0/label',
+                              'value': '필터 교체 후 초기화' if is_airp else '필터 청소 후 초기화'},
+                             {'op': 'replace', 'path': '/0/state/label',
+                              'value': '교체 후 실행' if is_airp else '청소 후 실행'}]
+        if cap == NS + 'currentHumidity':
+            item['patch'] = [{'op': 'replace', 'path': '/0/state/label', 'value': '{{humidity.value}} %'}]
         rows.append(item)
     # Main controls retain the same relative order in basic and advanced views.
     priority = ['switch', 'fanSpeedPercent', NS + 'targetHumidity', 'mode', NS + 'airPurifierFavoriteLevel',
-                NS + 'fanOscillationControl', NS + 'fanOscillationDegrees', NS + 'currentHumidity',
-                NS + 'powerOffTimer', 'fineDustSensor', 'relativeHumidityMeasurement',
+                NS + 'fanOscillationControl', NS + 'powerOffTimer', NS + 'fanOscillationDegrees', NS + 'currentHumidity',
+                'fineDustSensor', 'relativeHumidityMeasurement',
                 'temperatureMeasurement', 'filterState', NS + 'deviceFault',
                 NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock',
                 NS + 'filterMaintenance', NS + 'latestAlert']

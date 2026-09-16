@@ -1,0 +1,34 @@
+{
+  "tag": "ko",
+  "label": "버튼 잠금",
+  "attributes": {
+    "lock": {
+      "label": "잠금 상태",
+      "displayTemplate": "{{device.label}} {{value}}",
+      "i18n": {
+        "value": {
+          "locked": {
+            "label": "잠김"
+          },
+          "unlocked": {
+            "label": "잠금 해제"
+          }
+        }
+      }
+    }
+  },
+  "commands": {
+    "setLock": {
+      "label": "어린이 잠금 설정",
+      "arguments": {}
+    },
+    "unlock": {
+      "label": "잠금 해제",
+      "arguments": {}
+    },
+    "lock": {
+      "label": "잠그기",
+      "arguments": {}
+    }
+  }
+}
