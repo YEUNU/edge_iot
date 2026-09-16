@@ -1,0 +1,34 @@
+{
+  "tag": "ko",
+  "label": "표시등",
+  "attributes": {
+    "indicator": {
+      "label": "표시등",
+      "displayTemplate": "{{device.label}} 표시등 {{value}}",
+      "i18n": {
+        "value": {
+          "bright": {
+            "label": "밝게"
+          },
+          "dim": {
+            "label": "어둡게"
+          },
+          "off": {
+            "label": "꺼짐"
+          }
+        }
+      }
+    }
+  },
+  "commands": {
+    "setIndicator": {
+      "label": "표시등 설정",
+      "arguments": {
+        "mode": {
+          "i18n": {},
+          "label": "모드"
+        }
+      }
+    }
+  }
+}

@@ -10,17 +10,20 @@
   },
   "detailView": [
     {
-      "label": "최근 알림",
+      "label": "최근 메시지",
       "displayType": "state",
       "state": {
         "label": "{{message.value}}"
       }
     },
     {
-      "label": "테스트 알림 보내기",
+      "label": "알림 전송 테스트",
       "displayType": "pushButton",
       "pushButton": {
         "command": "sendTest"
+      },
+      "state": {
+        "label": "테스트 보내기"
       }
     }
   ],

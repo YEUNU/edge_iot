@@ -1,0 +1,34 @@
+{
+  "tag": "ko",
+  "label": "조작음",
+  "attributes": {
+    "buzzer": {
+      "label": "부저 상태",
+      "displayTemplate": "{{device.label}} 부저 {{value}}",
+      "i18n": {
+        "value": {
+          "off": {
+            "label": "꺼짐"
+          },
+          "on": {
+            "label": "켜짐"
+          }
+        }
+      }
+    }
+  },
+  "commands": {
+    "setBuzzer": {
+      "label": "부저 설정",
+      "arguments": {}
+    },
+    "buzzerOff": {
+      "label": "부저 끄기",
+      "arguments": {}
+    },
+    "buzzerOn": {
+      "label": "부저 켜기",
+      "arguments": {}
+    }
+  }
+}

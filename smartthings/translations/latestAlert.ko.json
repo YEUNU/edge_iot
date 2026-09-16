@@ -1,6 +1,6 @@
 {
   "tag": "ko",
-  "label": "최근 알림",
+  "label": "알림",
   "attributes": {
     "message": {
       "label": "알림 내용",

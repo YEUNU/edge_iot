@@ -728,6 +728,13 @@ test("direct mode retains messages without firing the legacy routine", function(
   for _, event in ipairs(emitted) do assert(event.capability ~= "button") end
 end)
 
+test("purifier keeps its saved favorite setting while powered off", function()
+  local emitted = {}
+  local device = { emit_event = function(_, event) emitted[event.capability] = event end }
+  airp.apply_state(device, {power = false, ["favorite-level"] = 14})
+  assert(emitted["earthpanel38939.airPurifierFavoriteLevel"].args[1] == 14)
+end)
+
 test("compact rotation mirrors confirmed hardware state", function()
   local emitted = {}
   local device = { emit_event = function(_, event) emitted[event.capability] = event end }

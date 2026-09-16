@@ -196,8 +196,9 @@ function M.apply_state(device, p)
 
   local favorite_level = p["favorite-level"]
   if favorite_level ~= nil and cap_favoriteLevel then
-    local effective = (power == false) and 0 or favorite_level
-    events.emit(device, cap_favoriteLevel, cap_favoriteLevel.level(effective))
+    -- This is the saved manual setting, not the currently running motor speed.
+    -- Reporting 0 while off breaks the UI's valid 1–14 slider range.
+    events.emit(device, cap_favoriteLevel, cap_favoriteLevel.level(favorite_level))
   end
 end
 
