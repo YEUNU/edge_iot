@@ -1,0 +1,27 @@
+{
+  "dashboard": {
+    "states": [],
+    "actions": []
+  },
+  "detailView": [
+    {
+      "label": "설정 온도",
+      "displayType": "slider",
+      "slider": {
+        "value": "temperature.value",
+        "unit": "temperature.unit",
+        "command": "setTemperature",
+        "range": [
+          18,
+          30
+        ],
+        "step": 1,
+        "supportedValues": "temperatureRange.value"
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [],
+    "actions": []
+  }
+}

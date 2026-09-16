@@ -1,0 +1,70 @@
+{
+  "dashboard": {
+    "states": [],
+    "actions": []
+  },
+  "detailView": [
+    {
+      "label": "모드",
+      "displayType": "list",
+      "list": {
+        "command": {
+          "name": "setMode",
+          "alternatives": [
+            {
+              "key": "auto",
+              "value": "자동"
+            },
+            {
+              "key": "cool",
+              "value": "냉방"
+            },
+            {
+              "key": "dry",
+              "value": "제습"
+            },
+            {
+              "key": "fanOnly",
+              "value": "송풍"
+            },
+            {
+              "key": "heat",
+              "value": "난방"
+            }
+          ],
+          "argumentType": "string",
+          "supportedValues": "supportedModes.value"
+        },
+        "state": {
+          "value": "mode.value",
+          "alternatives": [
+            {
+              "key": "auto",
+              "value": "자동"
+            },
+            {
+              "key": "cool",
+              "value": "냉방"
+            },
+            {
+              "key": "dry",
+              "value": "제습"
+            },
+            {
+              "key": "fanOnly",
+              "value": "송풍"
+            },
+            {
+              "key": "heat",
+              "value": "난방"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [],
+    "actions": []
+  }
+}

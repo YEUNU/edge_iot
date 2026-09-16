@@ -1,0 +1,7 @@
+name: 'Tuya AC Local'
+packageKey: 'com.yunu.tuya-ac-local'
+permissions:
+  lan: {}
+  discovery: {}
+description: 'Tuya IR AC via local TinyTuya bridge; last-command state, no cloud at runtime'
+vendorSupportInformation: 'https://github.com/yunu/edge_iot'
