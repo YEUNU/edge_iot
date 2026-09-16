@@ -1,0 +1,24 @@
+{
+  "dashboard": {
+    "states": [
+      {
+        "label": "{{status.value}}"
+      }
+    ],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "{{i18n.label}}",
+      "displayType": "state",
+      "state": {
+        "label": "{{status.value}}"
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [],
+    "actions": []
+  }
+}

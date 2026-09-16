@@ -1,0 +1,21 @@
+{
+  "tag": "ko",
+  "label": "필터 교체 알림",
+  "attributes": {
+    "status": {
+      "label": "필터 교체 알림",
+      "displayTemplate": "{{device.label}} · {{attribute}}: {{value}}",
+      "i18n": {
+        "value": {
+          "normal": {
+            "label": "정상"
+          },
+          "replace": {
+            "label": "필터 교체 필요"
+          }
+        }
+      }
+    }
+  },
+  "commands": {}
+}

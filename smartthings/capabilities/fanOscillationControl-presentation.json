@@ -1,0 +1,45 @@
+{
+  "dashboard": {
+    "states": [],
+    "actions": []
+  },
+  "detailView": [
+    {
+      "label": "{{i18n.label}}",
+      "displayType": "list",
+      "list": {
+        "command": {
+          "name": "setFanOscillationMode",
+          "alternatives": [
+            {
+              "key": "fixed",
+              "value": "고정"
+            },
+            {
+              "key": "horizontal",
+              "value": "좌우 회전"
+            }
+          ],
+          "argumentType": "string"
+        },
+        "state": {
+          "value": "fanOscillationMode.value",
+          "alternatives": [
+            {
+              "key": "fixed",
+              "value": "고정"
+            },
+            {
+              "key": "horizontal",
+              "value": "좌우 회전"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [],
+    "actions": []
+  }
+}

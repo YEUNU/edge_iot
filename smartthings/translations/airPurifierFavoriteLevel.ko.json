@@ -1,0 +1,17 @@
+{
+  "tag": "ko",
+  "label": "즐겨찾기 풍량",
+  "attributes": {
+    "level": {
+      "label": "풍량 단계",
+      "displayTemplate": "{{device.label}} · {{attribute}}: {{value}}",
+      "i18n": {}
+    }
+  },
+  "commands": {
+    "setFavoriteLevel": {
+      "label": "즐겨찾기 풍량 설정",
+      "arguments": {}
+    }
+  }
+}

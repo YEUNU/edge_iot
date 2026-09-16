@@ -6,6 +6,8 @@ components:
         version: 1
       - id: relativeHumidityMeasurement
         version: 1
+      - id: earthpanel38939.currentHumidity
+        version: 1
       - id: earthpanel38939.targetHumidity
         version: 1
       - id: mode
@@ -44,7 +46,7 @@ preferences:
       default: "0.0.0.0"
   - name: deviceToken
     title: 기기 Token (32-hex)
-    description: Xiaomi-Cloud-Tokens-Extractor 로 추출
+    description: 자동 검색으로 확보되지 않을 때만 기기의 32자리 로컬 토큰 입력
     required: true
     preferenceType: string
     definition:
@@ -54,4 +56,4 @@ preferences:
       default: "00000000000000000000000000000000"
 metadata:
   mnmn: SmartThingsCommunity
-  vid: 9917624b-41a5-3f6a-adb5-5c7ba3f3ec9f
+  vid: 1c3fb1d6-c882-3b5d-86f0-faad5449b55a

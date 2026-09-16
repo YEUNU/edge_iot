@@ -44,7 +44,7 @@ preferences:
       default: "0.0.0.0"
   - name: deviceToken
     title: 기기 Token (32-hex)
-    description: Xiaomi-Cloud-Tokens-Extractor 로 추출
+    description: 자동 검색으로 확보되지 않을 때만 기기의 32자리 로컬 토큰 입력
     required: true
     preferenceType: string
     definition:
@@ -54,4 +54,4 @@ preferences:
       default: "00000000000000000000000000000000"
 metadata:
   mnmn: SmartThingsCommunity
-  vid: 797ba5f1-e5ae-3482-bbbb-1ce2d49d55c1
+  vid: d57eb181-1c16-3b74-ba40-24a23d3828b0

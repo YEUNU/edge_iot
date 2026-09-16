@@ -5,14 +5,32 @@ SmartThings Edge drivers for Xiaomi MiIO/MiOT devices and Tuya IR air conditione
 ## Xiaomi MiIO LAN
 
 The primary driver controls three Xiaomi models directly over UDP/54321. It
-does not use Xiaomi Cloud. The per-device token is stored in the SmartThings
-device preferences and is used to derive the MiIO AES-128-CBC key and IV.
+does not use Xiaomi Cloud for control. A one-time QR login helper can retrieve
+tokens during onboarding and transfer them to the hub. Per-device tokens are
+stored in hub fields (or manual preferences) and derive the MiIO AES-128-CBC key and IV.
 
 | Device | MiOT model | Main capabilities |
 |---|---|---|
 | Mi Smart Standing Fan 2 | `zhimi.fan.za5` | Power, speed, oscillation, wind mode, off timer |
 | Mi Air Purifier 4 Compact | `zhimi.airp.cpa4` | Power, mode, PM2.5, favorite level, filter life |
 | Xiaomi Smart Dehumidifier 13L | `xiaomi.derh.13l` | Power, mode, current/target humidity, fault status |
+
+### Local discovery
+
+The hub now scans miIO locally at startup, every five minutes, and on nearby
+scan. Refresh on the Xiaomi setup device also starts a scan. Existing tokens
+are reused; authenticated discovered addresses are stored on the hub. Devices
+that expose a usable local token can be enrolled automatically after encrypted
+model verification. Devices that hide it still require an independently obtained
+token; no Xiaomi Cloud lookup is performed. See
+[verification and remaining limits](smartthings/LOCAL_DISCOVERY.md).
+
+### First-time login (no manual token entry)
+
+Use the [one-time Xiaomi QR login helper](xiaomi-miio/onboarding/README.md) to
+retrieve supported devices and transfer credentials to the hub. The helper exits
+after enrollment. Subsequent control remains local and does not require the Mac
+or Xiaomi Cloud. Manual setup remains available below.
 
 ### Installation
 
@@ -55,6 +73,13 @@ humidity read-only, restrict enums to the actual hardware, show the fan's remain
 timer as one continuous control, and move filter reset to the advanced view.
 The purifier's automation-only filter warning remains available to the notifier
 without adding a duplicate status card.
+
+The mobile layout puts fan speed first and uses a compact oscillation dropdown.
+The dehumidifier's basic view shows current humidity without the large history
+chart, so target humidity and mode fit on the first screen. Standard sensor
+history and automation capabilities remain available. See the
+[UI configuration guide](smartthings/UI.md) and
+[ADB verification report](smartthings/UI_AUDIT.md) for deployment and device-tested results.
 
 ### Xiaomi code flow
 

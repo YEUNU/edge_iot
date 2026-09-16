@@ -1,0 +1,43 @@
+{
+  "name": "Fan Oscillation Control",
+  "attributes": {
+    "fanOscillationMode": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "horizontal"
+            ]
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "setter": "setFanOscillationMode",
+      "enumCommands": []
+    }
+  },
+  "commands": {
+    "setFanOscillationMode": {
+      "name": "setFanOscillationMode",
+      "arguments": [
+        {
+          "name": "fanOscillationMode",
+          "optional": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "horizontal"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

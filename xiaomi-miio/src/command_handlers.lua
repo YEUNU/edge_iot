@@ -192,6 +192,7 @@ local cap_alarmBuzzer    = cap(NS .. ".alarmBuzzer")
 local cap_indicatorMode  = cap(NS .. ".indicatorLightMode")
 local cap_targetHumidity = cap(NS .. ".targetHumidity")
 local cap_oscillationAngle = cap(NS .. ".fanOscillationDegrees")
+local cap_oscillationControl = cap(NS .. ".fanOscillationControl")
 local cap_powerOffTimer = cap(NS .. ".powerOffTimer")
 local cap_filterMaintenance = cap(NS .. ".filterMaintenance")
 local cap_favoriteLevel = cap(NS .. ".airPurifierFavoriteLevel")
@@ -256,6 +257,10 @@ end
 
 function M.set_oscillation_mode(driver, device, command)
   optimistic(device, capabilities.fanOscillationMode.fanOscillationMode(command.args.fanOscillationMode))
+  if cap_oscillationControl then
+    require("devices.events").emit(device, cap_oscillationControl,
+      cap_oscillationControl.fanOscillationMode(command.args.fanOscillationMode))
+  end
   fire_and_confirm(driver, device, "set_oscillation_mode",
     function(h, c) return call_setter(h, c, "set_oscillation_mode", command.args.fanOscillationMode) end)
 end

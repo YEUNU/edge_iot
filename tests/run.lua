@@ -132,6 +132,7 @@ end
 
 local command_handlers = require "command_handlers"
 local discovery = require "discovery"
+require("miio.discover").scan = function() return {} end
 local fan = require "devices.fan_za5"
 local airp = require "devices.airp_cpa4"
 local dehumidifier = require "devices.derh_13l"
@@ -725,6 +726,29 @@ test("direct mode retains messages without firing the legacy routine", function(
   assert(emitted[1].args[1]:match("물통"))
   assert(emitted[2].args[1] == "직접 알림 테스트 요청입니다. 실제 기기 고장이 아닙니다.")
   for _, event in ipairs(emitted) do assert(event.capability ~= "button") end
+end)
+
+test("compact rotation mirrors confirmed hardware state", function()
+  local emitted = {}
+  local device = { emit_event = function(_, event) emitted[event.capability] = event end }
+  fan.apply_state(device, {swing = true})
+  assert(emitted.fanOscillationMode.args[1] == "horizontal")
+  assert(emitted["earthpanel38939.fanOscillationControl"].args[1] == "horizontal")
+  fan.apply_state(device, {swing = false})
+  assert(emitted["earthpanel38939.fanOscillationControl"].args[1] == "fixed")
+end)
+
+test("compact humidity mirrors the sensor without replacing standard history", function()
+  local emitted = {}
+  local device = { emit_event = function(_, event) emitted[event.capability] = event end }
+  dehumidifier.apply_state(device, {humidity = 57})
+  assert(emitted.relativeHumidityMeasurement.args[1] == 57)
+  assert(emitted["earthpanel38939.currentHumidity"].args[1] == 57)
+  emitted = {}
+  device.supports_capability = function(_, cap) return cap.ID ~= "earthpanel38939.currentHumidity" end
+  dehumidifier.apply_state(device, {humidity = 58})
+  assert(emitted.relativeHumidityMeasurement.args[1] == 58)
+  assert(not emitted["earthpanel38939.currentHumidity"], "old profiles must not receive unsupported events")
 end)
 
 print(string.format("%d tests passed", passed))

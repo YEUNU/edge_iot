@@ -10,7 +10,7 @@
   },
   "detailView": [
     {
-      "label": "꺼짐 예약 (0분: 해제)",
+      "label": "{{i18n.label}}",
       "displayType": "slider",
       "slider": {
         "range": [

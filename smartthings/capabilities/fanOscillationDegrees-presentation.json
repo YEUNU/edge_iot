@@ -1,15 +1,22 @@
 {
   "dashboard": {
-    "states": [{ "label": "회전각 {{degrees.value}}°" }],
+    "states": [
+      {
+        "label": "회전각 {{degrees.value}}°"
+      }
+    ],
     "actions": [],
     "panelItems": []
   },
   "detailView": [
     {
-      "label": "좌우 회전각",
+      "label": "{{i18n.label}}",
       "displayType": "slider",
       "slider": {
-        "range": [30, 120],
+        "range": [
+          30,
+          120
+        ],
         "step": 5,
         "command": "setDegrees",
         "argumentType": "integer",
@@ -24,7 +31,10 @@
         "label": "좌우 회전각",
         "displayType": "slider",
         "slider": {
-          "range": [30, 120],
+          "range": [
+            30,
+            120
+          ],
           "step": 5,
           "value": "degrees.value",
           "valueType": "integer"
@@ -36,7 +46,10 @@
         "label": "좌우 회전각 설정",
         "displayType": "slider",
         "slider": {
-          "range": [30, 120],
+          "range": [
+            30,
+            120
+          ],
           "step": 5,
           "command": "setDegrees",
           "argumentType": "integer"

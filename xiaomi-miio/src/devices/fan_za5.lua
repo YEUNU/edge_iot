@@ -24,6 +24,7 @@ local NS = "earthpanel38939"
 local cap_childLock       = capabilities[NS .. ".childLock"]
 local cap_alarmBuzzer     = capabilities[NS .. ".alarmBuzzer"]
 local cap_oscillationAngle = capabilities[NS .. ".fanOscillationDegrees"]
+local cap_oscillationControl = capabilities[NS .. ".fanOscillationControl"]
 local cap_powerOffTimer   = capabilities[NS .. ".powerOffTimer"]
 local cap_indicatorMode   = capabilities[NS .. ".indicatorLightMode"]
 
@@ -128,6 +129,10 @@ function M.apply_state(device, p)
   if swing ~= nil then
     events.emit(device, capabilities.fanOscillationMode,
       capabilities.fanOscillationMode.fanOscillationMode(swing and "horizontal" or "fixed"))
+    if cap_oscillationControl then
+      events.emit(device, cap_oscillationControl,
+        cap_oscillationControl.fanOscillationMode(swing and "horizontal" or "fixed"))
+    end
   end
 
   local angle = p["angle"]

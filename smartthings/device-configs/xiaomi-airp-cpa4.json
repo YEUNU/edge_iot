@@ -46,7 +46,13 @@
       "capability": "earthpanel38939.airPurifierFavoriteLevel",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "{{i18n.label}}"
+        }
+      ]
     },
     {
       "component": "main",

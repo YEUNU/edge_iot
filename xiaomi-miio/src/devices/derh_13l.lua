@@ -24,6 +24,7 @@ local alerts = require "alerts"
 local M = {}
 local NS = "earthpanel38939"
 local cap_targetHumidity = capabilities[NS .. ".targetHumidity"]
+local cap_currentHumidity = capabilities[NS .. ".currentHumidity"]
 local cap_childLock      = capabilities[NS .. ".childLock"]
 local cap_alarmBuzzer    = capabilities[NS .. ".alarmBuzzer"]
 local cap_indicatorMode  = capabilities[NS .. ".indicatorLightMode"]
@@ -161,6 +162,9 @@ function M.apply_state(device, p)
   if hum ~= nil then
     events.emit(device, capabilities.relativeHumidityMeasurement,
       capabilities.relativeHumidityMeasurement.humidity(hum))
+    if cap_currentHumidity then
+      events.emit(device, cap_currentHumidity, cap_currentHumidity.humidity(hum))
+    end
   end
 
   local temp = p["temperature"]

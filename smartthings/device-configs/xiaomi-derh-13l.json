@@ -30,6 +30,13 @@
     },
     {
       "component": "main",
+      "capability": "earthpanel38939.targetHumidity",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
       "capability": "mode",
       "version": 1,
       "values": [],
@@ -43,29 +50,10 @@
     },
     {
       "component": "main",
-      "capability": "earthpanel38939.targetHumidity",
+      "capability": "earthpanel38939.currentHumidity",
       "version": 1,
       "values": [],
       "patch": []
-    },
-    {
-      "component": "main",
-      "capability": "relativeHumidityMeasurement",
-      "version": 1,
-      "values": [],
-      "patch": [
-        {
-          "op": "replace",
-          "path": "/0",
-          "value": {
-            "label": "현재 습도",
-            "displayType": "state",
-            "state": {
-              "label": "{{humidity.value}}%"
-            }
-          }
-        }
-      ]
     },
     {
       "component": "main",
