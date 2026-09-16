@@ -15,6 +15,7 @@ local Driver = require "st.driver"
 local models = require "models"
 local Client = require "miio.client"
 local discovery = require "discovery"
+local connection = require "connection"
 local cmds = require "command_handlers"
 local alerts = require "alerts"
 
@@ -55,6 +56,8 @@ local function find_model_def(device)
   -- selected on the generic setup record, then to the stored handler hint.
   local m = device.model and model_to_def[device.model]
   if m then return m end
+  local discovered = device:get_field("local_connection")
+  if discovered and model_to_def[discovered.model] then return model_to_def[discovered.model] end
   local selected = device.preferences and device.preferences.deviceModel
   if selected and handler_to_def[selected] then return handler_to_def[selected] end
   return device:get_field("model_def")
@@ -67,26 +70,7 @@ local function desired_profile(cfg, prefs)
   return cfg.profile
 end
 
-local function valid_ipv4(ip)
-  if type(ip) ~= "string" or ip == "0.0.0.0" then return false end
-  local count = 0
-  for part in ip:gmatch("[^.]+") do
-    count = count + 1
-    if count > 4 or not part:match("^%d+$") then return false end
-    local value = tonumber(part)
-    if not value or value < 0 or value > 255 then return false end
-  end
-  return count == 4 and not ip:match("%.%.") and not ip:match("^%.") and not ip:match("%.$")
-end
-
-local function prefs_complete(prefs)
-  local token = prefs and prefs.deviceToken
-  return prefs
-     and valid_ipv4(prefs.deviceIp)
-     and type(token) == "string" and #token == 32
-     and token:match("^%x+$") ~= nil
-     and token ~= string.rep("0", 32)
-end
+local prefs_complete = connection.complete
 
 local function sync_device_metadata(device, cfg)
   if not cfg then return end
@@ -96,13 +80,21 @@ local function sync_device_metadata(device, cfg)
     manufacturer = "Xiaomi",
     vendor_provided_label = cfg.vendor_label,
   }
-  if prefs_complete(device.preferences or {}) then
+  if prefs_complete(connection.get(device)) then
     metadata.provisioning_state = "PROVISIONED"
   end
   device:try_update_metadata(metadata)
 end
 
 local function attach(device)
+  -- The setup record is a hub-hosted UI, not an unreachable appliance.
+  -- A model default alone must not turn missing onboarding credentials into
+  -- an offline warning or disable its refresh/enrollment controls.
+  if device.model == "xiaomi.setup" and not prefs_complete(connection.get(device)) then
+    device:online()
+    device:set_field("client", nil)
+    return false
+  end
   local cfg = find_model_def(device)
   if not cfg then
     device.log.error("unknown model: " .. tostring(device.model))
@@ -110,7 +102,7 @@ local function attach(device)
   end
   device:set_field("model_def", cfg)
 
-  local prefs = device.preferences or {}
+  local prefs = connection.get(device)
   if not prefs_complete(prefs) then
     device.log.info("missing IP/token preferences; idle until configured")
     device:offline()
@@ -166,6 +158,12 @@ local function start_polling(driver, device)
 end
 
 local function device_init(driver, device)
+  discovery.restore(driver, device)
+  if device.model == "xiaomi.setup" then
+    device:try_update_metadata({profile="xiaomi-setup.v1"})
+    local cap = safe_cap("earthpanel38939.xiaomiLocalLink")
+    if cap then device:emit_event(cap.status(device:get_field("enrollment_status") or "최초 샤오미 로그인이 필요합니다")) end
+  end
   device.log.info("init " .. device.device_network_id)
   if alerts.is_endpoint(device) then
     device:try_update_metadata({ profile = alerts.PROFILE })
@@ -175,7 +173,7 @@ local function device_init(driver, device)
   local cfg = find_model_def(device)
   if device.model == "xiaomi.setup" and not cfg then
     device.log.info("waiting for Xiaomi model/IP/token settings")
-    device:offline()
+    device:online()
     return
   end
   if cfg then
@@ -183,7 +181,7 @@ local function device_init(driver, device)
     -- Package updates can change a profile ID even when its name is stable.
     -- Migrate existing physical devices too, so newly added alert capabilities
     -- are available without deleting devices or losing their routines.
-    if prefs_complete(device.preferences or {}) then
+    if prefs_complete(connection.get(device)) then
       sync_device_metadata(device, cfg)
     end
   end
@@ -200,13 +198,17 @@ local function device_added(driver, device)
     alerts.initialize(driver, device)
     return
   end
+  if device.model == "xiaomi.setup" and not prefs_complete(connection.get(device)) then
+    device:online()
+    return
+  end
   -- Set the model_def regardless of preferences so we know which handler to use
   -- once the user fills them in.
   local cfg = find_model_def(device)
   if cfg then
     device:set_field("model_def", cfg)
   elseif device.model == "xiaomi.setup" then
-    device:offline()
+    device:online()
   end
 end
 
@@ -217,12 +219,17 @@ local function device_info_changed(driver, device, _, args)
   local old_prefs = args and args.old_st_store and args.old_st_store.preferences or {}
   local connection_changed = old_prefs.deviceIp ~= prefs.deviceIp
                           or old_prefs.deviceToken ~= prefs.deviceToken
+  if old_prefs.deviceIp ~= prefs.deviceIp and connection.valid_ip(prefs.deviceIp) then
+    local saved = device:get_field("local_connection") or {}
+    saved = { ip = prefs.deviceIp, token = saved.token, did = saved.did, model = saved.model, preference_token = saved.preference_token }
+    connection.save(device, saved)
+  end
   local model_changed = old_prefs.deviceModel ~= prefs.deviceModel
   local advanced_changed = old_prefs.showAdvanced ~= prefs.showAdvanced
   local cfg = find_model_def(device)
   local setup_completed = device.model == "xiaomi.setup" and connection_changed
 
-  if cfg and prefs_complete(prefs) and (model_changed or advanced_changed or setup_completed) then
+  if cfg and prefs_complete(connection.get(device)) and (model_changed or advanced_changed or setup_completed) then
     device:set_field("model_def", cfg)
     sync_device_metadata(device, cfg)
   end
@@ -248,7 +255,13 @@ end
 
 local capability_handlers = {
   [capabilities.refresh.ID] = {
-    [capabilities.refresh.commands.refresh.NAME] = cmds.refresh,
+    [capabilities.refresh.commands.refresh.NAME] = function(driver, device)
+      if device.model == "xiaomi.setup" then
+        discovery.scan(driver)
+      else
+        cmds.refresh(driver, device)
+      end
+    end,
   },
   [capabilities.switch.ID] = {
     [capabilities.switch.commands.on.NAME]  = cmds.switch_on,
@@ -309,6 +322,12 @@ if cap_oscillationAngle then
     ["setDegrees"] = cmds.set_oscillation_angle,
   }
 end
+local cap_oscillationControl = safe_cap(NS .. ".fanOscillationControl")
+if cap_oscillationControl then
+  capability_handlers[cap_oscillationControl.ID] = {
+    setFanOscillationMode = cmds.set_oscillation_mode,
+  }
+end
 if cap_powerOffTimer then
   capability_handlers[cap_powerOffTimer.ID] = {
     ["setTimer"] = cmds.set_power_off_timer,
@@ -325,6 +344,22 @@ if cap_favoriteLevel then
   }
 end
 
+discovery.on_connected = function(driver, device)
+  device_init(driver, device)
+end
+
+local cap_xiaomiLink = safe_cap("earthpanel38939.xiaomiLocalLink")
+if cap_xiaomiLink then
+  capability_handlers[cap_xiaomiLink.ID] = {
+    enroll = function(driver, device, command)
+      require("enrollment").handle(driver, device, command.args, function(message)
+        device:set_field("enrollment_status", message, {persist=true})
+        device:emit_event(cap_xiaomiLink.status(message))
+      end)
+    end,
+  }
+end
+
 local driver = Driver("xiaomi-miio", {
   discovery = discovery.handle,
   lifecycle_handlers = {
@@ -336,5 +371,10 @@ local driver = Driver("xiaomi-miio", {
   capability_handlers = capability_handlers,
 })
 
+-- Hub-owned periodic rediscovery repairs DHCP changes without a host bridge.
+if driver.call_on_schedule then
+  driver:call_on_schedule(300, function() discovery.scan(driver) end, "xiaomi_local_discovery")
+  driver:call_with_delay(5, function() discovery.scan(driver) end, "xiaomi_initial_discovery")
+end
 log.info("xiaomi-miio driver:run()")
 driver:run()

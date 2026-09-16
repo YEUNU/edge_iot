@@ -30,6 +30,19 @@
     },
     {
       "component": "main",
+      "capability": "fanSpeedPercent",
+      "version": 1,
+      "values": [],
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "바람 세기"
+        }
+      ]
+    },
+    {
+      "component": "main",
       "capability": "mode",
       "version": 1,
       "values": [],
@@ -43,31 +56,9 @@
     },
     {
       "component": "main",
-      "capability": "fanSpeedPercent",
+      "capability": "earthpanel38939.fanOscillationControl",
       "version": 1,
       "values": [],
-      "patch": []
-    },
-    {
-      "component": "main",
-      "capability": "fanOscillationMode",
-      "version": 1,
-      "values": [
-        {
-          "key": "fanOscillationMode.value",
-          "enabledValues": [
-            "fixed",
-            "horizontal"
-          ]
-        },
-        {
-          "key": "setFanOscillationMode",
-          "enabledValues": [
-            "fixed",
-            "horizontal"
-          ]
-        }
-      ],
       "patch": []
     },
     {

@@ -4,6 +4,8 @@ components:
     capabilities:
       - id: refresh
         version: 1
+      - id: earthpanel38939.xiaomiLocalLink
+        version: 1
     categories:
       - name: Others
 preferences:
@@ -30,7 +32,7 @@ preferences:
       default: "0.0.0.0"
   - name: deviceToken
     title: 기기 Token (32-hex)
-    description: Xiaomi-Cloud-Tokens-Extractor 로 추출
+    description: 자동 검색으로 확보되지 않을 때만 기기의 32자리 로컬 토큰 입력
     required: true
     preferenceType: string
     definition:
@@ -45,3 +47,7 @@ preferences:
     preferenceType: boolean
     definition:
       default: false
+
+metadata:
+  mnmn: SmartThingsCommunity
+  vid: 0fd3dc1d-1b8e-312c-89d0-3724a5a73e05

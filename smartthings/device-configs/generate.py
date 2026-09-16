@@ -14,6 +14,13 @@ def patch_row(item, row):
 
 for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
     if profile.stem == 'xiaomi-setup':
+        link = entry(NS + 'xiaomiLocalLink')
+        link['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '샤오미 기기 연결'}]
+        config = {'type': 'profile', 'dashboard': {'states': [entry(NS + 'xiaomiLocalLink')],
+                  'actions': []}, 'detailView': [link],
+                  'automation': {'conditions': [], 'actions': []}}
+        (Path(__file__).parent / (profile.stem + '.json')).write_text(
+            json.dumps(config, ensure_ascii=False, indent=2) + '\n')
         continue
     text = profile.read_text()
     caps = re.findall(r'^      - id: (.+)$', text, re.M)
@@ -25,15 +32,24 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
     rows = []
     for cap in caps:
         # Keep API/automation attributes, but avoid redundant filter/legacy-button cards.
-        if cap in (NS + 'filterAlert', 'button'):
+        if cap in (NS + 'filterAlert', 'button', 'fanOscillationMode'):
+            continue
+        # Android renders the standard sensor as a large history chart even
+        # when patched to state. Keep its history/dashboard/automation contract,
+        # but use a compact read-only mirror in the everyday dehumidifier view.
+        if is_derh and cap == ('relativeHumidityMeasurement' if not advanced else NS + 'currentHumidity'):
             continue
         item = entry(cap)
+        if cap in (NS + 'airPurifierFavoriteLevel', NS + 'latestAlert'):
+            item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '{{i18n.label}}'}]
         if cap == 'relativeHumidityMeasurement':
             patch_row(item, {'label': '현재 습도', 'displayType': 'state',
                              'state': {'label': '{{humidity.value}}%'}})
         if cap == 'mode':
             item['patch'] = [{'op': 'replace', 'path': '/0/label',
                               'value': '바람 모드' if is_fan else '운전 모드'}]
+        if cap == 'fanSpeedPercent':
+            item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '바람 세기'}]
         if cap == 'filterState':
             item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '필터 잔량'}]
             if advanced:
@@ -44,8 +60,8 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
                 item['patch'].append({'op': 'remove', 'path': '/1'})
         rows.append(item)
     # Main controls retain the same relative order in basic and advanced views.
-    priority = ['switch', 'mode', 'fanSpeedPercent', NS + 'airPurifierFavoriteLevel',
-                'fanOscillationMode', NS + 'fanOscillationDegrees', NS + 'targetHumidity',
+    priority = ['switch', 'fanSpeedPercent', NS + 'targetHumidity', 'mode', NS + 'airPurifierFavoriteLevel',
+                NS + 'fanOscillationControl', NS + 'fanOscillationDegrees', NS + 'currentHumidity',
                 NS + 'powerOffTimer', 'fineDustSensor', 'relativeHumidityMeasurement',
                 'temperatureMeasurement', 'filterState', NS + 'deviceFault',
                 NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock',
@@ -55,7 +71,7 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
                  'fineDustSensor' if is_airp else 'relativeHumidityMeasurement')
     config = {'type': 'profile', 'dashboard': {'states': [entry(state_cap)],
               'actions': [] if is_alert else [entry('switch')]}, 'detailView': rows,
-              'automation': {'conditions': [entry(c) for c in caps if c not in (NS + 'latestAlert', NS + 'filterMaintenance')],
+              'automation': {'conditions': [entry(c) for c in caps if c not in (NS + 'latestAlert', NS + 'filterMaintenance', NS + 'currentHumidity', NS + 'fanOscillationControl')],
                              'actions': [entry(c) for c in caps if c in ('switch', 'mode', 'fanSpeedPercent', 'fanOscillationMode', 'filterState', NS + 'targetHumidity', NS + 'fanOscillationDegrees', NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock', NS + 'powerOffTimer', NS + 'airPurifierFavoriteLevel')]}}
     # Restrict standard enums to what the actual model can do in every view.
     groups = [config['dashboard']['states'], config['dashboard']['actions'], rows,

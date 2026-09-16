@@ -1,0 +1,17 @@
+{
+  "tag": "ko",
+  "label": "최근 알림",
+  "attributes": {
+    "message": {
+      "label": "알림 내용",
+      "displayTemplate": "{{device.label}} · {{attribute}}: {{value}}",
+      "i18n": {}
+    }
+  },
+  "commands": {
+    "sendTest": {
+      "label": "테스트 알림 보내기",
+      "arguments": {}
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "Xiaomi Local Link",
+  "attributes": {
+    "status": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "commands": {
+    "enroll": {
+      "name": "enroll",
+      "arguments": [
+        {
+          "name": "address",
+          "optional": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "port",
+          "optional": false,
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
+          "name": "ticket",
+          "optional": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    }
+  }
+}

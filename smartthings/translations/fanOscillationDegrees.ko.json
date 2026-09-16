@@ -1,0 +1,17 @@
+{
+  "tag": "ko",
+  "label": "좌우 회전 각도",
+  "attributes": {
+    "degrees": {
+      "label": "회전 각도",
+      "displayTemplate": "{{device.label}} · {{attribute}}: {{value}}",
+      "i18n": {}
+    }
+  },
+  "commands": {
+    "setDegrees": {
+      "label": "회전 각도 설정",
+      "arguments": {}
+    }
+  }
+}

@@ -2,20 +2,28 @@
 
 기존 기기 ID와 capability 계약을 유지하고, 모델별 device configuration을 적용합니다.
 
-- 제습기: 현재 습도는 읽기 전용 숫자, 목표 습도는 30–70% 조절 슬라이더.
+- 제습기: 기본 화면의 현재 습도는 간결한 읽기 전용 숫자, 목표 습도는 30–70% 조절 슬라이더이며 운전 모드보다 먼저 배치.
+  표준 습도 capability는 대시보드·기록·자동화에 유지하고, 큰 그래프는 고급 화면에서 표시.
 - 공기청정기: 미세먼지와 필터 잔량을 표시하고 중복 필터 경고 행은 숨김.
   필터 교체 초기화는 고급 화면에서 단일 버튼으로 제공.
-- 선풍기: 풍량은 슬라이더, 회전은 실제 지원하는 고정·좌우만 선택.
+- 선풍기: 바람 세기 → 바람 모드 → 좌우 회전 → 꺼짐 예약 순서.
+  회전은 고정·좌우 회전만 제공하는 드롭다운이며 표준 자동화 명령과 같은 제어·확인 경로를 사용.
 - 꺼짐 예약: 0–600분 슬라이더. 0분은 해제이며 실제 남은 분을 그대로 표시.
 - Xiaomi 알림: 최근 메시지와 테스트 버튼만 표시. 이전 루틴용 버튼 상태는 숨김.
 - 대시보드: 모델별 핵심 측정값 하나와 전원 조작. 알림 기기는 정적 안내 표시.
 
 기본 화면은 자주 쓰는 기능, 고급 화면은 표시등·부저·잠금·관리 기능을 추가합니다.
 SmartThings 앱의 상태/조작 그룹 구분은 플랫폼이 결정합니다.
+Android 앱은 일부 표준 capability의 `displayType`을 무시하고 전용 그래프·버튼을
+사용하므로, 현재 습도와 회전 선택은 화면용 custom capability로 표시합니다.
+실제 센서 값과 회전 상태를 함께 발행하며 기존 표준 capability 계약은 유지합니다.
+
+설정용 기기는 IP·토큰 입력 전에도 온라인으로 유지합니다. 실제 가전의 연결 실패는
+기존과 같이 오프라인으로 표시합니다.
 
 ## 수정과 배포
 
-`device-configs/generate.py`가 프로필 capability를 읽어 7개 JSON 구성을 만듭니다.
+`device-configs/generate.py`가 프로필 capability를 읽어 설정 화면을 포함한 8개 JSON 구성을 만듭니다.
 
 ```sh
 python3 smartthings/device-configs/generate.py
@@ -29,3 +37,28 @@ presentation을 바꾸면 해당 presentation도 먼저 업데이트한 뒤 드�
 배포 후 `smartthings devices DEVICE_ID -j`의 presentationId를 확인하고
 `smartthings presentation PRESENTATION_ID SmartThingsCommunity -j`로 실제 생성된
 화면을 확인합니다. 앱에 이전 화면이 남아 있으면 앱을 종료하고 다시 엽니다.
+
+## 한국어 번역
+
+`translations/*.json`을 capability 이름과 함께 관리합니다. Presentation의 한글
+label만으로는 앱의 영문 capability 제목 대체를 방지할 수 없습니다.
+정의·presentation을 등록한 다음 번역을 적용하고 device configuration을 생성합니다.
+
+```sh
+for file in smartthings/translations/*.json; do
+  name=$(basename "$file" .json)
+  name=${name%.*}
+  smartthings capabilities:translations:upsert "earthpanel38939.$name" -i "$file"
+done
+```
+
+`favoriteLevel*.json`의 실제 capability ID는 `earthpanel38939.airPurifierFavoriteLevel`입니다.
+새 설치에서는 `currentHumidity`와 `fanOscillationControl`의 정의·presentation도 먼저 등록합니다.
+SmartThings의 프로필 갱신 안내가 나오면 확인을 누른 뒤 기기를 다시 엽니다.
+한국어 API 확인에는 `--language ko`를 사용합니다.
+
+알림·설정 카드의 상단 제목은 Android에서 기본 언어 번역을 사용하는 동작을
+실기로 확인했습니다. 이 한국어 전용 화면의 `latestAlert.en.json`과
+`xiaomiLocalLink.en.json`에도 한국어 기본 제목을 넣어 영문 대체 표시를 방지합니다.
+
+번역 형식 참고: [SmartThings Capability Translations](https://developer.smartthings.com/docs/devices/capabilities/capability-translations/).

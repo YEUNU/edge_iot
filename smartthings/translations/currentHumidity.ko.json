@@ -1,0 +1,12 @@
+{
+  "tag": "ko",
+  "label": "현재 습도",
+  "attributes": {
+    "humidity": {
+      "label": "현재 습도",
+      "displayTemplate": "{{device.label}} 습도: {{value}}%",
+      "i18n": {}
+    }
+  },
+  "commands": {}
+}

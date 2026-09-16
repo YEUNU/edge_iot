@@ -1,0 +1,26 @@
+{
+  "tag": "ko",
+  "label": "필터 관리",
+  "attributes": {
+    "status": {
+      "label": "필터 관리",
+      "displayTemplate": "{{device.label}} · {{attribute}}: {{value}}",
+      "i18n": {
+        "value": {
+          "resetting": {
+            "label": "초기화 중"
+          },
+          "ready": {
+            "label": "준비됨"
+          }
+        }
+      }
+    }
+  },
+  "commands": {
+    "resetFilter": {
+      "label": "필터 청소 후 초기화",
+      "arguments": {}
+    }
+  }
+}

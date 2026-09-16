@@ -30,6 +30,13 @@
     },
     {
       "component": "main",
+      "capability": "earthpanel38939.targetHumidity",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
       "capability": "mode",
       "version": 1,
       "values": [],
@@ -40,13 +47,6 @@
           "value": "운전 모드"
         }
       ]
-    },
-    {
-      "component": "main",
-      "capability": "earthpanel38939.targetHumidity",
-      "version": 1,
-      "values": [],
-      "patch": []
     },
     {
       "component": "main",

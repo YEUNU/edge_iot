@@ -1,0 +1,17 @@
+{
+  "tag": "ko",
+  "label": "샤오미 기기 연결",
+  "attributes": {
+    "status": {
+      "label": "연결 안내",
+      "displayTemplate": "{{device.label}} · {{attribute}}: {{value}}",
+      "i18n": {}
+    }
+  },
+  "commands": {
+    "enroll": {
+      "label": "샤오미 기기 연결",
+      "arguments": {}
+    }
+  }
+}

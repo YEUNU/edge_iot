@@ -18,7 +18,13 @@
       "capability": "earthpanel38939.latestAlert",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "{{i18n.label}}"
+        }
+      ]
     }
   ],
   "automation": {

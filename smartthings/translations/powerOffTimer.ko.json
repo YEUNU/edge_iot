@@ -1,0 +1,17 @@
+{
+  "tag": "ko",
+  "label": "꺼짐 예약 (0분: 해제)",
+  "attributes": {
+    "minutes": {
+      "label": "남은 시간(분)",
+      "displayTemplate": "{{device.label}} · {{attribute}}: {{value}}",
+      "i18n": {}
+    }
+  },
+  "commands": {
+    "setTimer": {
+      "label": "꺼짐 예약 설정",
+      "arguments": {}
+    }
+  }
+}

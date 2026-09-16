@@ -8,6 +8,8 @@ components:
         version: 1
       - id: fanOscillationMode
         version: 1
+      - id: earthpanel38939.fanOscillationControl
+        version: 1
       - id: mode
         version: 1
       - id: earthpanel38939.powerOffTimer
@@ -34,7 +36,7 @@ preferences:
       default: "0.0.0.0"
   - name: deviceToken
     title: 기기 Token (32-hex)
-    description: Xiaomi-Cloud-Tokens-Extractor 로 추출
+    description: 자동 검색으로 확보되지 않을 때만 기기의 32자리 로컬 토큰 입력
     required: true
     preferenceType: string
     definition:
@@ -44,4 +46,4 @@ preferences:
       default: "00000000000000000000000000000000"
 metadata:
   mnmn: SmartThingsCommunity
-  vid: 9e9cf9bb-421f-38ad-a0d9-34faeff16a48
+  vid: f155295d-9741-3bd1-b565-e64bb33ec277

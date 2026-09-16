@@ -1,0 +1,25 @@
+{
+  "tag": "ko",
+  "label": "좌우 회전",
+  "attributes": {
+    "fanOscillationMode": {
+      "label": "좌우 회전",
+      "i18n": {
+        "value": {
+          "fixed": {
+            "label": "고정"
+          },
+          "horizontal": {
+            "label": "좌우 회전"
+          }
+        }
+      }
+    }
+  },
+  "commands": {
+    "setFanOscillationMode": {
+      "label": "좌우 회전 설정",
+      "arguments": {}
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "dashboard": {
+    "states": [
+      {
+        "label": "{{humidity.value}}%"
+      }
+    ],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "{{i18n.label}}",
+      "displayType": "state",
+      "state": {
+        "label": "{{humidity.value}}%"
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [],
+    "actions": []
+  }
+}
