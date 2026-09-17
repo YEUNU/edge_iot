@@ -23,6 +23,10 @@
             {
               "key": "Carrier",
               "value": "캐리어"
+            },
+            {
+              "key": "Winia",
+              "value": "위니아"
             }
           ],
           "argumentType": "string"
@@ -41,6 +45,10 @@
             {
               "key": "Carrier",
               "value": "캐리어"
+            },
+            {
+              "key": "Winia",
+              "value": "위니아"
             }
           ]
         }
@@ -54,120 +62,292 @@
           "name": "setCandidate",
           "alternatives": [
             {
-              "key": "Carrier · Unknown · 1160",
-              "value": "호환 코드 · 1160"
+              "key": "Carrier · Tuya 2132",
+              "value": "Tuya 2132 · 2132"
             },
             {
-              "key": "Carrier · 40GKX-024RB · 1161",
-              "value": "40GKX-024RB · 1161"
+              "key": "Carrier · Tuya 2607",
+              "value": "Tuya 2607 · 2607"
             },
             {
-              "key": "Carrier · 42TVGS024-703 · 1162",
-              "value": "42TVGS024-703 · 1162"
+              "key": "Carrier/LG/Samsung · Tuya 2807",
+              "value": "Tuya 2807 · 2807"
             },
             {
-              "key": "Carrier · 42LUVH025N-1 · 1164",
-              "value": "42LUVH025N-1 · 1164"
+              "key": "Carrier · Tuya 3392",
+              "value": "Tuya 3392 · 3392"
             },
             {
-              "key": "Carrier · 42P250HX, 53P250HX · 1165",
-              "value": "42P250HX, 53P250HX · 1165"
+              "key": "Carrier · Tuya 3402",
+              "value": "Tuya 3402 · 3402"
             },
             {
-              "key": "Carrier · CS-A121N · 1166",
-              "value": "CS-A121N · 1166"
+              "key": "Carrier · Tuya 3412",
+              "value": "Tuya 3412 · 3412"
+            },
+            {
+              "key": "Carrier · Tuya 3442",
+              "value": "Tuya 3442 · 3442"
+            },
+            {
+              "key": "Carrier · Tuya 3457",
+              "value": "Tuya 3457 · 3457"
+            },
+            {
+              "key": "Carrier · Tuya 3472",
+              "value": "Tuya 3472 · 3472"
+            },
+            {
+              "key": "Carrier · Tuya 5163",
+              "value": "Tuya 5163 · 5163"
+            },
+            {
+              "key": "Carrier · Tuya 5214",
+              "value": "Tuya 5214 · 5214"
+            },
+            {
+              "key": "Carrier · Tuya 5215",
+              "value": "Tuya 5215 · 5215"
+            },
+            {
+              "key": "Carrier · Tuya 5243",
+              "value": "Tuya 5243 · 5243"
+            },
+            {
+              "key": "Carrier · Tuya 5244",
+              "value": "Tuya 5244 · 5244"
+            },
+            {
+              "key": "Carrier · Tuya 5245",
+              "value": "Tuya 5245 · 5245"
+            },
+            {
+              "key": "Carrier · Tuya 5246",
+              "value": "Tuya 5246 · 5246"
+            },
+            {
+              "key": "Carrier · Tuya 6883",
+              "value": "Tuya 6883 · 6883"
+            },
+            {
+              "key": "Carrier · Tuya 7248",
+              "value": "Tuya 7248 · 7248"
+            },
+            {
+              "key": "Carrier · Tuya 7409",
+              "value": "Tuya 7409 · 7409"
+            },
+            {
+              "key": "Carrier · Tuya 7411",
+              "value": "Tuya 7411 · 7411"
+            },
+            {
+              "key": "Carrier · Tuya 7711",
+              "value": "Tuya 7711 · 7711"
+            },
+            {
+              "key": "Carrier · Tuya 10727",
+              "value": "Tuya 10727 · 10727"
+            },
+            {
+              "key": "Carrier · Tuya 11272",
+              "value": "Tuya 11272 · 11272"
+            },
+            {
+              "key": "Carrier · Tuya 11707",
+              "value": "Tuya 11707 · 11707"
+            },
+            {
+              "key": "Carrier · Tuya 12265",
+              "value": "Tuya 12265 · 12265"
+            },
+            {
+              "key": "Carrier · Tuya 1000048",
+              "value": "Tuya 1000048 · 1000048"
             },
             {
               "key": "Carrier · Tuya 104800501",
               "value": "기존 Carrier 리모컨"
             },
             {
-              "key": "LG · R09AWN, R24AWN, E09EK · 1060",
-              "value": "R09AWN, R24AWN, E09EK · 1060"
+              "key": "Carrier · Tuya 410051847",
+              "value": "Tuya 410051847 · 410051847"
             },
             {
-              "key": "LG · Unknown · 1061",
-              "value": "호환 코드 · 1061"
+              "key": "Carrier · Tuya 414428148",
+              "value": "Tuya 414428148 · 414428148"
             },
             {
-              "key": "LG · P12RK, A06AWV · 1062",
-              "value": "P12RK, A06AWV · 1062"
+              "key": "Carrier · Tuya 470410477",
+              "value": "Tuya 470410477 · 470410477"
             },
             {
-              "key": "LG · P12EP1 · 1063",
-              "value": "P12EP1 · 1063"
+              "key": "Carrier · Tuya 497485387",
+              "value": "Tuya 497485387 · 497485387"
             },
             {
-              "key": "LG · Unknown · 1064",
-              "value": "호환 코드 · 1064"
+              "key": "Carrier · Tuya 1553000035",
+              "value": "Tuya 1553000035 · 1553000035"
             },
             {
-              "key": "LG · LG080EC, LG100EC, LG150EC, LG200EC · 1065",
-              "value": "LG080EC, LG100EC, LG150EC, LG200EC · 1065"
+              "key": "Carrier · Tuya 1553000036",
+              "value": "Tuya 1553000036 · 1553000036"
             },
             {
-              "key": "LG · LA090HYV, LA120HYV, LAN090HYV, LAN120HYV · 1066",
-              "value": "LA090HYV, LA120HYV, LAN090HYV, LAN120HYV · 1066"
+              "key": "Carrier · Tuya 1553000037",
+              "value": "Tuya 1553000037 · 1553000037"
             },
             {
-              "key": "LG · W12TCM · 1067",
-              "value": "W12TCM · 1067"
+              "key": "Carrier · Tuya 1553000038",
+              "value": "Tuya 1553000038 · 1553000038"
             },
             {
-              "key": "LG · AKB74295303 · 1068",
-              "value": "AKB74295303 · 1068"
+              "key": "Carrier · Tuya 1553000039",
+              "value": "Tuya 1553000039 · 1553000039"
             },
             {
-              "key": "LG · AKB74295304 · 1069",
-              "value": "AKB74295304 · 1069"
+              "key": "LG · Tuya 2847",
+              "value": "Tuya 2847 · 2847"
             },
             {
-              "key": "LG · PC09SQ NSJ · 1070",
-              "value": "PC09SQ NSJ · 1070"
+              "key": "LG · Tuya 3482",
+              "value": "Tuya 3482 · 3482"
             },
             {
-              "key": "LG · RAS-32CNH2 · 1083",
-              "value": "RAS-32CNH2 · 1083"
+              "key": "LG · Tuya 3532",
+              "value": "Tuya 3532 · 3532"
             },
             {
-              "key": "LG · P12RK · 7062",
-              "value": "P12RK · 7062"
+              "key": "LG · Tuya 3592",
+              "value": "Tuya 3592 · 3592"
             },
             {
-              "key": "LG · LG080EC, LG100EC, LG150EC, LG200EC · 7065",
-              "value": "LG080EC, LG100EC, LG150EC, LG200EC · 7065"
+              "key": "LG · Tuya 5139",
+              "value": "Tuya 5139 · 5139"
             },
             {
-              "key": "Samsung · Unknown · 1400",
-              "value": "호환 코드 · 1400"
+              "key": "LG · Tuya 5560",
+              "value": "Tuya 5560 · 5560"
             },
             {
-              "key": "Samsung · AR**HSF/JFS** · 1401",
-              "value": "AR**HSF/JFS** · 1401"
+              "key": "LG · Tuya 5671",
+              "value": "Tuya 5671 · 5671"
             },
             {
-              "key": "Samsung · AR**TSHGAWK · 1402",
-              "value": "AR**TSHGAWK · 1402"
+              "key": "LG · Tuya 7626",
+              "value": "Tuya 7626 · 7626"
             },
             {
-              "key": "Samsung · AR**TXHZ*** · 1403",
-              "value": "AR**TXHZ*** · 1403"
+              "key": "LG · Tuya 11292",
+              "value": "Tuya 11292 · 11292"
             },
             {
-              "key": "Samsung · AR**TSHZ**** · 1404",
-              "value": "AR**TSHZ**** · 1404"
+              "key": "LG · Tuya 1000047",
+              "value": "Tuya 1000047 · 1000047"
             },
             {
-              "key": "Samsung · AR**TSHQBURN · 1405",
-              "value": "AR**TSHQBURN · 1405"
+              "key": "LG · Tuya 416051031",
+              "value": "Tuya 416051031 · 416051031"
             },
             {
-              "key": "Samsung · AR**NXWS*** · 1407",
-              "value": "AR**NXWS*** · 1407"
+              "key": "LG · Tuya 1553000064",
+              "value": "Tuya 1553000064 · 1553000064"
             },
             {
-              "key": "Samsung · AR18HSFSAWKNEU Ver.01 · 1408",
-              "value": "AR18HSFSAWKNEU Ver.01 · 1408"
+              "key": "LG · Tuya 1553000065",
+              "value": "Tuya 1553000065 · 1553000065"
+            },
+            {
+              "key": "LG · Tuya 1553000066",
+              "value": "Tuya 1553000066 · 1553000066"
+            },
+            {
+              "key": "LG · Tuya 1553000067",
+              "value": "Tuya 1553000067 · 1553000067"
+            },
+            {
+              "key": "Samsung · Tuya 3227",
+              "value": "Tuya 3227 · 3227"
+            },
+            {
+              "key": "Samsung · Tuya 3237",
+              "value": "Tuya 3237 · 3237"
+            },
+            {
+              "key": "Samsung · Tuya 4736",
+              "value": "Tuya 4736 · 4736"
+            },
+            {
+              "key": "Samsung · Tuya 4745",
+              "value": "Tuya 4745 · 4745"
+            },
+            {
+              "key": "Samsung · Tuya 4766",
+              "value": "Tuya 4766 · 4766"
+            },
+            {
+              "key": "Samsung · Tuya 4850",
+              "value": "Tuya 4850 · 4850"
+            },
+            {
+              "key": "Samsung · Tuya 6996",
+              "value": "Tuya 6996 · 6996"
+            },
+            {
+              "key": "Samsung · Tuya 7202",
+              "value": "Tuya 7202 · 7202"
+            },
+            {
+              "key": "Samsung · Tuya 11842",
+              "value": "Tuya 11842 · 11842"
+            },
+            {
+              "key": "Samsung · Tuya 1000077",
+              "value": "Tuya 1000077 · 1000077"
+            },
+            {
+              "key": "Samsung · Tuya 1000079",
+              "value": "Tuya 1000079 · 1000079"
+            },
+            {
+              "key": "Samsung · Tuya 1000081",
+              "value": "Tuya 1000081 · 1000081"
+            },
+            {
+              "key": "Samsung · Tuya 1000083",
+              "value": "Tuya 1000083 · 1000083"
+            },
+            {
+              "key": "Samsung · Tuya 411141604",
+              "value": "Tuya 411141604 · 411141604"
+            },
+            {
+              "key": "Samsung · Tuya 1553000068",
+              "value": "Tuya 1553000068 · 1553000068"
+            },
+            {
+              "key": "Winia · Tuya 2616",
+              "value": "Tuya 2616 · 2616"
+            },
+            {
+              "key": "Winia · Tuya 4895",
+              "value": "Tuya 4895 · 4895"
+            },
+            {
+              "key": "Winia · Tuya 11217",
+              "value": "Tuya 11217 · 11217"
+            },
+            {
+              "key": "Winia · Tuya 103410040",
+              "value": "Tuya 103410040 · 103410040"
+            },
+            {
+              "key": "Winia · Tuya 103410728",
+              "value": "Tuya 103410728 · 103410728"
+            },
+            {
+              "key": "Winia · Tuya 103410766",
+              "value": "Tuya 103410766 · 103410766"
             }
           ],
           "argumentType": "string",
@@ -177,120 +357,292 @@
           "value": "candidate.value",
           "alternatives": [
             {
-              "key": "Carrier · Unknown · 1160",
-              "value": "호환 코드 · 1160"
+              "key": "Carrier · Tuya 2132",
+              "value": "Tuya 2132 · 2132"
             },
             {
-              "key": "Carrier · 40GKX-024RB · 1161",
-              "value": "40GKX-024RB · 1161"
+              "key": "Carrier · Tuya 2607",
+              "value": "Tuya 2607 · 2607"
             },
             {
-              "key": "Carrier · 42TVGS024-703 · 1162",
-              "value": "42TVGS024-703 · 1162"
+              "key": "Carrier/LG/Samsung · Tuya 2807",
+              "value": "Tuya 2807 · 2807"
             },
             {
-              "key": "Carrier · 42LUVH025N-1 · 1164",
-              "value": "42LUVH025N-1 · 1164"
+              "key": "Carrier · Tuya 3392",
+              "value": "Tuya 3392 · 3392"
             },
             {
-              "key": "Carrier · 42P250HX, 53P250HX · 1165",
-              "value": "42P250HX, 53P250HX · 1165"
+              "key": "Carrier · Tuya 3402",
+              "value": "Tuya 3402 · 3402"
             },
             {
-              "key": "Carrier · CS-A121N · 1166",
-              "value": "CS-A121N · 1166"
+              "key": "Carrier · Tuya 3412",
+              "value": "Tuya 3412 · 3412"
+            },
+            {
+              "key": "Carrier · Tuya 3442",
+              "value": "Tuya 3442 · 3442"
+            },
+            {
+              "key": "Carrier · Tuya 3457",
+              "value": "Tuya 3457 · 3457"
+            },
+            {
+              "key": "Carrier · Tuya 3472",
+              "value": "Tuya 3472 · 3472"
+            },
+            {
+              "key": "Carrier · Tuya 5163",
+              "value": "Tuya 5163 · 5163"
+            },
+            {
+              "key": "Carrier · Tuya 5214",
+              "value": "Tuya 5214 · 5214"
+            },
+            {
+              "key": "Carrier · Tuya 5215",
+              "value": "Tuya 5215 · 5215"
+            },
+            {
+              "key": "Carrier · Tuya 5243",
+              "value": "Tuya 5243 · 5243"
+            },
+            {
+              "key": "Carrier · Tuya 5244",
+              "value": "Tuya 5244 · 5244"
+            },
+            {
+              "key": "Carrier · Tuya 5245",
+              "value": "Tuya 5245 · 5245"
+            },
+            {
+              "key": "Carrier · Tuya 5246",
+              "value": "Tuya 5246 · 5246"
+            },
+            {
+              "key": "Carrier · Tuya 6883",
+              "value": "Tuya 6883 · 6883"
+            },
+            {
+              "key": "Carrier · Tuya 7248",
+              "value": "Tuya 7248 · 7248"
+            },
+            {
+              "key": "Carrier · Tuya 7409",
+              "value": "Tuya 7409 · 7409"
+            },
+            {
+              "key": "Carrier · Tuya 7411",
+              "value": "Tuya 7411 · 7411"
+            },
+            {
+              "key": "Carrier · Tuya 7711",
+              "value": "Tuya 7711 · 7711"
+            },
+            {
+              "key": "Carrier · Tuya 10727",
+              "value": "Tuya 10727 · 10727"
+            },
+            {
+              "key": "Carrier · Tuya 11272",
+              "value": "Tuya 11272 · 11272"
+            },
+            {
+              "key": "Carrier · Tuya 11707",
+              "value": "Tuya 11707 · 11707"
+            },
+            {
+              "key": "Carrier · Tuya 12265",
+              "value": "Tuya 12265 · 12265"
+            },
+            {
+              "key": "Carrier · Tuya 1000048",
+              "value": "Tuya 1000048 · 1000048"
             },
             {
               "key": "Carrier · Tuya 104800501",
               "value": "기존 Carrier 리모컨"
             },
             {
-              "key": "LG · R09AWN, R24AWN, E09EK · 1060",
-              "value": "R09AWN, R24AWN, E09EK · 1060"
+              "key": "Carrier · Tuya 410051847",
+              "value": "Tuya 410051847 · 410051847"
             },
             {
-              "key": "LG · Unknown · 1061",
-              "value": "호환 코드 · 1061"
+              "key": "Carrier · Tuya 414428148",
+              "value": "Tuya 414428148 · 414428148"
             },
             {
-              "key": "LG · P12RK, A06AWV · 1062",
-              "value": "P12RK, A06AWV · 1062"
+              "key": "Carrier · Tuya 470410477",
+              "value": "Tuya 470410477 · 470410477"
             },
             {
-              "key": "LG · P12EP1 · 1063",
-              "value": "P12EP1 · 1063"
+              "key": "Carrier · Tuya 497485387",
+              "value": "Tuya 497485387 · 497485387"
             },
             {
-              "key": "LG · Unknown · 1064",
-              "value": "호환 코드 · 1064"
+              "key": "Carrier · Tuya 1553000035",
+              "value": "Tuya 1553000035 · 1553000035"
             },
             {
-              "key": "LG · LG080EC, LG100EC, LG150EC, LG200EC · 1065",
-              "value": "LG080EC, LG100EC, LG150EC, LG200EC · 1065"
+              "key": "Carrier · Tuya 1553000036",
+              "value": "Tuya 1553000036 · 1553000036"
             },
             {
-              "key": "LG · LA090HYV, LA120HYV, LAN090HYV, LAN120HYV · 1066",
-              "value": "LA090HYV, LA120HYV, LAN090HYV, LAN120HYV · 1066"
+              "key": "Carrier · Tuya 1553000037",
+              "value": "Tuya 1553000037 · 1553000037"
             },
             {
-              "key": "LG · W12TCM · 1067",
-              "value": "W12TCM · 1067"
+              "key": "Carrier · Tuya 1553000038",
+              "value": "Tuya 1553000038 · 1553000038"
             },
             {
-              "key": "LG · AKB74295303 · 1068",
-              "value": "AKB74295303 · 1068"
+              "key": "Carrier · Tuya 1553000039",
+              "value": "Tuya 1553000039 · 1553000039"
             },
             {
-              "key": "LG · AKB74295304 · 1069",
-              "value": "AKB74295304 · 1069"
+              "key": "LG · Tuya 2847",
+              "value": "Tuya 2847 · 2847"
             },
             {
-              "key": "LG · PC09SQ NSJ · 1070",
-              "value": "PC09SQ NSJ · 1070"
+              "key": "LG · Tuya 3482",
+              "value": "Tuya 3482 · 3482"
             },
             {
-              "key": "LG · RAS-32CNH2 · 1083",
-              "value": "RAS-32CNH2 · 1083"
+              "key": "LG · Tuya 3532",
+              "value": "Tuya 3532 · 3532"
             },
             {
-              "key": "LG · P12RK · 7062",
-              "value": "P12RK · 7062"
+              "key": "LG · Tuya 3592",
+              "value": "Tuya 3592 · 3592"
             },
             {
-              "key": "LG · LG080EC, LG100EC, LG150EC, LG200EC · 7065",
-              "value": "LG080EC, LG100EC, LG150EC, LG200EC · 7065"
+              "key": "LG · Tuya 5139",
+              "value": "Tuya 5139 · 5139"
             },
             {
-              "key": "Samsung · Unknown · 1400",
-              "value": "호환 코드 · 1400"
+              "key": "LG · Tuya 5560",
+              "value": "Tuya 5560 · 5560"
             },
             {
-              "key": "Samsung · AR**HSF/JFS** · 1401",
-              "value": "AR**HSF/JFS** · 1401"
+              "key": "LG · Tuya 5671",
+              "value": "Tuya 5671 · 5671"
             },
             {
-              "key": "Samsung · AR**TSHGAWK · 1402",
-              "value": "AR**TSHGAWK · 1402"
+              "key": "LG · Tuya 7626",
+              "value": "Tuya 7626 · 7626"
             },
             {
-              "key": "Samsung · AR**TXHZ*** · 1403",
-              "value": "AR**TXHZ*** · 1403"
+              "key": "LG · Tuya 11292",
+              "value": "Tuya 11292 · 11292"
             },
             {
-              "key": "Samsung · AR**TSHZ**** · 1404",
-              "value": "AR**TSHZ**** · 1404"
+              "key": "LG · Tuya 1000047",
+              "value": "Tuya 1000047 · 1000047"
             },
             {
-              "key": "Samsung · AR**TSHQBURN · 1405",
-              "value": "AR**TSHQBURN · 1405"
+              "key": "LG · Tuya 416051031",
+              "value": "Tuya 416051031 · 416051031"
             },
             {
-              "key": "Samsung · AR**NXWS*** · 1407",
-              "value": "AR**NXWS*** · 1407"
+              "key": "LG · Tuya 1553000064",
+              "value": "Tuya 1553000064 · 1553000064"
             },
             {
-              "key": "Samsung · AR18HSFSAWKNEU Ver.01 · 1408",
-              "value": "AR18HSFSAWKNEU Ver.01 · 1408"
+              "key": "LG · Tuya 1553000065",
+              "value": "Tuya 1553000065 · 1553000065"
+            },
+            {
+              "key": "LG · Tuya 1553000066",
+              "value": "Tuya 1553000066 · 1553000066"
+            },
+            {
+              "key": "LG · Tuya 1553000067",
+              "value": "Tuya 1553000067 · 1553000067"
+            },
+            {
+              "key": "Samsung · Tuya 3227",
+              "value": "Tuya 3227 · 3227"
+            },
+            {
+              "key": "Samsung · Tuya 3237",
+              "value": "Tuya 3237 · 3237"
+            },
+            {
+              "key": "Samsung · Tuya 4736",
+              "value": "Tuya 4736 · 4736"
+            },
+            {
+              "key": "Samsung · Tuya 4745",
+              "value": "Tuya 4745 · 4745"
+            },
+            {
+              "key": "Samsung · Tuya 4766",
+              "value": "Tuya 4766 · 4766"
+            },
+            {
+              "key": "Samsung · Tuya 4850",
+              "value": "Tuya 4850 · 4850"
+            },
+            {
+              "key": "Samsung · Tuya 6996",
+              "value": "Tuya 6996 · 6996"
+            },
+            {
+              "key": "Samsung · Tuya 7202",
+              "value": "Tuya 7202 · 7202"
+            },
+            {
+              "key": "Samsung · Tuya 11842",
+              "value": "Tuya 11842 · 11842"
+            },
+            {
+              "key": "Samsung · Tuya 1000077",
+              "value": "Tuya 1000077 · 1000077"
+            },
+            {
+              "key": "Samsung · Tuya 1000079",
+              "value": "Tuya 1000079 · 1000079"
+            },
+            {
+              "key": "Samsung · Tuya 1000081",
+              "value": "Tuya 1000081 · 1000081"
+            },
+            {
+              "key": "Samsung · Tuya 1000083",
+              "value": "Tuya 1000083 · 1000083"
+            },
+            {
+              "key": "Samsung · Tuya 411141604",
+              "value": "Tuya 411141604 · 411141604"
+            },
+            {
+              "key": "Samsung · Tuya 1553000068",
+              "value": "Tuya 1553000068 · 1553000068"
+            },
+            {
+              "key": "Winia · Tuya 2616",
+              "value": "Tuya 2616 · 2616"
+            },
+            {
+              "key": "Winia · Tuya 4895",
+              "value": "Tuya 4895 · 4895"
+            },
+            {
+              "key": "Winia · Tuya 11217",
+              "value": "Tuya 11217 · 11217"
+            },
+            {
+              "key": "Winia · Tuya 103410040",
+              "value": "Tuya 103410040 · 103410040"
+            },
+            {
+              "key": "Winia · Tuya 103410728",
+              "value": "Tuya 103410728 · 103410728"
+            },
+            {
+              "key": "Winia · Tuya 103410766",
+              "value": "Tuya 103410766 · 103410766"
             }
           ]
         }

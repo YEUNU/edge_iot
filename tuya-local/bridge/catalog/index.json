@@ -1,297 +1,929 @@
 {
   "profiles": [
     {
-      "remote_index": 1060,
-      "manufacturer": "LG",
-      "name": "LG · R09AWN, R24AWN, E09EK · 1060",
-      "models": [
-        "R09AWN",
-        "R24AWN",
-        "E09EK"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1061,
-      "manufacturer": "LG",
-      "name": "LG · Unknown · 1061",
-      "models": [
-        "Unknown"
-      ],
-      "excluded_states": 2,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1062,
-      "manufacturer": "LG",
-      "name": "LG · P12RK, A06AWV · 1062",
-      "models": [
-        "P12RK",
-        "A06AWV"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1063,
-      "manufacturer": "LG",
-      "name": "LG · P12EP1 · 1063",
-      "models": [
-        "P12EP1"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1064,
-      "manufacturer": "LG",
-      "name": "LG · Unknown · 1064",
-      "models": [
-        "Unknown"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1065,
-      "manufacturer": "LG",
-      "name": "LG · LG080EC, LG100EC, LG150EC, LG200EC · 1065",
-      "models": [
-        "LG080EC",
-        "LG100EC",
-        "LG150EC",
-        "LG200EC"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1066,
-      "manufacturer": "LG",
-      "name": "LG · LA090HYV, LA120HYV, LAN090HYV, LAN120HYV · 1066",
-      "models": [
-        "LA090HYV",
-        "LA120HYV",
-        "LAN090HYV",
-        "LAN120HYV"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1067,
-      "manufacturer": "LG",
-      "name": "LG · W12TCM · 1067",
-      "models": [
-        "W12TCM"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1068,
-      "manufacturer": "LG",
-      "name": "LG · AKB74295303 · 1068",
-      "models": [
-        "AKB74295303"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1069,
-      "manufacturer": "LG",
-      "name": "LG · AKB74295304 · 1069",
-      "models": [
-        "AKB74295304"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1070,
-      "manufacturer": "LG",
-      "name": "LG · PC09SQ NSJ · 1070",
-      "models": [
-        "PC09SQ NSJ"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1083,
-      "manufacturer": "LG",
-      "name": "LG · RAS-32CNH2 · 1083",
-      "models": [
-        "RAS-32CNH2"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1160,
+      "remote_index": 2132,
       "manufacturer": "Carrier",
-      "name": "Carrier · Unknown · 1160",
-      "models": [
-        "Unknown"
+      "brands": [
+        "Carrier"
       ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
+      "name": "Carrier · Tuya 2132",
+      "models": [
+        "Tuya 2132"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
     },
     {
-      "remote_index": 1161,
+      "remote_index": 2607,
       "manufacturer": "Carrier",
-      "name": "Carrier · 40GKX-024RB · 1161",
-      "models": [
-        "40GKX-024RB"
+      "brands": [
+        "Carrier"
       ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
+      "name": "Carrier · Tuya 2607",
+      "models": [
+        "Tuya 2607"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
     },
     {
-      "remote_index": 1162,
+      "remote_index": 2616,
+      "manufacturer": "Winia",
+      "brands": [
+        "Winia"
+      ],
+      "name": "Winia · Tuya 2616",
+      "models": [
+        "Tuya 2616"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 2807,
       "manufacturer": "Carrier",
-      "name": "Carrier · 42TVGS024-703 · 1162",
-      "models": [
-        "42TVGS024-703"
+      "brands": [
+        "Carrier",
+        "LG",
+        "Samsung"
       ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
+      "name": "Carrier/LG/Samsung · Tuya 2807",
+      "models": [
+        "Tuya 2807"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
     },
     {
-      "remote_index": 1164,
-      "manufacturer": "Carrier",
-      "name": "Carrier · 42LUVH025N-1 · 1164",
-      "models": [
-        "42LUVH025N-1"
-      ],
-      "excluded_states": 1,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1165,
-      "manufacturer": "Carrier",
-      "name": "Carrier · 42P250HX, 53P250HX · 1165",
-      "models": [
-        "42P250HX",
-        "53P250HX"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1166,
-      "manufacturer": "Carrier",
-      "name": "Carrier · CS-A121N · 1166",
-      "models": [
-        "CS-A121N"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1400,
-      "manufacturer": "Samsung",
-      "name": "Samsung · Unknown · 1400",
-      "models": [
-        "Unknown"
-      ],
-      "excluded_states": 2,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1401,
-      "manufacturer": "Samsung",
-      "name": "Samsung · AR**HSF/JFS** · 1401",
-      "models": [
-        "AR**HSF/JFS**"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1402,
-      "manufacturer": "Samsung",
-      "name": "Samsung · AR**TSHGAWK · 1402",
-      "models": [
-        "AR**TSHGAWK"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1403,
-      "manufacturer": "Samsung",
-      "name": "Samsung · AR**TXHZ*** · 1403",
-      "models": [
-        "AR**TXHZ***"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1404,
-      "manufacturer": "Samsung",
-      "name": "Samsung · AR**TSHZ**** · 1404",
-      "models": [
-        "AR**TSHZ****"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1405,
-      "manufacturer": "Samsung",
-      "name": "Samsung · AR**TSHQBURN · 1405",
-      "models": [
-        "AR**TSHQBURN"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1407,
-      "manufacturer": "Samsung",
-      "name": "Samsung · AR**NXWS*** · 1407",
-      "models": [
-        "AR**NXWS***"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 1408,
-      "manufacturer": "Samsung",
-      "name": "Samsung · AR18HSFSAWKNEU Ver.01 · 1408",
-      "models": [
-        "AR18HSFSAWKNEU Ver.01"
-      ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
-    },
-    {
-      "remote_index": 7062,
+      "remote_index": 2847,
       "manufacturer": "LG",
-      "name": "LG · P12RK · 7062",
-      "models": [
-        "P12RK"
+      "brands": [
+        "LG"
       ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
+      "name": "LG · Tuya 2847",
+      "models": [
+        "Tuya 2847"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
     },
     {
-      "remote_index": 7065,
-      "manufacturer": "LG",
-      "name": "LG · LG080EC, LG100EC, LG150EC, LG200EC · 7065",
-      "models": [
-        "LG080EC",
-        "LG100EC",
-        "LG150EC",
-        "LG200EC"
+      "remote_index": 3227,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
       ],
-      "excluded_states": 0,
-      "verification": "community codes; appliance test required"
+      "name": "Samsung · Tuya 3227",
+      "models": [
+        "Tuya 3227"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 3237,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 3237",
+      "models": [
+        "Tuya 3237"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 3392,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 3392",
+      "models": [
+        "Tuya 3392"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 3402,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 3402",
+      "models": [
+        "Tuya 3402"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 3412,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 3412",
+      "models": [
+        "Tuya 3412"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 3442,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 3442",
+      "models": [
+        "Tuya 3442"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 3457,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 3457",
+      "models": [
+        "Tuya 3457"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 3472,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 3472",
+      "models": [
+        "Tuya 3472"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 3482,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 3482",
+      "models": [
+        "Tuya 3482"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 3532,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 3532",
+      "models": [
+        "Tuya 3532"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 3592,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 3592",
+      "models": [
+        "Tuya 3592"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 4736,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 4736",
+      "models": [
+        "Tuya 4736"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 4745,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 4745",
+      "models": [
+        "Tuya 4745"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 4766,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 4766",
+      "models": [
+        "Tuya 4766"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 4850,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 4850",
+      "models": [
+        "Tuya 4850"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 4895,
+      "manufacturer": "Winia",
+      "brands": [
+        "Winia"
+      ],
+      "name": "Winia · Tuya 4895",
+      "models": [
+        "Tuya 4895"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 5139,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 5139",
+      "models": [
+        "Tuya 5139"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 5163,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 5163",
+      "models": [
+        "Tuya 5163"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 5214,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 5214",
+      "models": [
+        "Tuya 5214"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 5215,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 5215",
+      "models": [
+        "Tuya 5215"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 5243,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 5243",
+      "models": [
+        "Tuya 5243"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 5244,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 5244",
+      "models": [
+        "Tuya 5244"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 5245,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 5245",
+      "models": [
+        "Tuya 5245"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 5246,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 5246",
+      "models": [
+        "Tuya 5246"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 5560,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 5560",
+      "models": [
+        "Tuya 5560"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 5671,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 5671",
+      "models": [
+        "Tuya 5671"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 6883,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 6883",
+      "models": [
+        "Tuya 6883"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 6996,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 6996",
+      "models": [
+        "Tuya 6996"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 7202,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 7202",
+      "models": [
+        "Tuya 7202"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 7248,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 7248",
+      "models": [
+        "Tuya 7248"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 7409,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 7409",
+      "models": [
+        "Tuya 7409"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 7411,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 7411",
+      "models": [
+        "Tuya 7411"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 7626,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 7626",
+      "models": [
+        "Tuya 7626"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 7711,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 7711",
+      "models": [
+        "Tuya 7711"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 10727,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 10727",
+      "models": [
+        "Tuya 10727"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 11217,
+      "manufacturer": "Winia",
+      "brands": [
+        "Winia"
+      ],
+      "name": "Winia · Tuya 11217",
+      "models": [
+        "Tuya 11217"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 11272,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 11272",
+      "models": [
+        "Tuya 11272"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 11292,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 11292",
+      "models": [
+        "Tuya 11292"
+      ],
+      "control_style": "buttons",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 11707,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 11707",
+      "models": [
+        "Tuya 11707"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 11842,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 11842",
+      "models": [
+        "Tuya 11842"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 12265,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 12265",
+      "models": [
+        "Tuya 12265"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1000047,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 1000047",
+      "models": [
+        "Tuya 1000047"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1000048,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 1000048",
+      "models": [
+        "Tuya 1000048"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1000077,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 1000077",
+      "models": [
+        "Tuya 1000077"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1000079,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 1000079",
+      "models": [
+        "Tuya 1000079"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1000081,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 1000081",
+      "models": [
+        "Tuya 1000081"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1000083,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 1000083",
+      "models": [
+        "Tuya 1000083"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 103410040,
+      "manufacturer": "Winia",
+      "brands": [
+        "Winia"
+      ],
+      "name": "Winia · Tuya 103410040",
+      "models": [
+        "Tuya 103410040"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 103410728,
+      "manufacturer": "Winia",
+      "brands": [
+        "Winia"
+      ],
+      "name": "Winia · Tuya 103410728",
+      "models": [
+        "Tuya 103410728"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 103410766,
+      "manufacturer": "Winia",
+      "brands": [
+        "Winia"
+      ],
+      "name": "Winia · Tuya 103410766",
+      "models": [
+        "Tuya 103410766"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 410051847,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 410051847",
+      "models": [
+        "Tuya 410051847"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 411141604,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 411141604",
+      "models": [
+        "Tuya 411141604"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 414428148,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 414428148",
+      "models": [
+        "Tuya 414428148"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 416051031,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 416051031",
+      "models": [
+        "Tuya 416051031"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 470410477,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 470410477",
+      "models": [
+        "Tuya 470410477"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 497485387,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 497485387",
+      "models": [
+        "Tuya 497485387"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1553000035,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 1553000035",
+      "models": [
+        "Tuya 1553000035"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1553000036,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 1553000036",
+      "models": [
+        "Tuya 1553000036"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1553000037,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 1553000037",
+      "models": [
+        "Tuya 1553000037"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1553000038,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 1553000038",
+      "models": [
+        "Tuya 1553000038"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1553000039,
+      "manufacturer": "Carrier",
+      "brands": [
+        "Carrier"
+      ],
+      "name": "Carrier · Tuya 1553000039",
+      "models": [
+        "Tuya 1553000039"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1553000064,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 1553000064",
+      "models": [
+        "Tuya 1553000064"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1553000065,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 1553000065",
+      "models": [
+        "Tuya 1553000065"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1553000066,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 1553000066",
+      "models": [
+        "Tuya 1553000066"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1553000067,
+      "manufacturer": "LG",
+      "brands": [
+        "LG"
+      ],
+      "name": "LG · Tuya 1553000067",
+      "models": [
+        "Tuya 1553000067"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
+    },
+    {
+      "remote_index": 1553000068,
+      "manufacturer": "Samsung",
+      "brands": [
+        "Samsung"
+      ],
+      "name": "Samsung · Tuya 1553000068",
+      "models": [
+        "Tuya 1553000068"
+      ],
+      "control_style": "state",
+      "verification": "Exact Tuya Publish payloads; appliance compatibility requires user test"
     },
     {
       "remote_index": 104800501,
@@ -303,11 +935,10 @@
       "verification": "Exact Tuya command logs, 107/107 states matched by timestamp; IR receipt unobservable"
     }
   ],
-  "excluded": [],
+  "complete": true,
   "source": {
-    "url": "https://github.com/smartHomeHub/SmartIR",
-    "commit": "e4df2957ad915536f41ffb39daa96886d7cfe040",
-    "license": "MIT",
-    "carrier": "Tuya user-authorized export, 107 on states + off"
+    "kind": "Tuya user-authorized Publish log export",
+    "category_id": 5,
+    "legacy": "Existing Carrier 104800501, 107 on states and off"
   }
 }

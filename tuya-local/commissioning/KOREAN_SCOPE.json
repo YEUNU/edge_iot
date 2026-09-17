@@ -7968,5 +7968,6 @@
       "power_off",
       "power_on"
     ]
-  }
+  },
+  "status": "local_raw_export_complete"
 }

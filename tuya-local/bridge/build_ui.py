@@ -6,7 +6,6 @@ x=json.loads((directory/'index.json').read_text())
 carrier=json.loads(gzip.decompress((directory/'104800501.json.gz').read_bytes()))
 if not any(p['remote_index']==104800501 for p in x['profiles']):
  x['profiles'].append({k:v for k,v in carrier.items() if k not in ('codes','default_state')})
-x.setdefault('source',{'url':'https://github.com/smartHomeHub/SmartIR','commit':'e4df2957ad915536f41ffb39daa96886d7cfe040','license':'MIT','carrier':'Tuya user-authorized export, 107 on states + off'})
 (directory/'index.json').write_text(json.dumps(x,ensure_ascii=False,indent=2)+'\n')
 allowed_brands = {'Samsung', 'LG', 'Carrier', 'Winia'}
 profiles=sorted(x['profiles'],key=lambda p:(p['manufacturer'],p['remote_index']))

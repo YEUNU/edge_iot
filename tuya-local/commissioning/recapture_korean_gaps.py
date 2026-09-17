@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Recapture unresolved keys after the main export has finished.
 
-Uses a separate exclusive journal per attempt and a two-second quiet interval
+Uses a separate exclusive journal per attempt and a five-second quiet interval
 between responses and new requests. Never run alongside the primary exporter.
 """
 import argparse
+import fcntl
 import json
 import os
 import time
@@ -19,6 +20,12 @@ def unresolved(data):
     results = {r['job'] for r in records if r['phase']=='result'}
     if starts != set(range(len(jobs))) or results != starts:
         raise ValueError('The primary export must finish before recapturing gaps')
+    for path in data.glob('korean-recapture-*.jsonl'):
+        attempt = [json.loads(s) for s in path.read_text().splitlines()]
+        began = {r['job'] for r in attempt if r['phase']=='start'}
+        ended = {r['job'] for r in attempt if r['phase']=='result'}
+        if began != ended:
+            raise ValueError('Uncertain previous recapture requires inspection')
     report = json.loads((data/'korean-captured.json').read_text())
     missing = sorted({r['job'] for r in report['missing']})
     if any(n < 0 or n >= len(jobs) for n in missing):
@@ -33,6 +40,8 @@ def main():
     parser.add_argument('--hub-covered', action='store_true')
     parser.add_argument('--limit', type=int, default=0)
     args = parser.parse_args()
+    lock = os.open(args.data/'korean-export.lock', os.O_CREAT | os.O_RDWR, 0o600)
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     jobs = unresolved(args.data)
     if args.limit: jobs=jobs[:args.limit]
     print('Unresolved keys:',len(jobs),flush=True)
@@ -56,7 +65,9 @@ def main():
                    'error_message':response.get('msg')})
             print('%d/%d job=%d accepted=%s' % (position,len(jobs),number,accepted),flush=True)
             if not accepted: raise RuntimeError('Rejected key; inspect before another attempt')
-            time.sleep(2)
+            time.sleep(5)
+            if position % 20 == 0:
+                time.sleep(15)
 
 
 if __name__=='__main__':main()

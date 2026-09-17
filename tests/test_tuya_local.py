@@ -121,17 +121,6 @@ class HttpTests(unittest.TestCase):
 
 
 class CatalogTests(unittest.TestCase):
-    def test_literal_encoder_preserves_leader_and_long_gap(self):
-        import base64
-        from import_catalog import convert_command, pulses
-        from tinytuya.Contrib import IRRemoteControlDevice as IR
-        raw=bytes([0,1,40,140,22,53,22,17,22,53,22,17,22,0,13,5])
-        packet=base64.b64encode(bytes([0x26,0])+len(raw).to_bytes(2,'little')+raw).decode()
-        original=pulses(packet,'Broadlink');encoded=convert_command(packet,'Broadlink')
-        decoded=IR.head_key_to_pulses(encoded['head'],encoded['key1'][1:])
-        self.assertEqual(len(original),len(decoded))
-        for a,b in zip(original,decoded):self.assertLessEqual(abs(a-b),max(35,a*.12))
-        self.assertGreater(decoded[0],8000);self.assertGreater(decoded[-1],100000)
     def test_catalog_loads_without_cloud_and_selects_lazily(self):
         import gzip
         from controller import validate
@@ -144,6 +133,11 @@ class CatalogTests(unittest.TestCase):
             result=c.status(str(p['remote_index']))
             self.assertLess(len(json.dumps(result)),16384)
             self.assertEqual(result['state'],{})
+            if data.get('control_style') == 'buttons':
+                self.assertTrue(result['supported_keys'])
+                with self.assertRaises(ValueError):
+                    c.command({'power':True},str(p['remote_index']))
+                continue
             self.assertTrue(c.command({'power':True},str(p['remote_index']))['state']['power'])
             self.assertEqual(c.command({'power':False},str(p['remote_index']))['state'],{'power':False})
 

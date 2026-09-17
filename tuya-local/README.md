@@ -8,7 +8,7 @@ SmartThings Edge → LAN HTTP 브리지 → Tuya IR 허브 → 적외선 에어�
 
 대상은 이 IR 허브에 Tuya가 제공하는 삼성 16개, LG 16개, 캐리어 35개, 위니아 6개 코드셋입니다. 브랜드 사이의 공유 항목을 합치면 **71개 코드셋, 7,723개 키**입니다. 기존에 실제 작동을 확인한 Carrier `104800501`도 유지합니다. 그 외 브랜드는 새 배포에서 제외합니다.
 
-**4개 브랜드 전체 수집·배포는 진행 중입니다.** `commissioning/KOREAN_SCOPE.json`은 목표 목록이며 완료 증거가 아닙니다. 최종 배포는 모든 원문 키와 브랜드 연결을 검증한 뒤에만 허용합니다. 이전에 설치한 버전과 작업 중인 카탈로그를 구분해야 합니다. [수집 절차](commissioning/README.md)와 [검증 기록](TEST_RESULTS.md)을 참고하세요.
+**4개 브랜드의 71개 코드셋·7,723개 키 원문 확보와 대조가 완료됐습니다.** 기존 Carrier를 합쳐 72개 코드셋을 포함합니다. 최종 배포는 모든 원문 키와 브랜드 연결 검사를 통과해야 합니다. 브리지·드라이버 배포는 완료됐고, 새 UI의 휴대폰 화면 재검증은 남아 있습니다. [수집 절차](commissioning/README.md)와 [검증 기록](TEST_RESULTS.md)을 참고하세요.
 
 기존 Carrier는 냉방/난방 18–30°C × 풍량 4종, 자동/송풍/제습 각 1종 = 107개 켜짐 상태와 전원 끄기를 포함합니다. **107은 기종 수가 아니라 이 리모컨 하나의 설정 조합 수입니다.**
 
@@ -73,12 +73,10 @@ python3 -m venv .venv
 
 ## 코드와 UI 재생성
 
-공개 데이터 출처: https://github.com/smartHomeHub/SmartIR
-고정 커밋: `e4df2957ad915536f41ffb39daa96886d7cfe040`, MIT 라이선스는 `bridge/catalog/LICENSE.upstream`에 보존했습니다.
-해당 프로젝트와 제휴한 제품이 아닙니다. 이 저장소는 변환된 코드 데이터와 자체 브리지/드라이버를 제공합니다.
+현재 카탈로그는 Tuya에서 사용자 허가로 송신한 Publish 원문을 보존합니다. 다른 공개 라이브러리의 신호를 변환하는 코드는 제거했습니다. `head`, `key1`뿐 아니라 `key2` 등 추가 프레임도 그대로 전송합니다.
 
 ```sh
-python3 bridge/import_catalog.py /path/to/pinned-source bridge/catalog
+python3 commissioning/verify_korean_release.py bridge/catalog --require-existing
 python3 bridge/build_ui.py
 python3 bridge/build_temperature_ui.py
 python3 bridge/build_remote_ui.py
@@ -86,11 +84,7 @@ python3 bridge/deploy_ui.py
 smartthings edge:drivers:package . --channel YOUR_CHANNEL --hub YOUR_HUB
 ```
 
-`deploy_ui.py`는 로그인한 계정의 capability/presentation을 생성·갱신하고 프로필의 `vid`를 저장합니다.
-다른 계정에 배포할 때는 프로필, 생성기, Lua와 연결 스크립트의 `earthpanel38939`를 자신의 namespace로 변경하세요.
-일상 화면은 기종의 온도 범위에 맞는 프로필을 사용하며 루틴에는 표준 전원·온도·모드·풍량 capability를 유지합니다.
-변환기는 펄스 개수와 각 타이밍을 왕복 검사합니다. 최대 오차 허용은 35µs 또는 12%이며 실제 변환 클러스터링은 3.5%입니다.
-신호가 바뀌는 원본을 조용히 수용하지 않습니다. 긴 종료 간격도 보존합니다.
+`deploy_ui.py`는 로그인한 계정의 capability/presentation을 생성·갱신하고 프로필의 `vid`를 저장합니다. 다른 계정에 배포할 때는 프로필, 생성기, Lua와 연결 스크립트의 `earthpanel38939`를 자신의 namespace로 변경하세요. 일상 화면은 9종 온도 범위와 버튼형 기종 전용 프로필을 사용합니다. 상태 조합형 기종은 표준 전원·온도·모드·풍량 루틴을 유지합니다. 버튼형 12개 코드셋은 명시적 버튼 전송을 사용합니다.
 
 ## 검증
 
