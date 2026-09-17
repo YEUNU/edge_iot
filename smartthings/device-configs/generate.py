@@ -41,7 +41,10 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
             continue
         item = entry(cap)
         if cap == NS + 'airPurifierFavoriteLevel':
-            item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '{{i18n.label}}'}]
+            item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '수동 풍량'}]
+            item['visibleCondition'] = {'capability': 'mode', 'version': 1,
+                'component': 'main', 'value': 'mode.value', 'operator': 'EQUALS',
+                'operand': '즐겨찾기'}
         if cap == NS + 'latestAlert':
             item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '최근 메시지'},
                              {'op': 'replace', 'path': '/1/state/label', 'value': '테스트 보내기'}]
@@ -102,6 +105,14 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
     for group in groups:
         for item in group:
             cap = item['capability']
+            if is_airp and cap == 'mode':
+                # Preserve the existing mode value for routines; only rename its UI.
+                alternatives = [{'key': key, 'value': label, 'type': 'active'}
+                                for key, label in [('자동', '자동'), ('수면', '수면'), ('즐겨찾기', '수동')]]
+                paths = (['/0/list/command/alternatives', '/0/list/state/alternatives']
+                         if group is rows else ['/0/list/alternatives'])
+                item['patch'].extend({'op': 'replace', 'path': path, 'value': alternatives}
+                                     for path in paths)
             if cap == 'fanOscillationMode':
                 item['values'] = [{'key': 'fanOscillationMode.value', 'enabledValues': ['fixed', 'horizontal']},
                                   {'key': 'setFanOscillationMode', 'enabledValues': ['fixed', 'horizontal']}]
