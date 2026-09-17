@@ -89,8 +89,9 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
                 NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock',
                 NS + 'filterMaintenance', NS + 'latestAlert']
     rows.sort(key=lambda x: priority.index(x['capability']))
-    state_cap = (NS + 'latestAlert' if is_alert else 'fanSpeedPercent' if is_fan else
-                 'fineDustSensor' if is_airp else 'relativeHumidityMeasurement')
+    # Dashboard state drives both the label and active/inactive card styling.
+    # Sensor values remain available while off, so they cannot represent power.
+    state_cap = NS + 'latestAlert' if is_alert else 'switch'
     config = {'type': 'profile', 'dashboard': {'states': [entry(state_cap)],
               'actions': [] if is_alert else [entry('switch')]}, 'detailView': rows,
               'automation': {'conditions': [entry(c) for c in caps if c not in (NS + 'latestAlert', NS + 'filterMaintenance', NS + 'currentHumidity', NS + 'fanOscillationControl')],

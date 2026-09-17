@@ -4,7 +4,7 @@
     "states": [
       {
         "component": "main",
-        "capability": "fineDustSensor",
+        "capability": "switch",
         "version": 1,
         "values": [],
         "patch": []
