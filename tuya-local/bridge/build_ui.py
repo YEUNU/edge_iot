@@ -32,7 +32,9 @@ presentation={'dashboard':{'states':[],'actions':[],'panelItems':[]},'detailView
 def model_label(p):
  if p['remote_index']==104800501:return '기존 Carrier 리모컨'
  models=', '.join(p.get('models',[]))[:65]
- return (models if models and models!='Unknown' else '호환 코드')+' · '+str(p['remote_index'])
+ if not models or models == 'Unknown' or models == 'Tuya '+str(p['remote_index']):
+  return '호환 코드 '+str(p['remote_index'])
+ return models+' · '+str(p['remote_index'])
 for attribute,label,values,command in [('brand','제조사',[{'key':b,'value':brand_labels.get(b,b)} for b in brands],'setBrand'),('candidate','기종',[{'key':p['name'],'value':model_label(p)} for p in profiles],'setCandidate')]:
  model={'command':{'name':command,'alternatives':values,'argumentType':'string'},'state':{'value':attribute+'.value','alternatives':values}}
  if attribute=='candidate':model['command']['supportedValues']='supportedCandidates.value'
