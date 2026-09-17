@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import argparse
 import base64
 import hashlib
-import hmac
 import json
 import logging
 import os
@@ -165,11 +164,6 @@ class XiaomiCloudConnector(ABC):
         return base64.b64encode(hash_object.digest()).decode("utf-8")
 
     @staticmethod
-    def signed_nonce_sec(nonce, ssecurity):
-        hash_object = hashlib.sha256(base64.b64decode(ssecurity) + base64.b64decode(nonce))
-        return base64.b64encode(hash_object.digest()).decode("utf-8")
-
-    @staticmethod
     def generate_nonce(millis):
         nonce_bytes = os.urandom(8) + (int(millis / 60000)).to_bytes(4, byteorder="big")
         return base64.b64encode(nonce_bytes).decode()
@@ -185,15 +179,6 @@ class XiaomiCloudConnector(ABC):
     @staticmethod
     def generate_device_id():
         return "".join(map(lambda i: chr(i), [random.randint(97, 122) for _ in range(6)]))
-
-    @staticmethod
-    def generate_signature(url, signed_nonce, nonce, params):
-        signature_params = [url.split("com")[1], signed_nonce, nonce]
-        for k, v in params.items():
-            signature_params.append(f"{k}={v}")
-        signature_string = "&".join(signature_params)
-        signature = hmac.new(base64.b64decode(signed_nonce), msg=signature_string.encode(), digestmod=hashlib.sha256)
-        return base64.b64encode(signature.digest()).decode()
 
     @staticmethod
     def generate_enc_signature(url, method, signed_nonce, params):
