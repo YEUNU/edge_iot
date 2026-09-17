@@ -51,11 +51,6 @@ local SIID_LOCK = 6
 local PIID_LOCK = 1
 
 local SIID_WARMUP = 7
-local PIID_WARMUP = 3
-
-local SIID_DELAY = 8
-local PIID_DELAY_ON = 1
-local PIID_DELAY_REMAIN = 3
 
 local MODE_LABELS = { [0] = "스마트", [1] = "수면", [2] = "옷 건조" }
 local LABEL_TO_MODE_CODE = { ["스마트"] = 0, ["수면"] = 1, ["옷 건조"] = 2 }
