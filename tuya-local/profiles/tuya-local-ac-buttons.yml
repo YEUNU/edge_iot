@@ -10,3 +10,7 @@ components:
         version: 1
     categories:
       - name: AirConditioner
+
+metadata:
+  mnmn: SmartThingsCommunity
+  vid: 129b243a-6a8e-3c5e-8cb4-08068bac8112

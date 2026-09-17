@@ -180,7 +180,7 @@ print(info and info.model or request_err)
 
 [Tuya 로컬 제어](tuya-local/README.md): 인증된 자동 연결, 스마트싱스 기종 선택·온도·모드·풍량 시험 UI, LAN 브리지. 실행 서비스는 지정한 IR 허브로만 발신 연결을 허용합니다.
 
-삼성·LG·캐리어·위니아의 Tuya 71개 코드셋·7,723개 키 전체를 로컬에서 사용하도록 수집·검증 중입니다. 다른 브랜드는 새 배포에서 제외합니다. 아직 전체 수집·배포 완료를 뜻하지 않으며, [수집 절차와 배포 조건](tuya-local/commissioning/README.md)을 참고하세요.
+삼성·LG·캐리어·위니아의 Tuya 71개 코드셋·7,723개 키 전체의 로컬 송신 원문을 확보·검증했습니다. 기존 Carrier를 합쳐 72개 코드셋을 포함하고 다른 브랜드는 제외합니다. 브리지·드라이버에 배포했으며 새 UI의 휴대폰 화면 재검증은 남아 있습니다. [수집 절차와 배포 조건](tuya-local/commissioning/README.md)을 참고하세요.
 
 Tuya 검증:
 

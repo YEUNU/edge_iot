@@ -139,6 +139,7 @@ request_override=function(p,c)
 end
 link.configure(nil,d)
 library.setBrand(nil,d,{args={brand='Winia'}})
+library.setCandidate(nil,d,{args={candidate='999999'}})
 assert(profile=='tuya-local-ac.setup-buttons.v1','button candidate needs button setup view')
 local raw=driver.capability_handlers['earthpanel38939.acRemoteKeys']
 local count=#calls

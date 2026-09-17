@@ -7,9 +7,12 @@ import gzip
 import json
 import tempfile
 import unittest
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from test_tuya_local import config, FakeDevice, ROOT, ON, Controller, DeviceError
+
+sys.path.insert(0,str(ROOT/'tuya-local/commissioning'))
 
 class ScenarioTests(unittest.TestCase):
     def rich_config(self):
@@ -29,7 +32,24 @@ class ScenarioTests(unittest.TestCase):
                 self.assertEqual(result['state'],entry['state'])
                 self.assertFalse(result['confirmed'])
                 controller.device.sent.clear();count+=1
-        self.assertEqual(count,6826)
+        self.assertEqual(count,7635)
+
+    def test_every_requested_tuya_key_replays_complete_payload(self):
+        from verify_korean_release import verify
+        folder=ROOT/'tuya-local/bridge/catalog'
+        scope=json.loads((ROOT/'tuya-local/commissioning/KOREAN_SCOPE.json').read_text())
+        self.assertEqual(verify(folder,scope,require_existing=True)['keys'],7723)
+        count=0
+        for path in folder.glob('*.json.gz'):
+            profile=json.loads(gzip.decompress(path.read_bytes()))
+            c=Controller(dict(config(),**profile),factory=FakeDevice)
+            for key in profile.get('keys',[]):
+                result=c.command({'key':key['id']})
+                self.assertEqual(json.loads(c.device.sent[-1]['201']),key['command'])
+                self.assertEqual(result['state'],{})
+                self.assertFalse(result['confirmed'])
+                c.device.sent.clear();count+=1
+        self.assertEqual(count,7723)
 
     def test_mode_transition_uses_supported_combination_and_rejects_bad_fan(self):
         c=Controller(self.rich_config(),factory=FakeDevice)
