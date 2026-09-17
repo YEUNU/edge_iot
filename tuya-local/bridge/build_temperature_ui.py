@@ -7,6 +7,9 @@ ranges={};by_id={}
 for p in profiles:
  data=json.loads(gzip.decompress((root/'bridge/catalog'/(str(p['remote_index'])+'.json.gz')).read_bytes()))
  temps=sorted({e['state']['target_temperature'] for e in data['codes'] if e['state']['power']})
+ if not temps:
+  if data.get('control_style')=='buttons': continue
+  raise ValueError('State profile has no temperatures')
  lo,hi=min(temps),max(temps)
  slug='acTemp'+str(lo)+'To'+str(hi)
  ranges[slug]=(lo,hi);by_id[str(p['remote_index'])]=slug

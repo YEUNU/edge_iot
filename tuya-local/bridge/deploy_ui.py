@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 import subprocess
+import sys
 ROOT=Path(__file__).resolve().parents[1]
 NAMESPACE='earthpanel38939'
 
@@ -12,7 +13,9 @@ def run(*args):
     return json.loads(result.stdout)
 
 def main():
-    caps=[ROOT/'capabilities/acLocalLink.json',ROOT/'capabilities/acModelLibrary.json',ROOT/'capabilities/acModeControl.json']
+    subprocess.run([sys.executable, str(ROOT/'commissioning/verify_korean_release.py'),
+                    str(ROOT/'bridge/catalog'), '--require-existing'], check=True)
+    caps=[ROOT/'capabilities/acLocalLink.json',ROOT/'capabilities/acModelLibrary.json',ROOT/'capabilities/acModeControl.json',ROOT/'capabilities/acRemoteKeys.json']
     caps+=sorted(p for p in (ROOT/'capabilities').glob('acTemp*.json') if not p.name.endswith('-presentation.json'))
     for path in caps:
         identifier=NAMESPACE+'.'+path.stem

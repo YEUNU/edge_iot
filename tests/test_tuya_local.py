@@ -147,4 +147,29 @@ class CatalogTests(unittest.TestCase):
             self.assertTrue(c.command({'power':True},str(p['remote_index']))['state']['power'])
             self.assertEqual(c.command({'power':False},str(p['remote_index']))['state'],{'power':False})
 
-if __name__=='__main__': unittest.main()
+
+class ButtonRemoteTests(unittest.TestCase):
+    def test_button_only_remote_never_invents_absolute_state(self):
+        cfg = config()
+        cfg.update(codes=[], default_state={}, control_style='buttons',
+                   keys=[{'id':'power', 'name':'전원 전환', 'command': ON}])
+        c = Controller(cfg, factory=FakeDevice)
+        result = c.command({'key':'power'})
+        self.assertEqual(json.loads(c.device.sent[-1]['201']), ON)
+        self.assertEqual(result['state'], {})
+        self.assertEqual(result['settings'], {})
+        self.assertEqual(result['control_style'], 'buttons')
+        self.assertEqual(result['supported_keys'][0]['id'], 'power')
+        with self.assertRaises(ValueError): c.command({'power':False})
+        with self.assertRaises(ValueError): c.command({'key':'missing'})
+        self.assertEqual(len(c.device.sent), 1)
+
+    def test_extra_button_invalidates_last_absolute_state(self):
+        cfg = config()
+        cfg['keys'] = [{'id':'temperature_up', 'command':ON}]
+        c = Controller(cfg, factory=FakeDevice)
+        c.command({'power':True})
+        self.assertEqual(c.command({'key':'temperature_up'})['state'], {})
+
+if __name__ == '__main__':
+    unittest.main()

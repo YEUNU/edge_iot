@@ -1,0 +1,59 @@
+{
+  "name": "AC Remote Keys",
+  "attributes": {
+    "key": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "setter": "selectKey"
+    },
+    "supportedKeys": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "commands": {
+    "selectKey": {
+      "name": "selectKey",
+      "arguments": [
+        {
+          "name": "key",
+          "optional": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "sendKey": {
+      "name": "sendKey",
+      "arguments": []
+    },
+    "back": {
+      "name": "back",
+      "arguments": []
+    }
+  }
+}

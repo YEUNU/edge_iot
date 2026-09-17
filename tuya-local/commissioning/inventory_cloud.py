@@ -48,6 +48,10 @@ def main():
 
     base = 'infrareds/' + hub + '/categories/5'
     brands = get('brands', base + '/brands')
+    requested = {12, 32, 252, 350}  # Samsung, LG, Carrier, Winia only.
+    brands = [brand for brand in brands if brand['brand_id'] in requested]
+    if {brand['brand_id'] for brand in brands} != requested:
+        raise RuntimeError('A requested brand is missing from the hub inventory')
     inventory = []
     for position, brand in enumerate(brands, 1):
         brand_id = brand['brand_id']

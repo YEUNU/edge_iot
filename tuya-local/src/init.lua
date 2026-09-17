@@ -5,6 +5,7 @@ local catalog = require 'catalog'
 local temperatures = require 'temperature_profiles'
 local library = caps['earthpanel38939.acModelLibrary']
 local connection = caps['earthpanel38939.acLocalLink']
+local remote_keys = caps['earthpanel38939.acRemoteKeys']
 local mode_control = caps['earthpanel38939.acModeControl']
 local function connection_note(device,text)
   if device:supports_capability(connection) then device:emit_event(connection.status(text)) end
@@ -24,12 +25,22 @@ local function in_setup(device)
 end
 local function update_view(device)
   local setup=in_setup(device)
+  local active=catalog[tostring(device:get_field('active_profile') or 104800501)] or {}
+  local candidate=catalog[tostring(device:get_field('candidate_profile') or 104800501)] or {}
   local profile=not Client.valid(credentials(device)) and 'tuya-local-ac.connect.v1'
-    or (setup and 'tuya-local-ac.setup.v1' or ('tuya-local-ac.'..(temperatures.by_id[tostring(device:get_field('active_profile') or 104800501)] or 'acTemp18To30')..'.v1'))
+    or (device:get_field('keys_open') and 'tuya-local-ac.keys.v1')
+    or (setup and (candidate.style=='buttons' and 'tuya-local-ac.setup-buttons.v1' or 'tuya-local-ac.setup.v1'))
+    or (active.style=='buttons' and 'tuya-local-ac.buttons.v1')
+    or ( ('tuya-local-ac.'..(temperatures.by_id[tostring(device:get_field('active_profile') or 104800501)] or 'acTemp18To30')..'.v1'))
   device:try_update_metadata({profile=profile})
 end
 local function selected(device)
   return tostring(device:get_field('active_profile') or device.preferences.remoteIndex or 104800501)
+end
+local function matches_brand(item, brand)
+  if item.brand==brand then return true end
+  for _,name in ipairs(item.brands or {}) do if name==brand then return true end end
+  return false
 end
 local function show_candidate(device, id)
   if not catalog[id] then
@@ -38,10 +49,13 @@ local function show_candidate(device, id)
   local item=catalog[id]
   if not item then note(device,'등록되지 않은 코드셋'); return end
   device:set_field('candidate_profile',id,{persist=true})
+  local brand=device:get_field('candidate_brand')
+  if not brand or not matches_brand(item,brand) then brand=item.brand end
+  device:set_field('candidate_brand',brand,{persist=true})
   local candidates={}
-  for key,p in pairs(catalog) do if p.brand==item.brand then table.insert(candidates,p.name) end end
+  for key,p in pairs(catalog) do if matches_brand(p,brand) then table.insert(candidates,p.name) end end
   table.sort(candidates)
-  library_event(device,library.brand(item.brand,{state_change=true}))
+  library_event(device,library.brand(brand,{state_change=true}))
   library_event(device,library.supportedCandidates(candidates,{state_change=true,visibility={displayed=false}}))
   library_event(device,library.candidate(item.name,{state_change=true}))
 end
@@ -49,6 +63,23 @@ end
 local function apply(device, result, testing)
   local s = result.state
   if type(s) ~= 'table' then device:offline(); return end
+  device:set_field('has_remote_keys', #(result.supported_keys or {}) > 0)
+  if device:supports_capability(remote_keys) then
+    local keys={}
+    for _,key in ipairs(result.supported_keys or {}) do table.insert(keys,key.id) end
+    local chosen=device:get_field('remote_key')
+    local found=false
+    for _,id in ipairs(keys) do if id==chosen then found=true end end
+    if not found then chosen=keys[1] or '' end
+    device:set_field('remote_key',chosen)
+    device:emit_event(remote_keys.supportedKeys(keys,{state_change=true,visibility={displayed=false}}))
+    device:emit_event(remote_keys.key(chosen,{state_change=true}))
+  end
+  if result.control_style=='buttons' or device:get_field('keys_open') then
+    connection_note(device,'버튼 전송 기준 · 실제 상태는 확인할 수 없습니다')
+    device:online()
+    return
+  end
   if type(s.power) == 'boolean' then
     device:emit_event(caps.switch.switch(s.power and 'on' or 'off'))
   end
@@ -154,6 +185,7 @@ local function save_candidate(d,v)
         if not catalog[id] then return end
         v:set_field('active_profile',id,{persist=true})
         v:set_field('setup_closed',true,{persist=true})
+        v:set_field('keys_open',false)
         v:set_field('setup_open',false,{persist=true})
         note(v,'저장했습니다')
         update_view(v)
@@ -164,10 +196,32 @@ local definition={
   discovery=discovery,
   lifecycle_handlers={init=init, added=init, infoChanged=info_changed},
   capability_handlers={
+    [remote_keys.ID]={
+      selectKey=function(_,v,c)
+        v:set_field('remote_key',c.args.key)
+        v:emit_event(remote_keys.key(c.args.key))
+      end,
+      sendKey=function(d,v)
+        local key=v:get_field('remote_key')
+        if key and key~='' then transact(d,v,{key=key}) end
+      end,
+      back=function(d,v)
+        v:set_field('keys_open',false)
+        update_view(v);refresh(d,v)
+      end,
+    },
     [mode_control.ID]={
       setMode=function(d,v,c) transact(d,v,{mode=c.args.mode}) end,
     },
     [connection.ID]={
+      showKeys=function(d,v)
+        if v:get_field('has_remote_keys')==false then
+          connection_note(v,'이 코드셋에는 추가 버튼이 없습니다')
+          return
+        end
+        v:set_field('keys_open',true)
+        update_view(v);refresh(d,v)
+      end,
       ['configure']=function(d,v)
         v:set_field('setup_open',true,{persist=true})
         update_view(v)
@@ -176,6 +230,7 @@ local definition={
         refresh(d,v)
       end,
       ['done']=function(d,v)
+        v:set_field('keys_open',false)
         v:set_field('setup_open',false,{persist=true})
         v:set_field('setup_closed',true,{persist=true})
         update_view(v);refresh(d,v)
@@ -192,11 +247,11 @@ local definition={
     [library.ID]={
       [library.commands.setBrand.NAME]=function(d,v,c)
         local choices={}
-        for id,p in pairs(catalog) do if p.brand==c.args.brand then table.insert(choices,id) end end
+        for id,p in pairs(catalog) do if matches_brand(p,c.args.brand) then table.insert(choices,id) end end
         table.sort(choices)
-        if choices[1] then show_candidate(v,choices[1]); note(v,'각 기능을 시험하세요'); refresh(d,v) end
+        if choices[1] then v:set_field('candidate_brand',c.args.brand,{persist=true}); show_candidate(v,choices[1]); update_view(v); note(v,'각 기능을 시험하세요'); refresh(d,v) end
       end,
-      [library.commands.setCandidate.NAME]=function(d,v,c) show_candidate(v,c.args.candidate); note(v,'각 기능을 시험하세요'); refresh(d,v) end,
+      [library.commands.setCandidate.NAME]=function(d,v,c) show_candidate(v,c.args.candidate); update_view(v); note(v,'각 기능을 시험하세요'); refresh(d,v) end,
       [library.commands.applyCode.NAME]=save_candidate,
     },
     [caps.refresh.ID]={[caps.refresh.commands.refresh.NAME]=refresh},

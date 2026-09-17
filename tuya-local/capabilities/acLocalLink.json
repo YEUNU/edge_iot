@@ -50,6 +50,10 @@
     "done": {
       "name": "done",
       "arguments": []
+    },
+    "showKeys": {
+      "name": "showKeys",
+      "arguments": []
     }
   }
 }
