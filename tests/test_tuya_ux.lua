@@ -52,12 +52,14 @@ assert(fields.bridge_credentials.bridgeToken=='valid','enrollment must save cred
 link.done(nil,d)
 driver.lifecycle_handlers.init(nil,d)
 assert(profile=='tuya-local-ac.acTemp18To30.v1','stored credentials must reconnect without preferences')
+link.showKeys(nil,d)
+assert(profile=='tuya-local-ac.acTemp18To30.v1','no extra keys must not open an empty remote view')
 print('Automatic enrollment and restart checks passed')
 
 local library=driver.capability_handlers['earthpanel38939.acModelLibrary']
 local starting=#calls
 link.configure(nil,d)
-library.setBrand(nil,d,{args={brand='Daikin'}})
+library.setBrand(nil,d,{args={brand='Samsung'}})
 for i=starting+1,#calls do assert(calls[i].changes==nil,'browsing may query capabilities but must not send IR') end
 assert(fields.active_profile=='104800501','browsing must not save a different model')
 local candidate=fields.candidate_profile
@@ -108,7 +110,7 @@ assert(candidate_event,'setup values must recover after asynchronous profile att
 print('Asynchronous profile attachment regression passed')
 
 local original=fields.active_profile
-library.setBrand(nil,d,{args={brand='Daikin'}})
+library.setBrand(nil,d,{args={brand='Samsung'}})
 local trial=tonumber(fields.candidate_profile)
 local h=driver.capability_handlers
 h.thermostatCoolingSetpoint.setCoolingSetpoint(nil,d,{args={setpoint=24}})
@@ -128,3 +130,27 @@ assert(calls[#calls].profile==tonumber(original),'normal controls must return to
 h['earthpanel38939.acModeControl'].setMode(nil,d,{args={mode='dry'}})
 assert(calls[#calls].profile==tonumber(original) and calls[#calls].changes.mode=='dry','daily dropdown must control the saved model')
 print('Full temperature/mode/fan trial routing and cancellation passed')
+
+-- Button-only remotes must not display invented absolute temperatures/power.
+local cat=require 'catalog'
+cat['999999']={brand='Winia',brands={'Winia'},style='buttons',name='Winia test buttons'}
+request_override=function(p,c)
+ return {state={},profile_id=tostring(p.remoteIndex),control_style='buttons',supported_keys={{id='power',name='전원 전환'}},supported_modes={},supported_fans={}}
+end
+link.configure(nil,d)
+library.setBrand(nil,d,{args={brand='Winia'}})
+assert(profile=='tuya-local-ac.setup-buttons.v1','button candidate needs button setup view')
+local raw=driver.capability_handlers['earthpanel38939.acRemoteKeys']
+local count=#calls
+raw.selectKey(nil,d,{args={key='power'}})
+assert(#calls==count,'selecting a remote button must not transmit')
+raw.sendKey(nil,d)
+assert(calls[#calls].profile==999999 and calls[#calls].changes.key=='power','send routes to candidate')
+library.applyCode(nil,d)
+assert(profile=='tuya-local-ac.buttons.v1','button remote must not show absolute controls')
+link.showKeys(nil,d)
+assert(profile=='tuya-local-ac.keys.v1')
+raw.back(nil,d)
+assert(profile=='tuya-local-ac.buttons.v1')
+request_override=nil
+print('Button-only selection, trial, save and back routing passed')

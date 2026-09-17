@@ -32,7 +32,8 @@ def validate(config):
     if type(config.get('remote_index')) is not int or config['remote_index'] < 1:
         raise ValueError('remote_index must identify the installed Tuya code set')
     entries = config['codes']
-    if not isinstance(entries, list) or not entries:
+    button_only = config.get('control_style') == 'buttons'
+    if not isinstance(entries, list) or (not entries and not button_only):
         raise ValueError('mapped IR codes required')
     seen = set()
     for entry in entries:
@@ -48,8 +49,23 @@ def validate(config):
             raise ValueError('IR command requires head/key1')
         if len(json.dumps(command)) > 3072 or not command['key1']:
             raise ValueError('invalid IR code size')
-    if 'off' not in seen:
+    if 'off' not in seen and not button_only:
         raise ValueError('explicit power-off code required (toggle codes unsupported)')
+    raw_keys = config.get('keys', [])
+    if not isinstance(raw_keys, list) or (button_only and not raw_keys):
+        raise ValueError('button remote requires explicit key codes')
+    identifiers = set()
+    for key in raw_keys:
+        identifier = key.get('id')
+        command = key.get('command', {})
+        if not isinstance(identifier, str) or not identifier or identifier in identifiers:
+            raise ValueError('invalid or duplicate remote key')
+        identifiers.add(identifier)
+        if (command.get('control') != 'send_ir' or command.get('type') != 0
+                or not isinstance(command.get('head'), str) or not command['head']
+                or not isinstance(command.get('key1'), str) or not command['key1']
+                or len(json.dumps(command)) > 3072):
+            raise ValueError('invalid remote key payload')
     return config
 
 
@@ -74,7 +90,7 @@ class Controller:
     def __init__(self, config, factory=None):
         config = dict(config)
         catalog_dir = Path(config.get('catalog_dir', Path(__file__).parent / 'catalog'))
-        if not config.get('codes'):
+        if not config.get('codes') and config.get('control_style') != 'buttons':
             default = catalog_dir / (str(config['remote_index'])+'.json.gz')
             profile = json.loads(gzip.decompress(default.read_bytes()))
             config.update(profile)
@@ -167,6 +183,10 @@ class Controller:
                 'profile_name': self.profiles[self.profile_id].get('name',self.profile_id),
                 'default_state': self.profiles[self.profile_id].get('default_state',{}),
                 'settings': dict(self.settings),
+                'control_style': self.profiles[self.profile_id].get('control_style', 'state'),
+                'supported_keys': [{'id': k['id'], 'name': k.get('name', k['id'])}
+                                   for k in self.profiles[self.profile_id].get('keys', [])
+                                   if not k.get('state_control') or self.profiles[self.profile_id].get('control_style') == 'buttons'],
                 'supported_modes': sorted({s['mode'] for s in on}),
                 'supported_fans': sorted({s['fan'] for s in mode_states}),
 
@@ -187,7 +207,27 @@ class Controller:
                 self._send(payload)
             return self._snapshot()
 
+    def _transmit_ir(self, command):
+        if self.config['control_type'] == 1:
+            payload = {'201': json.dumps(command)}
+        elif command['key1'].startswith('1'):
+            payload = {'1': 'study_key', '13': 0, '7': command['key1'][1:]}
+        else:
+            payload = {'1': 'send_ir', '13': 0, '3': command['head'], '4': command['key1'][1:]}
+        self._send(payload)
+
     def command(self, changes, profile_id=None):
+        if isinstance(changes, dict) and set(changes) == {'key'}:
+            with self.lock:
+                self._select(profile_id)
+                key = next((k for k in self.profiles[self.profile_id].get('keys', [])
+                            if k['id'] == changes['key']), None)
+                if key is None:
+                    raise ValueError('remote key is not available for this code set')
+                self._transmit_ir(key['command'])
+                # Toggle/relative buttons cannot establish absolute AC state.
+                self.state = {}
+                return self._snapshot()
         if not isinstance(changes, dict) or not changes or not set(changes) <= {'power', 'mode', 'fan', 'target_temperature'}:
             raise ValueError('invalid AC command')
         if 'power' in changes and type(changes['power']) is not bool:
@@ -211,13 +251,7 @@ class Controller:
             if key not in self.codes:
                 raise ValueError('no mapped IR code for requested mode/fan/temperature')
             command = self.codes[key]['command']
-            if self.config['control_type'] == 1:
-                payload = {'201': json.dumps(command)}
-            elif command['key1'].startswith('1'):
-                payload = {'1': 'study_key', '13': 0, '7': command['key1'][1:]}
-            else:
-                payload = {'1': 'send_ir', '13': 0, '3': command['head'], '4': command['key1'][1:]}
-            self._send(payload)
+            self._transmit_ir(command)
             self.state = target
             if target['power']:
                 self.settings = {k: v for k, v in target.items() if k != 'power'}

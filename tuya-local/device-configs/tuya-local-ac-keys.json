@@ -1,0 +1,44 @@
+{
+  "type": "profile",
+  "dashboard": {
+    "states": [
+      {
+        "component": "main",
+        "capability": "earthpanel38939.acLocalLink",
+        "version": 1,
+        "values": [],
+        "patch": []
+      }
+    ],
+    "actions": []
+  },
+  "detailView": [
+    {
+      "component": "main",
+      "capability": "earthpanel38939.acRemoteKeys",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.acLocalLink",
+      "version": 1,
+      "values": [],
+      "patch": [
+        {
+          "op": "remove",
+          "path": "/2"
+        },
+        {
+          "op": "remove",
+          "path": "/1"
+        }
+      ]
+    }
+  ],
+  "automation": {
+    "conditions": [],
+    "actions": []
+  }
+}

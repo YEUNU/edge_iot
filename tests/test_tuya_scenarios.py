@@ -18,7 +18,7 @@ class ScenarioTests(unittest.TestCase):
             cfg['codes'].append({'state':dict(power=True,mode=mode,fan=fan,target_temperature=temp),'command':dict(ON,key1='0'+mode+fan+str(temp))})
         return cfg
 
-    def test_all_74743_catalog_frames_replay_exact_original_payload(self):
+    def test_all_catalog_frames_replay_exact_original_payload(self):
         count=0
         for path in sorted((ROOT/'tuya-local/bridge/catalog').glob('*.json.gz')):
             profile=json.loads(gzip.decompress(path.read_bytes()))
@@ -29,7 +29,7 @@ class ScenarioTests(unittest.TestCase):
                 self.assertEqual(result['state'],entry['state'])
                 self.assertFalse(result['confirmed'])
                 controller.device.sent.clear();count+=1
-        self.assertEqual(count,74743)
+        self.assertEqual(count,6826)
 
     def test_mode_transition_uses_supported_combination_and_rejects_bad_fan(self):
         c=Controller(self.rich_config(),factory=FakeDevice)

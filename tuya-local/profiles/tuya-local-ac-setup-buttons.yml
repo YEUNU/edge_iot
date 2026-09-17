@@ -1,0 +1,14 @@
+name: tuya-local-ac.setup-buttons.v1
+components:
+  - id: main
+    capabilities:
+      - id: earthpanel38939.acModelLibrary
+        version: 1
+      - id: earthpanel38939.acRemoteKeys
+        version: 1
+      - id: earthpanel38939.acLocalLink
+        version: 1
+      - id: refresh
+        version: 1
+    categories:
+      - name: AirConditioner
