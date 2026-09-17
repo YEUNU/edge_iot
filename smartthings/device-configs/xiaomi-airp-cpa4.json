@@ -38,6 +38,48 @@
           "op": "replace",
           "path": "/0/label",
           "value": "운전 모드"
+        },
+        {
+          "op": "replace",
+          "path": "/0/list/command/alternatives",
+          "value": [
+            {
+              "key": "자동",
+              "value": "자동",
+              "type": "active"
+            },
+            {
+              "key": "수면",
+              "value": "수면",
+              "type": "active"
+            },
+            {
+              "key": "즐겨찾기",
+              "value": "수동",
+              "type": "active"
+            }
+          ]
+        },
+        {
+          "op": "replace",
+          "path": "/0/list/state/alternatives",
+          "value": [
+            {
+              "key": "자동",
+              "value": "자동",
+              "type": "active"
+            },
+            {
+              "key": "수면",
+              "value": "수면",
+              "type": "active"
+            },
+            {
+              "key": "즐겨찾기",
+              "value": "수동",
+              "type": "active"
+            }
+          ]
         }
       ]
     },
@@ -50,9 +92,17 @@
         {
           "op": "replace",
           "path": "/0/label",
-          "value": "{{i18n.label}}"
+          "value": "수동 풍량"
         }
-      ]
+      ],
+      "visibleCondition": {
+        "capability": "mode",
+        "version": 1,
+        "component": "main",
+        "value": "mode.value",
+        "operator": "EQUALS",
+        "operand": "즐겨찾기"
+      }
     },
     {
       "component": "main",
@@ -109,7 +159,29 @@
         "capability": "mode",
         "version": 1,
         "values": [],
-        "patch": []
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/list/alternatives",
+            "value": [
+              {
+                "key": "자동",
+                "value": "자동",
+                "type": "active"
+              },
+              {
+                "key": "수면",
+                "value": "수면",
+                "type": "active"
+              },
+              {
+                "key": "즐겨찾기",
+                "value": "수동",
+                "type": "active"
+              }
+            ]
+          }
+        ]
       },
       {
         "component": "main",
@@ -169,7 +241,29 @@
         "capability": "mode",
         "version": 1,
         "values": [],
-        "patch": []
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/list/alternatives",
+            "value": [
+              {
+                "key": "자동",
+                "value": "자동",
+                "type": "active"
+              },
+              {
+                "key": "수면",
+                "value": "수면",
+                "type": "active"
+              },
+              {
+                "key": "즐겨찾기",
+                "value": "수동",
+                "type": "active"
+              }
+            ]
+          }
+        ]
       },
       {
         "component": "main",
