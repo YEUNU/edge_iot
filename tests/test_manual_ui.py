@@ -28,7 +28,7 @@ class ManualUiTest(unittest.TestCase):
             for suffix in ('', '-advanced'):
                 c = load('device-configs/xiaomi-' + model + suffix + '.json')
                 for group in [c['detailView'], c['automation']['conditions'], c['automation']['actions']]:
-                    row = next(r for r in group if r['capability'] == NS + 'powerOffTimer')
+                    row = next(r for r in group if r['capability'] == NS + ('powerOffTimer' if model == 'fan-za5' else 'dehumidifierTimer'))
                     self.assertIn({'op': 'replace', 'path': '/0/slider/range', 'value': [0, maximum]}, row['patch'])
 
     def test_purifier_zero_and_standby_filter_reset(self):
@@ -44,7 +44,7 @@ class ManualUiTest(unittest.TestCase):
         d = load('capabilities/dryRemainingMinutes.json')
         self.assertEqual(d['attributes']['remainingMinutes']['schema']['properties']['value']['maximum'], 40)
         profile = (ROOT / 'xiaomi-miio/profiles/xiaomi-derh-13l-advanced.yml').read_text()
-        for cap in ['dryAfterOff', 'dryRemainingMinutes', 'isWarmingUp', 'powerOffTimer']:
+        for cap in ['dryAfterOff', 'dryRemainingMinutes', 'isWarmingUp', 'dehumidifierTimer']:
             self.assertIn(NS + cap, profile)
 
 

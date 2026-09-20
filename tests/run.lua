@@ -917,4 +917,86 @@ test("countdown confirmation accepts elapsed seconds but retries an increase", f
   end
 end)
 
+test("timer survives firmware enable resetting duration to one hour", function()
+  local state = { enabled = false, minutes = 0 }
+  local client = {
+    get_properties = function() return {{did = "timer-enabled", code = 0, value = state.enabled}} end,
+    set_property = function(_, _, piid, value)
+      if piid == 1 then
+        state.enabled = value
+        if value then state.minutes = 60 end
+      else state.minutes = value end
+      return true
+    end,
+  }
+  assert(dehumidifier.set_power_off_timer(client, 720))
+  assert(state.enabled and state.minutes == 720)
+  assert(dehumidifier.set_power_off_timer(client, 120))
+  assert(state.enabled and state.minutes == 120)
+end)
+
+test("target controls follow confirmed mode without guessing its humidity", function()
+  for _, mode in ipairs({0, 1, 2, 9}) do
+    local emitted = {}
+    dehumidifier.apply_state({emit_event = function(_, event)
+      emitted[event.attribute] = event.args[1]
+    end}, {mode = mode, target = 50})
+    assert(emitted.adjustable == ((mode == 0 or mode == 1) and "yes" or "no"))
+    assert(emitted.targetHumidity.value == 50)
+  end
+end)
+
+test("dehumidifier timer command uses its twelve hour capability", function()
+  local device, emitted = optimistic_fixture("derh", { ["timer-enabled"] = true },
+    {{ ["timer-enabled"] = true }})
+  local handler = device:get_field("handler_module")
+  handler.timer_capability = dehumidifier.timer_capability
+  handler.set_power_off_timer = function() return true, nil, { ["timer-enabled"] = true } end
+  command_handlers.set_power_off_timer(nil, device, {args = {minutes = 720}})
+  assert(emitted[1].capability == "earthpanel38939.dehumidifierTimer")
+  assert(emitted[1].args[1].value == 720)
+end)
+
+test("a cancel waits for an earlier slow timer command to finish", function()
+  local cosock = require "cosock"
+  local original_spawn = cosock.spawn
+  local worker, requests = nil, {}
+  local current = 0
+  local device = optimistic_fixture("derh", { ["timer-minutes"] = 720 }, {{ ["timer-minutes"] = 720 }})
+  local handler, client = device:get_field("handler_module"), device:get_field("client")
+  handler.set_power_off_timer = function(_, minutes)
+    requests[#requests + 1] = minutes
+    if minutes == 720 then coroutine.yield() end
+    current = minutes
+    return true, nil, { ["timer-minutes"] = minutes }
+  end
+  client.get_properties = function() return {{did = "timer-minutes", code = 0, value = current}} end
+  cosock.spawn = function(fn) worker = coroutine.create(fn); assert(coroutine.resume(worker)) end
+  command_handlers.set_power_off_timer(nil, device, {args = {minutes = 720}})
+  command_handlers.set_power_off_timer(nil, device, {args = {minutes = 0}})
+  assert(#requests == 1, "cancel must not race the earlier write")
+  assert(coroutine.resume(worker))
+  cosock.spawn = original_spawn
+  assert(#requests == 2 and requests[2] == 0 and current == 0)
+end)
+
+test("poll started before a command cannot roll back confirmed state", function()
+  local device, _, state = optimistic_fixture("fan", {power = true}, {{power = true}})
+  local handler, client = device:get_field("handler_module"), device:get_field("client")
+  handler.set_switch = function() return true, nil, {power = true} end
+  local first = true
+  client.get_properties = function()
+    if first then
+      first = false; coroutine.yield()
+      return {{did = "power", code = 0, value = false}}
+    end
+    return {{did = "power", code = 0, value = true}}
+  end
+  local poll = coroutine.create(function() command_handlers.refresh_core(nil, device) end)
+  assert(coroutine.resume(poll))
+  command_handlers.switch_on(nil, device)
+  assert(coroutine.resume(poll))
+  assert(#state.applied == 1 and state.applied[1].power == true)
+end)
+
 print(string.format("%d tests passed", passed))

@@ -8,6 +8,8 @@ local cosock = require "cosock"
 local capabilities = require "st.capabilities"
 
 local M = {}
+local command_queues = setmetatable({}, { __mode = "k" })
+local command_versions = setmetatable({}, { __mode = "k" })
 
 -- Optimistic UI: emit the expected new state immediately so the SmartThings
 -- app reflects the change without waiting on a LAN round-trip. A targeted
@@ -76,10 +78,15 @@ local function read_properties(device, handler, client, props)
   return by_did
 end
 
-local function refresh_properties(device, props, action_name)
+local function refresh_properties(device, props, action_name, during_command)
+  local queue = command_queues[device]
+  if queue and queue.running and not during_command then return true end
+  local version = command_versions[device]
   local handler, client = get_handler(device)
   if not (handler and client) then return false end
   local values, err = read_properties(device, handler, client, props)
+  -- A poll started before a command must not overwrite the newer state.
+  if command_versions[device] ~= version then return true end
   if not values then
     device:offline()
     warn_fail(device, action_name or "refresh", err)
@@ -146,7 +153,7 @@ end
 local function confirm_after_command(device, handler, client, action_name, expected)
   if not expected or next(expected) == nil then
     return refresh_properties(device, handler.core_props or handler.refresh_props,
-      action_name .. " confirmation")
+      action_name .. " confirmation", true)
   end
 
   local props = confirmation_props(handler, expected)
@@ -189,12 +196,28 @@ end
 local function fire_and_confirm(_, device, action_name, fn, finished)
   local handler, client = get_handler(device)
   if not (handler and client) then return end
+  command_versions[device] = (command_versions[device] or 0) + 1
+  local queue = command_queues[device]
+  if not queue then queue = { items = {} }; command_queues[device] = queue end
+  queue.items[#queue.items + 1] = { action = action_name, run = fn, finished = finished }
+  if queue.running then return end
+  queue.running = true
   cosock.spawn(function()
-    local ok, err, expected = fn(handler, client)
-    if not ok then warn_fail(device, action_name, err) end
-    confirm_after_command(device, handler, client, action_name, expected)
-    if finished then finished() end
-  end, "set_" .. action_name)
+    while #queue.items > 0 do
+      local task = table.remove(queue.items, 1)
+      local ran, failure = pcall(function()
+        local ok, err, expected = task.run(handler, client)
+        if not ok then warn_fail(device, task.action, err) end
+        confirm_after_command(device, handler, client, task.action, expected)
+      end)
+      if not ran then warn_fail(device, task.action, failure) end
+      if task.finished then
+        local done, err = pcall(task.finished)
+        if not done then warn_fail(device, task.action, err) end
+      end
+    end
+    queue.running = false
+  end, "device_command_queue")
 end
 
 local NS = "earthpanel38939"
@@ -288,8 +311,10 @@ function M.set_oscillation_angle(driver, device, command)
 end
 
 function M.set_power_off_timer(driver, device, command)
-  if cap_powerOffTimer then
-    optimistic(device, cap_powerOffTimer.minutes({ value = command.args.minutes, unit = "min" }))
+  local handler = device:get_field("handler_module")
+  local timer_cap = handler and handler.timer_capability and cap(handler.timer_capability) or cap_powerOffTimer
+  if timer_cap then
+    optimistic(device, timer_cap.minutes({ value = command.args.minutes, unit = "min" }))
   end
   fire_and_confirm(driver, device, "set_power_off_timer",
     function(h, c) return call_setter(h, c, "set_power_off_timer", command.args.minutes) end)

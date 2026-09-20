@@ -69,7 +69,7 @@
     },
     {
       "component": "main",
-      "capability": "earthpanel38939.powerOffTimer",
+      "capability": "earthpanel38939.dehumidifierTimer",
       "version": 1,
       "values": [],
       "patch": [
@@ -131,7 +131,7 @@
       },
       {
         "component": "main",
-        "capability": "earthpanel38939.powerOffTimer",
+        "capability": "earthpanel38939.dehumidifierTimer",
         "version": 1,
         "values": [],
         "patch": [
@@ -209,7 +209,7 @@
       },
       {
         "component": "main",
-        "capability": "earthpanel38939.powerOffTimer",
+        "capability": "earthpanel38939.dehumidifierTimer",
         "version": 1,
         "values": [],
         "patch": [

@@ -199,7 +199,7 @@ function M.apply_state(device, p)
   local favorite_level = p["favorite-level"]
   if favorite_level ~= nil and cap_favoriteLevel then
     -- This is the saved manual setting, not the currently running motor speed.
-    -- Reporting 0 while off breaks the UI's valid 1–14 slider range.
+    -- Power off must not overwrite the saved 0–14 manual setting.
     events.emit(device, cap_favoriteLevel, cap_favoriteLevel.level(favorite_level))
   end
 end
