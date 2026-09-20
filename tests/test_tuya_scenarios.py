@@ -91,6 +91,43 @@ class ScenarioTests(unittest.TestCase):
         with self.assertRaises(DeviceError):c.command({'power':True})
         self.assertEqual(len(c.device.sent),sent+1,'uncertain IR command must never be retried')
 
+    def test_stale_client_recreated_only_for_health_and_preserves_state(self):
+        instances=[]
+        class Stale(FakeDevice):
+            stale=False
+            def __init__(self,*a,**k):
+                super().__init__(*a,**k);instances.append(self)
+            def status(self):return {'Err':'timeout'} if self.stale else super().status()
+            def close(self):pass  # Socket close does not clear protocol state.
+        c=Controller(config(),factory=Stale)
+        c.command({'power':True})
+        before=copy.deepcopy((c.state,c.settings,c.profile_id))
+        old=c.device;old.stale=True;old.sent.clear()
+        with self.assertRaises(DeviceError):c.command({'power':False})
+        self.assertEqual(len(instances),1)
+        self.assertEqual(len(old.sent),1,'failed IR command must not be replayed')
+        old.sent.clear()
+        result=c.status()
+        self.assertTrue(result['reachable'])
+        self.assertEqual(len(instances),2)
+        self.assertEqual((c.state,c.settings,c.profile_id),before)
+        self.assertEqual([len(d.sent) for d in instances],[2,1])
+        for d in instances:
+            for payload in d.sent:self.assertEqual(json.loads(payload['201']),{'control':'study_exit'})
+
+    def test_unreachable_health_has_bounded_recovery_and_stays_failed(self):
+        instances=[]
+        class Unreachable(FakeDevice):
+            def __init__(self,*a,**k):
+                super().__init__(*a,**k);instances.append(self)
+            def status(self):return {'Err':'timeout'}
+            def close(self):pass
+        c=Controller(config(),factory=Unreachable)
+        with self.assertRaises(DeviceError):c.status()
+        self.assertEqual(len(instances),2)
+        self.assertEqual([len(d.sent) for d in instances],[2,1])
+        self.assertEqual(c.state,{})
+
     def test_lost_ack_is_uncertain_and_later_command_recovers(self):
         class Flaky(FakeDevice):
             reachable=True

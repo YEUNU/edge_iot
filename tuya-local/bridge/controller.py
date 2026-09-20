@@ -124,11 +124,17 @@ class Controller:
         if factory is None:
             import tinytuya
             factory = tinytuya.Device
-        self.device = factory(config['device_id'], config['ip'], config['local_key'],
+        self._device_factory = factory
+        self.device = self._new_device()
+
+    def _new_device(self):
+        config = self.config
+        device = self._device_factory(config['device_id'], config['ip'], config['local_key'],
                               version=config['version'], connection_timeout=2,
                               connection_retry_limit=1, connection_retry_delay=0.1)
-        self.device.set_socketPersistent(True)
-        self.device.set_socketRetryLimit(1)
+        device.set_socketPersistent(True)
+        device.set_socketRetryLimit(1)
+        return device
 
     def _restore_settings(self):
         saved=self.saved_settings.get(self.profile_id)
@@ -204,7 +210,15 @@ class Controller:
                 # Reopen an idle Tuya socket only for the non-IR health query.
                 # Never retry a control frame: a lost ACK may still mean delivery.
                 self.device.close()
-                self._send(payload)
+                try:
+                    self._send(payload)
+                except DeviceError:
+                    # Closing the socket can leave stale protocol/session state
+                    # in the client. Replace it once, preserving our IR history
+                    # and settings. Only this non-IR probe is safe to replay.
+                    self.device.close()
+                    self.device = self._new_device()
+                    self._send(payload)
             return self._snapshot()
 
     def _transmit_ir(self, command):
