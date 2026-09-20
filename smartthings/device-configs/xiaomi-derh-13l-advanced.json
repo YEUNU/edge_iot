@@ -33,7 +33,26 @@
       "capability": "earthpanel38939.targetHumidity",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/slider/range",
+          "value": [
+            40,
+            70
+          ]
+        }
+      ],
+      "visibleCondition": {
+        "capability": "earthpanel38939.targetHumidity",
+        "version": 1,
+        "component": "main",
+        "value": "adjustable.value",
+        "operator": "EQUALS",
+        "operand": "yes",
+        "valueType": "string",
+        "hideOnUnmatch": false
+      }
     },
     {
       "component": "main",
@@ -45,6 +64,22 @@
           "op": "replace",
           "path": "/0/label",
           "value": "운전 모드"
+        }
+      ]
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.powerOffTimer",
+      "version": 1,
+      "values": [],
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/slider/range",
+          "value": [
+            0,
+            720
+          ]
         }
       ]
     },
@@ -194,6 +229,48 @@
     },
     {
       "component": "main",
+      "capability": "earthpanel38939.dryAfterOff",
+      "version": 1,
+      "values": [],
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0",
+          "value": {
+            "label": "종료 후 내부 건조",
+            "displayType": "toggleSwitch",
+            "toggleSwitch": {
+              "command": {
+                "on": "enable",
+                "off": "disable"
+              },
+              "state": {
+                "value": "dryAfterOff.value",
+                "on": "on",
+                "off": "off",
+                "valueType": "string"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.dryRemainingMinutes",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.isWarmingUp",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
       "capability": "earthpanel38939.filterMaintenance",
       "version": 1,
       "values": [],
@@ -230,6 +307,52 @@
       {
         "component": "main",
         "capability": "earthpanel38939.targetHumidity",
+        "version": 1,
+        "values": [],
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/slider/range",
+            "value": [
+              40,
+              70
+            ]
+          }
+        ]
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.powerOffTimer",
+        "version": 1,
+        "values": [],
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/slider/range",
+            "value": [
+              0,
+              720
+            ]
+          }
+        ]
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.dryAfterOff",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.dryRemainingMinutes",
+        "version": 1,
+        "values": [],
+        "patch": []
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.isWarmingUp",
         "version": 1,
         "values": [],
         "patch": []
@@ -304,6 +427,38 @@
       {
         "component": "main",
         "capability": "earthpanel38939.targetHumidity",
+        "version": 1,
+        "values": [],
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/slider/range",
+            "value": [
+              40,
+              70
+            ]
+          }
+        ]
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.powerOffTimer",
+        "version": 1,
+        "values": [],
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/slider/range",
+            "value": [
+              0,
+              720
+            ]
+          }
+        ]
+      },
+      {
+        "component": "main",
+        "capability": "earthpanel38939.dryAfterOff",
         "version": 1,
         "values": [],
         "patch": []

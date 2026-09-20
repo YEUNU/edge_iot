@@ -1,0 +1,30 @@
+{
+  "name": "Dry Remaining Minutes",
+  "attributes": {
+    "remainingMinutes": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 40
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "min"
+            ],
+            "default": "min"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "value"
+        ]
+      },
+      "enumCommands": []
+    }
+  },
+  "commands": {}
+}

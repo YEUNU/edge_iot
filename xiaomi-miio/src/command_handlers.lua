@@ -109,19 +109,33 @@ end
 
 local function confirmation_props(handler, expected)
   local selected = {}
+  local wanted = {}
+  for did in pairs(expected) do
+    wanted[did] = true
+    for _, related in ipairs((handler.confirmation_dependencies or {})[did] or {}) do
+      wanted[related] = true
+    end
+  end
   for _, prop in ipairs(handler.refresh_props or {}) do
-    if expected[prop.did] ~= nil then selected[#selected + 1] = prop end
+    if wanted[prop.did] then selected[#selected + 1] = prop end
   end
   return selected
 end
 
-local function values_match(values, expected)
+local function values_match(values, expected, props, tolerances)
   if not values then return false end
+  for _, prop in ipairs(props or {}) do
+    if values[prop.did] == nil then return false end
+  end
   for did, wanted in pairs(expected) do
     local actual = values[did]
     if actual == nil then return false end
     if type(actual) == "number" and type(wanted) == "number" then
-      if math.abs(actual - wanted) > 0.001 then return false end
+      local tolerance = (tolerances or {})[did]
+      if tolerance then
+        -- Countdown readback may decrease, but must never increase.
+        if actual > wanted or wanted - actual > tolerance then return false end
+      elseif math.abs(actual - wanted) > 0.001 then return false end
     elseif actual ~= wanted then
       return false
     end
@@ -144,7 +158,7 @@ local function confirm_after_command(device, handler, client, action_name, expec
 
   cosock.socket.sleep(0.5)
   local first_values, first_err = read_properties(device, handler, client, props)
-  if values_match(first_values, expected) then
+  if values_match(first_values, expected, props, handler.confirmation_tolerances) then
     device:online()
     handler.apply_state(device, first_values)
     return true
@@ -157,7 +171,7 @@ local function confirm_after_command(device, handler, client, action_name, expec
   if final_values then
     device:online()
     handler.apply_state(device, final_values)
-    if values_match(final_values, expected) then return true end
+    if values_match(final_values, expected, props, handler.confirmation_tolerances) then return true end
     warn_fail(device, action_name, "confirmation mismatch; rolled back to device state")
     return false
   end
@@ -172,13 +186,14 @@ end
 
 -- Apply a setter in the background. Device setters return a third value: a
 -- map of raw MiOT did -> expected value used for the targeted confirmation.
-local function fire_and_confirm(_, device, action_name, fn)
+local function fire_and_confirm(_, device, action_name, fn, finished)
   local handler, client = get_handler(device)
   if not (handler and client) then return end
   cosock.spawn(function()
     local ok, err, expected = fn(handler, client)
     if not ok then warn_fail(device, action_name, err) end
     confirm_after_command(device, handler, client, action_name, expected)
+    if finished then finished() end
   end, "set_" .. action_name)
 end
 
@@ -190,7 +205,6 @@ end
 local cap_childLock      = cap(NS .. ".childLock")
 local cap_alarmBuzzer    = cap(NS .. ".alarmBuzzer")
 local cap_indicatorMode  = cap(NS .. ".indicatorLightMode")
-local cap_targetHumidity = cap(NS .. ".targetHumidity")
 local cap_oscillationAngle = cap(NS .. ".fanOscillationDegrees")
 local cap_oscillationControl = cap(NS .. ".fanOscillationControl")
 local cap_powerOffTimer = cap(NS .. ".powerOffTimer")
@@ -229,13 +243,13 @@ function M.set_fan_speed(driver, device, command)
 end
 
 function M.set_favorite_level(driver, device, command)
-  local level = tonumber(command.args.level) or 0
+  local level = tonumber(command.args.level)
+  if not level or level < 0 or level > 14 or level ~= math.floor(level) then return end
   if cap_favoriteLevel then
     optimistic(device, cap_favoriteLevel.level(level))
   end
-  optimistic(device, level > 0 and capabilities.switch.switch.on()
-    or capabilities.switch.switch.off())
-  if level > 0 then optimistic(device, capabilities.mode.mode("즐겨찾기")) end
+  optimistic(device, capabilities.switch.switch.on())
+  optimistic(device, capabilities.mode.mode("즐겨찾기"))
   fire_and_confirm(driver, device, "set_favorite_level",
     function(h, c) return call_setter(h, c, "set_favorite_level", command.args.level) end)
 end
@@ -288,11 +302,23 @@ function M.set_switch_level(driver, device, command)
 end
 
 function M.set_target_humidity(driver, device, command)
-  if cap_targetHumidity then
-    optimistic(device, cap_targetHumidity.targetHumidity({ value = command.args.humidity, unit = "%" }))
-  end
+  -- The device setter checks the current mode before accepting humidity.
+  -- Do not briefly display a rejected value in clothes-drying mode.
   fire_and_confirm(driver, device, "set_target_humidity",
     function(h, c) return call_setter(h, c, "set_target_humidity", command.args.humidity) end)
+end
+
+function M.set_dry_after_off(driver, device, command)
+  fire_and_confirm(driver, device, "set_dry_after_off",
+    function(h, c) return call_setter(h, c, "set_dry_after_off", command.args.state) end)
+end
+
+function M.enable_dry_after_off(driver, device)
+  return M.set_dry_after_off(driver, device, { args = { state = "on" } })
+end
+
+function M.disable_dry_after_off(driver, device)
+  return M.set_dry_after_off(driver, device, { args = { state = "off" } })
 end
 
 local function emit_lock(device, state)
@@ -347,7 +373,12 @@ function M.reset_filter(driver, device)
     optimistic(device, cap_filterMaintenance.status("resetting"))
   end
   fire_and_confirm(driver, device, "reset_filter",
-    function(h, c) return call_setter(h, c, "reset_filter") end)
+    function(h, c) return call_setter(h, c, "reset_filter") end,
+    function()
+      if cap_filterMaintenance and handler and handler.uses_filter_maintenance then
+        optimistic(device, cap_filterMaintenance.status("ready"))
+      end
+    end)
 end
 
 return M

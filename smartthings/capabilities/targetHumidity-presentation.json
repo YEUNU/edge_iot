@@ -1,0 +1,63 @@
+{
+  "dashboard": {
+    "states": [
+      {
+        "label": "목표 {{targetHumidity.value}}{{targetHumidity.unit}}"
+      }
+    ],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "목표 습도",
+      "displayType": "slider",
+      "slider": {
+        "range": [
+          40,
+          70
+        ],
+        "step": 1,
+        "unit": "targetHumidity.unit",
+        "command": "setTargetHumidity",
+        "argumentType": "integer",
+        "value": "targetHumidity.value",
+        "valueType": "integer"
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [
+      {
+        "label": "목표 습도",
+        "displayType": "slider",
+        "slider": {
+          "range": [
+            40,
+            70
+          ],
+          "step": 1,
+          "unit": "targetHumidity.unit",
+          "value": "targetHumidity.value",
+          "valueType": "integer"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "label": "목표 습도 설정",
+        "displayType": "slider",
+        "slider": {
+          "range": [
+            40,
+            70
+          ],
+          "step": 1,
+          "unit": "targetHumidity.unit",
+          "command": "setTargetHumidity",
+          "argumentType": "integer"
+        }
+      }
+    ]
+  }
+}

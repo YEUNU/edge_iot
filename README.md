@@ -190,3 +190,14 @@ lua tests/test_tuya_client.lua
 lua tests/test_tuya_ux.lua
 python3 scripts/check_public_data.py
 ```
+
+### Manual-based operating behavior
+
+See the [three-model manual audit](smartthings/MANUAL_AUDIT.md) for source manuals,
+firmware observations, operating limits and deployment checks. Dehumidifier
+humidity is adjustable only in smart/sleep modes (40–70%). Mode changes refresh
+the device-reported target. Its standby timer supports 12 hours; advanced controls
+include post-shutdown drying and remaining drying time. The fan timer follows the
+manual’s 8-hour limit. Purifier manual level 0 is a valid setting, and filter reset
+requires verified standby. Firmware retains control of compressor protection and
+automatic drying/defrost sequences.

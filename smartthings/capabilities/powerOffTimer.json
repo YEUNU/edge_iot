@@ -5,11 +5,23 @@
       "schema": {
         "type": "object",
         "properties": {
-          "value": { "type": "integer", "minimum": 0, "maximum": 600 },
-          "unit": { "type": "string", "enum": ["min"], "default": "min" }
+          "value": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 720
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "min"
+            ],
+            "default": "min"
+          }
         },
         "additionalProperties": false,
-        "required": ["value"]
+        "required": [
+          "value"
+        ]
       },
       "setter": "setTimer",
       "enumCommands": []
@@ -22,7 +34,11 @@
         {
           "name": "minutes",
           "optional": false,
-          "schema": { "type": "integer", "minimum": 0, "maximum": 600 }
+          "schema": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 720
+          }
         }
       ]
     }

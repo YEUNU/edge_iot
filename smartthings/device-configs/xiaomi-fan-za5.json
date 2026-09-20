@@ -66,7 +66,16 @@
       "capability": "earthpanel38939.powerOffTimer",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/slider/range",
+          "value": [
+            0,
+            480
+          ]
+        }
+      ]
     }
   ],
   "automation": {
@@ -119,7 +128,16 @@
         "capability": "earthpanel38939.powerOffTimer",
         "version": 1,
         "values": [],
-        "patch": []
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/slider/range",
+            "value": [
+              0,
+              480
+            ]
+          }
+        ]
       }
     ],
     "actions": [
@@ -171,7 +189,16 @@
         "capability": "earthpanel38939.powerOffTimer",
         "version": 1,
         "values": [],
-        "patch": []
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/slider/range",
+            "value": [
+              0,
+              480
+            ]
+          }
+        ]
       }
     ]
   }

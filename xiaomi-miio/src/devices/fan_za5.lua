@@ -13,11 +13,12 @@
     childLock {locked,unlocked}  <- siid=3 piid=1 (lock bool)
     alarmBuzzer {on,off}         <- siid=5 piid=1
     fanOscillationAngle (30..120°) <- siid=2 piid=5
-    powerOffTimer (0..600 min)   <- siid=2 piid=10 (device stores seconds)
+    powerOffTimer (0..480 min)   <- siid=2 piid=10 (device stores seconds)
 ]]
 
 local capabilities = require "st.capabilities"
 local events = require "devices.events"
+local validation = require "devices.validation"
 
 local M = {}
 local NS = "earthpanel38939"
@@ -52,6 +53,11 @@ local LABEL_TO_MODE_CODE = { ["자연풍"] = 0, ["직선풍"] = 1 }
 
 M.supported_modes = { "자연풍", "직선풍" }
 M.is_fan = true
+M.confirmation_dependencies = {
+  power = { "speed-percent", "fan-mode", "swing" },
+  ["fan-mode"] = { "speed-percent", "power" },
+}
+M.confirmation_tolerances = { ["power-off-delay"] = 3 }
 
 M.refresh_props = {
   { siid = SIID_FAN,        piid = PIID_POWER,           did = "power" },
@@ -194,7 +200,9 @@ function M.set_fan_speed(client, speed)
 end
 
 function M.set_fan_speed_percent(client, pct)
-  pct = math.floor(tonumber(pct) or 0)
+  local value, err = validation.integer(pct, 0, 100)
+  if not value then return nil, err end
+  pct = value
   if pct <= 0 then
     return confirmed({ power = false },
       client:set_property(SIID_FAN, PIID_POWER, false, "power"))
@@ -208,7 +216,9 @@ function M.set_fan_speed_percent(client, pct)
 end
 
 function M.set_switch_level(client, level)
-  level = math.max(0, math.min(100, level))
+  local value, err = validation.integer(level, 0, 100)
+  if not value then return nil, err end
+  level = value
   return confirmed({ indicator = level },
     client:set_property(SIID_INDICATOR, PIID_INDICATOR_BRIGHT, level, "indicator"))
 end
@@ -221,20 +231,26 @@ function M.set_indicator(client, mode)
 end
 
 function M.set_oscillation_mode(client, mode)
-  -- Device only supports horizontal swing on/off. Any non-fixed value enables it.
+  if mode ~= "fixed" and mode ~= "off" and mode ~= "horizontal" then
+    return nil, "unsupported oscillation mode: " .. tostring(mode)
+  end
   local enable_swing = (mode ~= "fixed" and mode ~= "off")
   return confirmed({ swing = enable_swing },
     client:set_property(SIID_FAN, PIID_SWING, enable_swing, "swing"))
 end
 
 function M.set_oscillation_angle(client, angle)
-  angle = math.max(30, math.min(120, math.floor(tonumber(angle) or 90)))
+  local value, err = validation.integer(angle, 30, 120)
+  if not value then return nil, err end
+  angle = value
   return confirmed({ angle = angle },
     client:set_property(SIID_FAN, PIID_ANGLE, angle, "angle"))
 end
 
 function M.set_power_off_timer(client, minutes)
-  minutes = math.max(0, math.min(600, math.floor(tonumber(minutes) or 0)))
+  local value, err = validation.integer(minutes, 0, 480)
+  if not value then return nil, err end
+  minutes = value
   local seconds = minutes * 60
   return confirmed({ ["power-off-delay"] = seconds },
     client:set_property(SIID_FAN, PIID_POWER_OFF_DELAY, seconds, "power-off-delay"))

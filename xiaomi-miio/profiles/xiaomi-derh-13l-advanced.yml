@@ -10,6 +10,14 @@ components:
         version: 1
       - id: earthpanel38939.targetHumidity
         version: 1
+      - id: earthpanel38939.powerOffTimer
+        version: 1
+      - id: earthpanel38939.dryAfterOff
+        version: 1
+      - id: earthpanel38939.dryRemainingMinutes
+        version: 1
+      - id: earthpanel38939.isWarmingUp
+        version: 1
       - id: mode
         version: 1
       - id: earthpanel38939.deviceFault
@@ -56,4 +64,4 @@ preferences:
       default: "00000000000000000000000000000000"
 metadata:
   mnmn: SmartThingsCommunity
-  vid: 6a998d6b-26ee-320c-a43c-d8b2345af584
+  vid: 9aa99807-a7c2-3d2f-b168-896452f57f3a

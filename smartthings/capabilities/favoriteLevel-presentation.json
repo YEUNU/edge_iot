@@ -14,7 +14,7 @@
       "displayType": "slider",
       "slider": {
         "range": [
-          1,
+          0,
           14
         ],
         "step": 1,
@@ -47,7 +47,7 @@
         "displayType": "slider",
         "slider": {
           "range": [
-            1,
+            0,
             14
           ],
           "step": 1,

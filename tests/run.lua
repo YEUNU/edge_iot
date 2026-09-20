@@ -165,6 +165,15 @@ end)
 local function recording_client()
   local calls = {}
   return {
+    get_properties = function(_, props)
+      local result = {}
+      for _, prop in ipairs(props) do
+        local value = 0
+        if prop.did == "power" or prop.did == "timer-enabled" then value = false end
+        result[#result + 1] = { did = prop.did, code = 0, value = value }
+      end
+      return result
+    end,
     set_property = function(_, siid, piid, value, did)
       calls[#calls + 1] = { siid = siid, piid = piid, value = value, did = did }
       return true
@@ -208,7 +217,7 @@ end)
 test("device polling separates core and auxiliary properties", function()
   assert(#fan.core_props == 5 and #fan.aux_props == 6)
   assert(#airp.core_props == 6 and #airp.aux_props == 5)
-  assert(#dehumidifier.core_props == 5 and #dehumidifier.aux_props == 4)
+  assert(#dehumidifier.core_props == 9 and #dehumidifier.aux_props == 6)
 end)
 
 test("air purifier basic profile advertises filter reset", function()
@@ -274,6 +283,54 @@ local function optimistic_fixture(kind, expected, reads)
   }
   return device, events, state
 end
+
+test("dehumidifier mode confirmation refreshes device target humidity", function()
+  for _, mode in ipairs(dehumidifier.supported_modes) do
+    local emitted, requests = {}, {}
+    local mode_code
+    local client = {
+      set_property = function(_, _, _, value) mode_code = value; return true end,
+      begin_session = function() return {} end,
+      get_properties = function(_, props)
+        local result = {}
+        for _, prop in ipairs(props) do
+          requests[prop.did] = true
+          result[#result + 1] = { did = prop.did, code = 0,
+            value = prop.did == "mode" and mode_code or 55 }
+        end
+        return result
+      end,
+    }
+    local device = {
+      label = "dehumidifier",
+      get_field = function(_, key)
+        return key == "handler_module" and dehumidifier or client
+      end,
+      emit_event = function(_, event) emitted[#emitted + 1] = event end,
+      online = function() end,
+      offline = function() error("unexpected offline") end,
+    }
+    command_handlers.set_mode(nil, device, { args = { mode = mode } })
+    assert(requests.mode and requests.target)
+    local target
+    for _, event in ipairs(emitted) do
+      if event.attribute == "targetHumidity" then target = event.args[1].value end
+    end
+    assert(target == 55, "must reflect the actual device target")
+  end
+end)
+
+test("missing related humidity is retried after mode confirmation", function()
+  cosock_sleeps = {}
+  local device, _, state = optimistic_fixture("derh", { mode = 1, target = 55 },
+    { { mode = 1 }, { mode = 1, target = 55 } })
+  local handler = device:get_field("handler_module")
+  handler.confirmation_dependencies = dehumidifier.confirmation_dependencies
+  handler.set_mode = function() return true, nil, { mode = 1 } end
+  command_handlers.set_mode(nil, device, { args = { mode = "수면" } })
+  assert(#cosock_sleeps == 2 and cosock_sleeps[2] == 1.5)
+  assert(state.applied[1].target == 55)
+end)
 
 test("fan speed optimistic UI also updates power", function()
   cosock_sleeps = {}
@@ -756,6 +813,108 @@ test("compact humidity mirrors the sensor without replacing standard history", f
   dehumidifier.apply_state(device, {humidity = 58})
   assert(emitted.relativeHumidityMeasurement.args[1] == 58)
   assert(not emitted["earthpanel38939.currentHumidity"], "old profiles must not receive unsupported events")
+end)
+
+test("humidity refuses drying mode or an unreadable mode without a write", function()
+  for _, reply in ipairs({ { code = 0, value = 2 }, { code = -1 }, { code = 0, value = 9 } }) do
+    local client, calls = recording_client()
+    client.get_properties = function() reply.did = "mode"; return { reply } end
+    assert(not dehumidifier.set_target_humidity(client, 60))
+    assert(#calls == 0)
+  end
+  local client, calls = recording_client()
+  client.get_properties = function() return nil, "timeout" end
+  assert(not dehumidifier.set_target_humidity(client, 60) and #calls == 0)
+end)
+
+test("humidity accepts manual limits in smart and sleep modes", function()
+  for _, mode in ipairs({0, 1}) do
+    local client, calls = recording_client()
+    client.get_properties = function() return { {did = "mode", code = 0, value = mode} } end
+    for _, humidity in ipairs({40, 55, 70}) do
+      assert(dehumidifier.set_target_humidity(client, humidity))
+      assert(calls[#calls].value == humidity)
+    end
+    for _, humidity in ipairs({30, 39, 71, 55.5, "bad", math.huge}) do
+      assert(not dehumidifier.set_target_humidity(client, humidity))
+    end
+    assert(#calls == 3)
+  end
+end)
+
+test("dehumidifier timer supports twelve hours and cancel without changing power", function()
+  local client, calls = recording_client()
+  assert(dehumidifier.set_power_off_timer(client, 720))
+  assert(calls[1].siid == 8 and calls[1].piid == 1 and calls[1].value == true)
+  assert(calls[2].piid == 2 and calls[2].value == 720)
+  assert(dehumidifier.set_power_off_timer(client, 0))
+  assert(calls[3].siid == 8 and calls[3].value == false)
+  assert(not dehumidifier.set_power_off_timer(client, 721) and #calls == 3)
+end)
+
+test("failed timer duration cancels a newly enabled default timer", function()
+  local client, calls = recording_client()
+  local setter = client.set_property
+  client.set_property = function(self, siid, piid, value, did)
+    setter(self, siid, piid, value, did)
+    if piid == 2 then return nil, "timeout" end
+    return true
+  end
+  assert(not dehumidifier.set_power_off_timer(client, 60))
+  assert(#calls == 3 and calls[3].piid == 1 and calls[3].value == false)
+end)
+
+test("drying remaining seconds and standby timer minutes stay distinct", function()
+  local emitted = {}
+  local device = {emit_event = function(_, event) emitted[event.attribute] = event.args[1] end}
+  dehumidifier.apply_state(device, { ["dry-after-off"] = true,
+    ["dry-left-seconds"] = 2399, ["timer-enabled"] = true,
+    ["timer-remaining"] = 120, ["warming-up"] = false })
+  assert(emitted.remainingMinutes.value == 40 and emitted.minutes.value == 120)
+  assert(emitted.dryAfterOff == "on" and emitted.warmingUp == "no")
+  dehumidifier.apply_state(device, { ["timer-enabled"] = false, ["timer-remaining"] = 120 })
+  assert(emitted.minutes.value == 0)
+  local client, calls = recording_client()
+  assert(dehumidifier.set_dry_after_off(client, "off"))
+  assert(calls[1].siid == 7 and calls[1].piid == 1 and calls[1].value == false)
+end)
+
+test("fan manual timer limit and invalid controls do not send writes", function()
+  local client, calls = recording_client()
+  assert(fan.set_power_off_timer(client, 480) and calls[1].value == 28800)
+  assert(not fan.set_power_off_timer(client, 481))
+  assert(not fan.set_fan_speed_percent(client, "bad"))
+  assert(not fan.set_oscillation_mode(client, "vertical"))
+  assert(not fan.set_oscillation_angle(client, 121))
+  assert(#calls == 1)
+end)
+
+test("purifier zero is a valid saved manual level not power off", function()
+  local client, calls = recording_client()
+  assert(airp.set_favorite_level(client, 0))
+  assert(calls[1].value == true and calls[2].value == 2 and calls[3].value == 0)
+  assert(not airp.set_favorite_level(client, -1) and #calls == 3)
+end)
+
+test("purifier filter reset requires verified standby", function()
+  for _, reply in ipairs({{code = 0, value = true}, {code = -1}}) do
+    local client, calls = recording_client()
+    client.get_properties = function() reply.did = "power"; return {reply} end
+    assert(not airp.reset_filter(client) and #calls == 0)
+  end
+end)
+
+test("countdown confirmation accepts elapsed seconds but retries an increase", function()
+  for _, actual in ipairs({58, 61}) do
+    cosock_sleeps = {}
+    local device = optimistic_fixture("fan", { ["power-off-delay"] = 60 },
+      {{ ["power-off-delay"] = actual }, { ["power-off-delay"] = 58 }})
+    local handler = device:get_field("handler_module")
+    handler.confirmation_tolerances = fan.confirmation_tolerances
+    handler.set_power_off_timer = function() return true, nil, { ["power-off-delay"] = 60 } end
+    command_handlers.set_power_off_timer(nil, device, {args = {minutes = 1}})
+    assert(#cosock_sleeps == (actual == 58 and 1 or 2))
+  end
 end)
 
 print(string.format("%d tests passed", passed))

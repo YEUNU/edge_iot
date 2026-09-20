@@ -255,7 +255,15 @@
           "path": "/0/state/label",
           "value": "교체 후 실행"
         }
-      ]
+      ],
+      "visibleCondition": {
+        "capability": "switch",
+        "version": 1,
+        "component": "main",
+        "value": "switch.value",
+        "operator": "EQUALS",
+        "operand": "off"
+      }
     }
   ],
   "automation": {

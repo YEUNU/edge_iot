@@ -17,6 +17,7 @@
 local capabilities = require "st.capabilities"
 local events = require "devices.events"
 local alerts = require "alerts"
+local validation = require "devices.validation"
 
 local M = {}
 local NS = "earthpanel38939"
@@ -56,6 +57,7 @@ local MODE_LABELS = { [0] = "자동", [1] = "수면", [2] = "즐겨찾기" }
 local LABEL_TO_MODE_CODE = { ["자동"] = 0, ["수면"] = 1, ["즐겨찾기"] = 2 }
 
 M.supported_modes = { "자동", "수면", "즐겨찾기" }
+M.confirmation_dependencies = { power = { "mode", "favorite-level" }, mode = { "favorite-level" } }
 
 local FAULT_LABELS = { [0] = "noFault", [2] = "motorStuck", [3] = "sensorLost" }
 local BRIGHT_TO_LIGHT_MODE = { [0] = "off", [1] = "dim", [2] = "bright" }
@@ -235,12 +237,9 @@ function M.set_indicator(client, mode)
 end
 
 function M.set_favorite_level(client, level)
-  level = math.floor(tonumber(level) or 0)
-  if level <= 0 then
-    return confirmed({ power = false },
-      client:set_property(SIID_AIRP, PIID_POWER, false, "power"))
-  end
-  level = math.max(1, math.min(14, level))
+  local value, validation_err = validation.integer(level, 0, 14)
+  if not value then return nil, validation_err end
+  level = value
   local expected = { power = true, mode = 2, ["favorite-level"] = level }
   local ok, err = client:set_property(SIID_AIRP, PIID_POWER, true, "power")
   if not ok then return nil, err, expected end
@@ -251,6 +250,9 @@ function M.set_favorite_level(client, level)
 end
 
 function M.reset_filter(client)
+  local power, err = validation.read(client, SIID_AIRP, PIID_POWER, "power")
+  if power == nil then return nil, err end
+  if power ~= false then return nil, "turn the purifier off before resetting the replaced filter" end
   -- The MiOT action declares filter-used-time (piid=3) as its sole input.
   return confirmed({}, client:action(SIID_FILTER, 1, { 0 }, "reset-filter"))
 end

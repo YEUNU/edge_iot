@@ -1,0 +1,38 @@
+{
+  "dashboard": {
+    "states": [
+      {
+        "label": "건조 남은 시간: {{remainingMinutes.value}}분"
+      }
+    ],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "건조 남은 시간",
+      "displayType": "state",
+      "state": {
+        "unit": "remainingMinutes.unit",
+        "label": "{{remainingMinutes.value}} 분"
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [
+      {
+        "label": "건조 남은 시간",
+        "displayType": "numberField",
+        "numberField": {
+          "value": "remainingMinutes.value",
+          "valueType": "integer",
+          "range": [
+            0,
+            40
+          ]
+        }
+      }
+    ],
+    "actions": []
+  }
+}

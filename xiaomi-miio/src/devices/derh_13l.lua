@@ -7,12 +7,13 @@
     relativeHumidityMeasurement     <- siid=3 piid=1
     temperatureMeasurement          <- siid=3 piid=2
   Custom caps (namespace earthpanel38939):
-    targetHumidity (30..70 %)       <- siid=2 piid=5
+    targetHumidity (40..70 %)       <- siid=2 piid=5 (manual operating range)
     childLock                       <- siid=6 piid=1
     alarmBuzzer                     <- siid=4 piid=1
     indicatorLightMode {off,dim,bright} <- siid=5 piid=2 (0=Close→off, 1=Half→dim, 2=Full→bright)
-    dryAfterOff {on,off}            <- siid=8 piid=1
-    dryRemainingMinutes (0..720)    <- siid=8 piid=3 (read-only)
+    dryAfterOff {on,off}            <- siid=7 piid=1
+    dryRemainingMinutes (0..40)     <- siid=7 piid=2 (seconds, read-only)
+    powerOffTimer (0..720 minutes)  <- siid=8 piid=1/2/3
     deviceFault                     <- siid=2 piid=2
     isWarmingUp                     <- siid=7 piid=3 (read-only bool)
 ]]
@@ -20,6 +21,7 @@
 local capabilities = require "st.capabilities"
 local events = require "devices.events"
 local alerts = require "alerts"
+local validation = require "devices.validation"
 
 local M = {}
 local NS = "earthpanel38939"
@@ -30,6 +32,10 @@ local cap_alarmBuzzer    = capabilities[NS .. ".alarmBuzzer"]
 local cap_indicatorMode  = capabilities[NS .. ".indicatorLightMode"]
 local cap_deviceFault    = capabilities[NS .. ".deviceFault"]
 local cap_filterMaintenance = capabilities[NS .. ".filterMaintenance"]
+local cap_dryAfterOff = capabilities[NS .. ".dryAfterOff"]
+local cap_dryRemaining = capabilities[NS .. ".dryRemainingMinutes"]
+local cap_warmingUp = capabilities[NS .. ".isWarmingUp"]
+local cap_timer = capabilities[NS .. ".powerOffTimer"]
 
 local SIID_DERH = 2
 local PIID_POWER = 1
@@ -78,6 +84,14 @@ local LED_FROM_MODE = { off = 0, dim = 1, bright = 2 }
 M.supported_modes = { "스마트", "수면", "옷 건조" }
 M.uses_filter_maintenance = true
 
+-- Mode changes can also change the device's target humidity. Read it back
+-- without guessing a preset or overwriting a humidity chosen by the user.
+M.confirmation_dependencies = {
+  mode = { "target" }, target = { "mode" },
+  power = { "dry-left-seconds", "warming-up" },
+  ["timer-enabled"] = { "timer-minutes", "timer-remaining" },
+}
+
 M.refresh_props = {
   { siid = SIID_DERH,  piid = PIID_POWER,    did = "power" },
   { siid = SIID_DERH,  piid = PIID_MODE,     did = "mode" },
@@ -88,6 +102,12 @@ M.refresh_props = {
   { siid = SIID_ALARM, piid = PIID_ALARM,    did = "alarm" },
   { siid = SIID_LED,   piid = PIID_LED_MODE, did = "led" },
   { siid = SIID_LOCK,  piid = PIID_LOCK,     did = "lock" },
+  { siid = 7, piid = 1, did = "dry-after-off" },
+  { siid = 7, piid = 2, did = "dry-left-seconds" },
+  { siid = 7, piid = 3, did = "warming-up" },
+  { siid = 8, piid = 1, did = "timer-enabled" },
+  { siid = 8, piid = 2, did = "timer-minutes" },
+  { siid = 8, piid = 3, did = "timer-remaining" },
 }
 
 local function select_props(wanted)
@@ -100,9 +120,12 @@ end
 
 M.core_props = select_props{
   power = true, mode = true, fault = true, target = true, humidity = true,
+  ["dry-left-seconds"] = true, ["warming-up"] = true,
+  ["timer-enabled"] = true, ["timer-remaining"] = true,
 }
 M.aux_props = select_props{
   temperature = true, alarm = true, led = true, lock = true,
+  ["dry-after-off"] = true, ["timer-minutes"] = true,
 }
 
 local function confirmed(expected, ok, err)
@@ -122,6 +145,21 @@ function M.on_added(device) emit_supported_modes(device) end
 function M.on_init(device)  emit_supported_modes(device) end
 
 function M.apply_state(device, p)
+  if p["dry-after-off"] ~= nil and cap_dryAfterOff then
+    events.emit(device, cap_dryAfterOff,
+      cap_dryAfterOff.dryAfterOff(p["dry-after-off"] and "on" or "off"))
+  end
+  if p["dry-left-seconds"] ~= nil and cap_dryRemaining then
+    events.emit(device, cap_dryRemaining,
+      cap_dryRemaining.remainingMinutes({ value = math.ceil(p["dry-left-seconds"] / 60), unit = "min" }))
+  end
+  if p["warming-up"] ~= nil and cap_warmingUp then
+    events.emit(device, cap_warmingUp, cap_warmingUp.warmingUp(p["warming-up"] and "yes" or "no"))
+  end
+  if cap_timer and (p["timer-enabled"] == false or p["timer-remaining"] ~= nil) then
+    events.emit(device, cap_timer, cap_timer.minutes({
+      value = p["timer-enabled"] == false and 0 or p["timer-remaining"], unit = "min" }))
+  end
   local power = p["power"]
   if power ~= nil then
     events.emit(device, capabilities.switch,
@@ -129,6 +167,10 @@ function M.apply_state(device, p)
   end
 
   local mode = p["mode"]
+  if mode ~= nil and cap_targetHumidity then
+    events.emit(device, cap_targetHumidity,
+      cap_targetHumidity.adjustable((mode == 0 or mode == 1) and "yes" or "no"))
+  end
   if mode ~= nil and MODE_LABELS[mode] then
     events.emit(device, capabilities.mode, capabilities.mode.mode(MODE_LABELS[mode]))
   end
@@ -200,9 +242,45 @@ function M.set_mode(client, mode_label)
 end
 
 function M.set_target_humidity(client, humidity)
-  humidity = math.max(30, math.min(70, math.floor(humidity)))
-  return confirmed({ target = humidity },
-    client:set_property(SIID_DERH, PIID_TARGET, humidity, "target"))
+  local value, err = validation.integer(humidity, 40, 70)
+  if not value then return nil, err end
+  local mode, read_err = validation.read(client, SIID_DERH, PIID_MODE, "mode")
+  if mode == nil then return nil, read_err end
+  if mode ~= 0 and mode ~= 1 then
+    return nil, "target humidity is adjustable only in smart or sleep mode"
+  end
+  return confirmed({ target = value },
+    client:set_property(SIID_DERH, PIID_TARGET, value, "target"))
+end
+
+function M.set_dry_after_off(client, state)
+  if state ~= "on" and state ~= "off" then return nil, "invalid drying setting" end
+  return confirmed({ ["dry-after-off"] = state == "on" },
+    client:set_property(7, 1, state == "on", "dry-after-off"))
+end
+
+function M.set_power_off_timer(client, minutes)
+  local value, err = validation.integer(minutes, 0, 720)
+  if not value then return nil, err end
+  if value == 0 then
+    return confirmed({ ["timer-enabled"] = false },
+      client:set_property(8, 1, false, "timer-enabled"))
+  end
+  local enabled, read_err = validation.read(client, 8, 1, "timer-enabled")
+  if enabled == nil then return nil, read_err end
+  -- Firmware 2.2.2 resets the duration to 60 minutes when enabling the timer.
+  -- Enable first, then set the requested duration; otherwise every request
+  -- silently becomes one hour despite both writes reporting success.
+  if not enabled then
+    local ok, enable_err = client:set_property(8, 1, true, "timer-enabled")
+    if not ok then return nil, enable_err end
+  end
+  local ok, set_err = client:set_property(8, 2, value, "timer-minutes")
+  if not ok and not enabled then
+    local restored, restore_err = client:set_property(8, 1, false, "timer-enabled")
+    if not restored then set_err = tostring(set_err) .. "; timer cancel failed: " .. tostring(restore_err) end
+  end
+  return confirmed({ ["timer-enabled"] = true, ["timer-minutes"] = value }, ok, set_err)
 end
 
 function M.set_child_lock(client, state)
