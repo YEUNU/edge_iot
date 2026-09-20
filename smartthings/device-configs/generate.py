@@ -99,7 +99,7 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
         rows.append(item)
     # Main controls retain the same relative order in basic and advanced views.
     priority = ['switch', 'fanSpeedPercent', NS + 'targetHumidity', 'mode', NS + 'airPurifierFavoriteLevel',
-                NS + 'fanOscillationControl', NS + 'powerOffTimer', NS + 'fanOscillationDegrees', NS + 'currentHumidity',
+                NS + 'fanOscillationControl', NS + 'powerOffTimer', NS + 'dehumidifierTimer', NS + 'fanOscillationDegrees', NS + 'currentHumidity',
                 'fineDustSensor', 'relativeHumidityMeasurement',
                 'temperatureMeasurement', 'filterState', NS + 'deviceFault',
                 NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock',
@@ -112,14 +112,14 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
     config = {'type': 'profile', 'dashboard': {'states': [entry(state_cap)],
               'actions': [] if is_alert else [entry('switch')]}, 'detailView': rows,
               'automation': {'conditions': [entry(c) for c in caps if c not in (NS + 'latestAlert', NS + 'filterMaintenance', NS + 'currentHumidity', NS + 'fanOscillationControl')],
-                             'actions': [entry(c) for c in caps if c in ('switch', 'mode', 'fanSpeedPercent', 'fanOscillationMode', 'filterState', NS + 'targetHumidity', NS + 'fanOscillationDegrees', NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock', NS + 'powerOffTimer', NS + 'airPurifierFavoriteLevel', NS + 'dryAfterOff')]}}
+                             'actions': [entry(c) for c in caps if c in ('switch', 'mode', 'fanSpeedPercent', 'fanOscillationMode', 'filterState', NS + 'targetHumidity', NS + 'fanOscillationDegrees', NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock', NS + 'powerOffTimer', NS + 'dehumidifierTimer', NS + 'airPurifierFavoriteLevel', NS + 'dryAfterOff')]}}
     # Restrict standard enums to what the actual model can do in every view.
     groups = [config['dashboard']['states'], config['dashboard']['actions'], rows,
               config['automation']['conditions'], config['automation']['actions']]
     for group in groups:
         for item in group:
             cap = item['capability']
-            if cap in (NS + 'targetHumidity', NS + 'powerOffTimer'):
+            if cap in (NS + 'targetHumidity', NS + 'powerOffTimer', NS + 'dehumidifierTimer'):
                 limits = [40, 70] if cap == NS + 'targetHumidity' else [0, 480 if is_fan else 720]
                 if not any(p.get('path') == '/0' for p in item['patch']):
                     item['patch'].append({'op': 'replace', 'path': '/0/slider/range', 'value': limits})

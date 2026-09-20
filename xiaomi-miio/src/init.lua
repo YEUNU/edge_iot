@@ -45,6 +45,7 @@ local cap_indicatorMode  = safe_cap(NS .. ".indicatorLightMode")
 local cap_targetHumidity = safe_cap(NS .. ".targetHumidity")
 local cap_oscillationAngle = safe_cap(NS .. ".fanOscillationDegrees")
 local cap_powerOffTimer = safe_cap(NS .. ".powerOffTimer")
+local cap_dehumidifierTimer = safe_cap(NS .. ".dehumidifierTimer")
 local cap_filterMaintenance = safe_cap(NS .. ".filterMaintenance")
 local cap_dryAfterOff = safe_cap(NS .. ".dryAfterOff")
 local cap_favoriteLevel = safe_cap(NS .. ".airPurifierFavoriteLevel")
@@ -332,6 +333,11 @@ end
 if cap_powerOffTimer then
   capability_handlers[cap_powerOffTimer.ID] = {
     ["setTimer"] = cmds.set_power_off_timer,
+  }
+end
+if cap_dehumidifierTimer then
+  capability_handlers[cap_dehumidifierTimer.ID] = {
+    setTimer = cmds.set_power_off_timer,
   }
 end
 if cap_dryAfterOff then

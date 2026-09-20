@@ -69,12 +69,20 @@ local model_configs = {
       { siid = 4, piid = 1, did = "alarm" },
       { siid = 5, piid = 2, did = "led" },
       { siid = 6, piid = 1, did = "lock" },
+      { siid = 7, piid = 1, did = "dry-after-off" },
+      { siid = 7, piid = 2, did = "dry-left-seconds" },
+      { siid = 7, piid = 3, did = "warming-up" },
+      { siid = 8, piid = 1, did = "timer-enabled" },
+      { siid = 8, piid = 2, did = "timer-minutes" },
+      { siid = 8, piid = 3, did = "timer-remaining" },
     },
   },
 }
 
 local client, client_err = Client.new{ ip = ip, token = token, timeout_s = 10 }
 assert(client, client_err)
+-- Separate short-lived probes from earlier probes' request IDs.
+client.next_id = (math.floor(require("socket").gettime() * 1000) % 0x7FFFFFFE) + 1
 local session, session_err = client:begin_session()
 assert(session, session_err)
 local config = assert(model_configs[model], "unsupported model")

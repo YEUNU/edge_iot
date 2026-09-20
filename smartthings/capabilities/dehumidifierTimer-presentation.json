@@ -1,0 +1,62 @@
+{
+  "dashboard": {
+    "states": [
+      {
+        "label": "꺼짐 예약 {{minutes.value}}분"
+      }
+    ],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "꺼짐 예약",
+      "displayType": "slider",
+      "slider": {
+        "range": [
+          0,
+          720
+        ],
+        "step": 1,
+        "command": "setTimer",
+        "argumentType": "integer",
+        "value": "minutes.value",
+        "valueType": "integer",
+        "unit": "minutes.unit"
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [
+      {
+        "label": "꺼짐 예약",
+        "displayType": "slider",
+        "slider": {
+          "range": [
+            0,
+            720
+          ],
+          "step": 1,
+          "value": "minutes.value",
+          "valueType": "integer",
+          "unit": "minutes.unit"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "label": "꺼짐 예약 설정",
+        "displayType": "slider",
+        "slider": {
+          "range": [
+            0,
+            720
+          ],
+          "step": 1,
+          "command": "setTimer",
+          "argumentType": "integer"
+        }
+      }
+    ]
+  }
+}

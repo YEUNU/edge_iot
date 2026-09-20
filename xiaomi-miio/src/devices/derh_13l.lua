@@ -13,7 +13,7 @@
     indicatorLightMode {off,dim,bright} <- siid=5 piid=2 (0=Close→off, 1=Half→dim, 2=Full→bright)
     dryAfterOff {on,off}            <- siid=7 piid=1
     dryRemainingMinutes (0..40)     <- siid=7 piid=2 (seconds, read-only)
-    powerOffTimer (0..720 minutes)  <- siid=8 piid=1/2/3
+    dehumidifierTimer (0..720 minutes) <- siid=8 piid=1/2/3
     deviceFault                     <- siid=2 piid=2
     isWarmingUp                     <- siid=7 piid=3 (read-only bool)
 ]]
@@ -35,7 +35,8 @@ local cap_filterMaintenance = capabilities[NS .. ".filterMaintenance"]
 local cap_dryAfterOff = capabilities[NS .. ".dryAfterOff"]
 local cap_dryRemaining = capabilities[NS .. ".dryRemainingMinutes"]
 local cap_warmingUp = capabilities[NS .. ".isWarmingUp"]
-local cap_timer = capabilities[NS .. ".powerOffTimer"]
+local cap_timer = capabilities[NS .. ".dehumidifierTimer"]
+M.timer_capability = NS .. ".dehumidifierTimer"
 
 local SIID_DERH = 2
 local PIID_POWER = 1

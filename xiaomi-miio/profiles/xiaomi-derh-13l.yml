@@ -4,7 +4,7 @@ components:
     capabilities:
       - id: switch
         version: 1
-      - id: earthpanel38939.powerOffTimer
+      - id: earthpanel38939.dehumidifierTimer
         version: 1
       - id: mode
         version: 1
@@ -48,4 +48,4 @@ preferences:
       default: "00000000000000000000000000000000"
 metadata:
   mnmn: SmartThingsCommunity
-  vid: 4b81b42a-0c4d-3bd8-a828-a406cb170cff
+  vid: cccb4db0-d1c1-35d8-a1f6-d23b68aea131
