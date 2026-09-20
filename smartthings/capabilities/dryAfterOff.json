@@ -1,0 +1,63 @@
+{
+  "name": "Dry After Off",
+  "attributes": {
+    "dryAfterOff": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "enum": [
+              "on",
+              "off"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "value"
+        ]
+      },
+      "setter": "setDryAfterOff",
+      "enumCommands": [
+        {
+          "command": "enable",
+          "value": "on"
+        },
+        {
+          "command": "disable",
+          "value": "off"
+        }
+      ]
+    }
+  },
+  "commands": {
+    "setDryAfterOff": {
+      "name": "setDryAfterOff",
+      "arguments": [
+        {
+          "name": "state",
+          "optional": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "on",
+              "off"
+            ]
+          }
+        }
+      ],
+      "sensitive": false
+    },
+    "enable": {
+      "name": "enable",
+      "arguments": [],
+      "sensitive": false
+    },
+    "disable": {
+      "name": "disable",
+      "arguments": [],
+      "sensitive": false
+    }
+  }
+}

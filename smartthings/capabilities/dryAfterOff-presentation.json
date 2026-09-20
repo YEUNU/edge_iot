@@ -1,0 +1,110 @@
+{
+  "dashboard": {
+    "states": [
+      {
+        "label": "종료 후 건조 {{dryAfterOff.value}}",
+        "alternatives": [
+          {
+            "key": "on",
+            "value": "켜짐",
+            "type": "active"
+          },
+          {
+            "key": "off",
+            "value": "꺼짐",
+            "type": "inactive"
+          }
+        ]
+      }
+    ],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "종료 후 건조",
+      "displayType": "list",
+      "list": {
+        "command": {
+          "name": "setDryAfterOff",
+          "alternatives": [
+            {
+              "key": "on",
+              "value": "켜기",
+              "type": "active"
+            },
+            {
+              "key": "off",
+              "value": "끄기",
+              "type": "inactive"
+            }
+          ],
+          "argumentType": "string"
+        },
+        "state": {
+          "value": "dryAfterOff.value",
+          "valueType": "string",
+          "alternatives": [
+            {
+              "key": "on",
+              "value": "켜짐",
+              "type": "active"
+            },
+            {
+              "key": "off",
+              "value": "꺼짐",
+              "type": "inactive"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [
+      {
+        "label": "종료 후 건조",
+        "displayType": "list",
+        "list": {
+          "alternatives": [
+            {
+              "key": "on",
+              "value": "켜짐",
+              "type": "active"
+            },
+            {
+              "key": "off",
+              "value": "꺼짐",
+              "type": "inactive"
+            }
+          ],
+          "value": "dryAfterOff.value",
+          "valueType": "string",
+          "multiSelectable": false
+        }
+      }
+    ],
+    "actions": [
+      {
+        "label": "종료 후 건조",
+        "displayType": "list",
+        "list": {
+          "alternatives": [
+            {
+              "key": "on",
+              "value": "켜기",
+              "type": "active"
+            },
+            {
+              "key": "off",
+              "value": "끄기",
+              "type": "inactive"
+            }
+          ],
+          "command": "setDryAfterOff",
+          "argumentType": "string"
+        }
+      }
+    ]
+  }
+}

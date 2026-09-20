@@ -1,0 +1,70 @@
+{
+  "dashboard": {
+    "states": [
+      {
+        "label": "{{warmingUp.value}}",
+        "alternatives": [
+          {
+            "key": "yes",
+            "value": "예열 중",
+            "type": "active"
+          },
+          {
+            "key": "no",
+            "value": "준비됨",
+            "type": "inactive"
+          }
+        ]
+      }
+    ],
+    "actions": [],
+    "panelItems": []
+  },
+  "detailView": [
+    {
+      "label": "예열 상태",
+      "displayType": "state",
+      "state": {
+        "alternatives": [
+          {
+            "key": "yes",
+            "value": "예열 중",
+            "type": "active"
+          },
+          {
+            "key": "no",
+            "value": "준비됨",
+            "type": "inactive"
+          }
+        ],
+        "label": "{{warmingUp.value}}"
+      }
+    }
+  ],
+  "automation": {
+    "conditions": [
+      {
+        "label": "예열 상태",
+        "displayType": "list",
+        "list": {
+          "alternatives": [
+            {
+              "key": "yes",
+              "value": "예열 중",
+              "type": "active"
+            },
+            {
+              "key": "no",
+              "value": "준비됨",
+              "type": "inactive"
+            }
+          ],
+          "value": "warmingUp.value",
+          "valueType": "string",
+          "multiSelectable": false
+        }
+      }
+    ],
+    "actions": []
+  }
+}

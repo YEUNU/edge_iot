@@ -4,6 +4,8 @@ components:
     capabilities:
       - id: switch
         version: 1
+      - id: earthpanel38939.powerOffTimer
+        version: 1
       - id: mode
         version: 1
       - id: relativeHumidityMeasurement
@@ -46,4 +48,4 @@ preferences:
       default: "00000000000000000000000000000000"
 metadata:
   mnmn: SmartThingsCommunity
-  vid: 5cdfb7d4-71a6-3223-a0f1-c5e6af439ac2
+  vid: 4b81b42a-0c4d-3bd8-a828-a406cb170cff

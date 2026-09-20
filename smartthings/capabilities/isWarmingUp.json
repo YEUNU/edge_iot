@@ -1,0 +1,25 @@
+{
+  "name": "Is Warming Up",
+  "attributes": {
+    "warmingUp": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "value"
+        ]
+      },
+      "enumCommands": []
+    }
+  },
+  "commands": {}
+}

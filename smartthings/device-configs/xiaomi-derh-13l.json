@@ -33,7 +33,26 @@
       "capability": "earthpanel38939.targetHumidity",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/slider/range",
+          "value": [
+            40,
+            70
+          ]
+        }
+      ],
+      "visibleCondition": {
+        "capability": "earthpanel38939.targetHumidity",
+        "version": 1,
+        "component": "main",
+        "value": "adjustable.value",
+        "operator": "EQUALS",
+        "operand": "yes",
+        "valueType": "string",
+        "hideOnUnmatch": false
+      }
     },
     {
       "component": "main",
@@ -45,6 +64,22 @@
           "op": "replace",
           "path": "/0/label",
           "value": "운전 모드"
+        }
+      ]
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.powerOffTimer",
+      "version": 1,
+      "values": [],
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/slider/range",
+          "value": [
+            0,
+            720
+          ]
         }
       ]
     },
@@ -96,6 +131,22 @@
       },
       {
         "component": "main",
+        "capability": "earthpanel38939.powerOffTimer",
+        "version": 1,
+        "values": [],
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/slider/range",
+            "value": [
+              0,
+              720
+            ]
+          }
+        ]
+      },
+      {
+        "component": "main",
         "capability": "mode",
         "version": 1,
         "values": [],
@@ -113,7 +164,16 @@
         "capability": "earthpanel38939.targetHumidity",
         "version": 1,
         "values": [],
-        "patch": []
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/slider/range",
+            "value": [
+              40,
+              70
+            ]
+          }
+        ]
       },
       {
         "component": "main",
@@ -149,6 +209,22 @@
       },
       {
         "component": "main",
+        "capability": "earthpanel38939.powerOffTimer",
+        "version": 1,
+        "values": [],
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/slider/range",
+            "value": [
+              0,
+              720
+            ]
+          }
+        ]
+      },
+      {
+        "component": "main",
         "capability": "mode",
         "version": 1,
         "values": [],
@@ -159,7 +235,16 @@
         "capability": "earthpanel38939.targetHumidity",
         "version": 1,
         "values": [],
-        "patch": []
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/slider/range",
+            "value": [
+              40,
+              70
+            ]
+          }
+        ]
       }
     ]
   }

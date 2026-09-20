@@ -2,7 +2,7 @@
   "dashboard": {
     "states": [
       {
-        "label": "수동 풍량 {{level.value}}"
+        "label": "목표 {{targetHumidity.value}}{{targetHumidity.unit}}"
       }
     ],
     "actions": [],
@@ -10,17 +10,18 @@
   },
   "detailView": [
     {
-      "label": "{{i18n.label}}",
+      "label": "목표 습도",
       "displayType": "slider",
       "slider": {
         "range": [
-          0,
-          14
+          40,
+          70
         ],
         "step": 1,
-        "command": "setFavoriteLevel",
+        "unit": "targetHumidity.unit",
+        "command": "setTargetHumidity",
         "argumentType": "integer",
-        "value": "level.value",
+        "value": "targetHumidity.value",
         "valueType": "integer"
       }
     }
@@ -28,30 +29,32 @@
   "automation": {
     "conditions": [
       {
-        "label": "수동 풍량",
+        "label": "목표 습도",
         "displayType": "slider",
         "slider": {
           "range": [
-            0,
-            14
+            40,
+            70
           ],
           "step": 1,
-          "value": "level.value",
+          "unit": "targetHumidity.unit",
+          "value": "targetHumidity.value",
           "valueType": "integer"
         }
       }
     ],
     "actions": [
       {
-        "label": "수동 풍량 설정",
+        "label": "목표 습도 설정",
         "displayType": "slider",
         "slider": {
           "range": [
-            0,
-            14
+            40,
+            70
           ],
           "step": 1,
-          "command": "setFavoriteLevel",
+          "unit": "targetHumidity.unit",
+          "command": "setTargetHumidity",
           "argumentType": "integer"
         }
       }

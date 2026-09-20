@@ -15,7 +15,7 @@
       "slider": {
         "range": [
           0,
-          600
+          720
         ],
         "step": 1,
         "command": "setTimer",
@@ -34,7 +34,7 @@
         "slider": {
           "range": [
             0,
-            600
+            720
           ],
           "step": 1,
           "value": "minutes.value",
@@ -50,7 +50,7 @@
         "slider": {
           "range": [
             0,
-            600
+            720
           ],
           "step": 1,
           "command": "setTimer",

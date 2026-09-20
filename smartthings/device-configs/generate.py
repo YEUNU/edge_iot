@@ -45,6 +45,15 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
             item['visibleCondition'] = {'capability': 'mode', 'version': 1,
                 'component': 'main', 'value': 'mode.value', 'operator': 'EQUALS',
                 'operand': '즐겨찾기'}
+        if is_derh and cap == NS + 'targetHumidity':
+            item['visibleCondition'] = {'capability': NS + 'targetHumidity', 'version': 1,
+                'component': 'main', 'value': 'adjustable.value', 'operator': 'EQUALS',
+                'operand': 'yes', 'valueType': 'string', 'hideOnUnmatch': False}
+        if cap == NS + 'dryAfterOff':
+            patch_row(item, {'label': '종료 후 내부 건조', 'displayType': 'toggleSwitch',
+                'toggleSwitch': {'command': {'on': 'enable', 'off': 'disable'},
+                    'state': {'value': 'dryAfterOff.value', 'on': 'on', 'off': 'off',
+                              'valueType': 'string'}}})
         if cap == NS + 'latestAlert':
             item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '최근 메시지'},
                              {'op': 'replace', 'path': '/1/state/label', 'value': '테스트 보내기'}]
@@ -81,6 +90,10 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
                               'value': '필터 교체 후 초기화' if is_airp else '필터 청소 후 초기화'},
                              {'op': 'replace', 'path': '/0/state/label',
                               'value': '교체 후 실행' if is_airp else '청소 후 실행'}]
+            if is_airp:
+                item['visibleCondition'] = {'capability': 'switch', 'version': 1,
+                    'component': 'main', 'value': 'switch.value', 'operator': 'EQUALS',
+                    'operand': 'off'}
         if cap == NS + 'currentHumidity':
             item['patch'] = [{'op': 'replace', 'path': '/0/state/label', 'value': '{{humidity.value}} %'}]
         rows.append(item)
@@ -90,6 +103,7 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
                 'fineDustSensor', 'relativeHumidityMeasurement',
                 'temperatureMeasurement', 'filterState', NS + 'deviceFault',
                 NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock',
+                NS + 'dryAfterOff', NS + 'dryRemainingMinutes', NS + 'isWarmingUp',
                 NS + 'filterMaintenance', NS + 'latestAlert']
     rows.sort(key=lambda x: priority.index(x['capability']))
     # Dashboard state drives both the label and active/inactive card styling.
@@ -98,13 +112,17 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
     config = {'type': 'profile', 'dashboard': {'states': [entry(state_cap)],
               'actions': [] if is_alert else [entry('switch')]}, 'detailView': rows,
               'automation': {'conditions': [entry(c) for c in caps if c not in (NS + 'latestAlert', NS + 'filterMaintenance', NS + 'currentHumidity', NS + 'fanOscillationControl')],
-                             'actions': [entry(c) for c in caps if c in ('switch', 'mode', 'fanSpeedPercent', 'fanOscillationMode', 'filterState', NS + 'targetHumidity', NS + 'fanOscillationDegrees', NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock', NS + 'powerOffTimer', NS + 'airPurifierFavoriteLevel')]}}
+                             'actions': [entry(c) for c in caps if c in ('switch', 'mode', 'fanSpeedPercent', 'fanOscillationMode', 'filterState', NS + 'targetHumidity', NS + 'fanOscillationDegrees', NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock', NS + 'powerOffTimer', NS + 'airPurifierFavoriteLevel', NS + 'dryAfterOff')]}}
     # Restrict standard enums to what the actual model can do in every view.
     groups = [config['dashboard']['states'], config['dashboard']['actions'], rows,
               config['automation']['conditions'], config['automation']['actions']]
     for group in groups:
         for item in group:
             cap = item['capability']
+            if cap in (NS + 'targetHumidity', NS + 'powerOffTimer'):
+                limits = [40, 70] if cap == NS + 'targetHumidity' else [0, 480 if is_fan else 720]
+                if not any(p.get('path') == '/0' for p in item['patch']):
+                    item['patch'].append({'op': 'replace', 'path': '/0/slider/range', 'value': limits})
             if is_airp and cap == 'mode':
                 # Preserve the existing mode value for routines; only rename its UI.
                 alternatives = [{'key': key, 'value': label, 'type': 'active'}
