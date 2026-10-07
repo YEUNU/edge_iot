@@ -85,6 +85,133 @@ test("miIO action rejects device error", function()
   assert(err:match("%-1"), err)
 end)
 
+-- Scripted UDP sockets exercise the real codec/client without LAN traffic.
+local function transport_fixture(options, replies)
+  local now, sockets = 100, {}
+  local transport = {
+    gettime = function() return now end,
+    udp = function()
+      local s = {sent = {}, closed = false}
+      sockets[#sockets + 1] = s
+      function s:settimeout(value) self.timeout = value; return 1 end
+      function s:setsockname() return 1 end
+      function s:sendto(body)
+        self.sent[#self.sent + 1] = body
+        if options.send_error then return nil, "send failed" end
+        return #body
+      end
+      function s:receivefrom()
+        local reply = table.remove(replies, 1) or {}
+        local wait = reply.delay or 0
+        if wait >= self.timeout then now = now + self.timeout; return nil, "timeout" end
+        now = now + wait
+        return reply.raw, reply.ip or "192.168.1.2", reply.port or 54321
+      end
+      function s:close() self.closed = true end
+      return s
+    end,
+  }
+  local previous = package.loaded["cosock.socket"]
+  package.loaded["cosock.socket"] = transport
+  local MockClient = dofile(root .. "/xiaomi-miio/src/miio/client.lua")
+  package.loaded["cosock.socket"] = previous
+  local client = assert(MockClient.new{
+    ip = "192.168.1.2", token = string.rep("ab", 16), timeout_s = options.timeout or 2,
+    deadline = options.deadline,
+    expected_did = options.expected_did,
+  })
+  return client, sockets, function() return now end
+end
+
+local function client_hello(did)
+  return string.pack(">I2I2I4I4I4", 0x2131, 32, 0, did, 100) .. string.rep("\255", 16)
+end
+local function client_reply(did, body)
+  return packet.build(string.rep("\xab", 16), did, 100, body)
+end
+
+test("miIO rejects invalid timeout and deadline options", function()
+  for _, timeout in ipairs({0, -1, math.huge, 0/0, "2", false}) do
+    assert(not Client.new{ip="192.168.1.2", token=string.rep("ab",16), timeout_s=timeout})
+  end
+  for _, deadline in ipairs({math.huge, 0/0, "soon", false}) do
+    assert(not Client.new{ip="192.168.1.2", token=string.rep("ab",16), deadline=deadline})
+  end
+  assert(not Client.new("invalid"))
+end)
+
+test("miIO deadline bounds all phases and retries", function()
+  local client, sockets, now = transport_fixture({deadline=103}, {
+    {raw=client_hello(123),delay=1.9}, {delay=2},
+  })
+  local result, err = client:send_raw('{"id":1}')
+  assert(not result and err=="deadline exceeded", tostring(err))
+  assert(now()==103 and #sockets==1 and sockets[1].closed)
+  client, sockets = transport_fixture({deadline=100}, {})
+  local did, _, handshake_err = client:handshake()
+  assert(not did and handshake_err=="deadline exceeded" and #sockets==0)
+end)
+
+test("miIO rejects unexpected UDP sources and malformed hello identities", function()
+  for _, reply in ipairs({
+    {raw=client_hello(123),ip="192.168.1.3"},
+    {raw=client_hello(123),port=12345},
+    {raw=client_hello(0)}, {raw=client_hello(0xFFFFFFFF)},
+    {raw=client_reply(123,'{"id":1,"result":{}}')}, {raw="short"},
+  }) do
+    local client, sockets = transport_fixture({}, {reply})
+    local did = client:handshake()
+    assert(not did and #sockets==1 and sockets[1].closed)
+  end
+end)
+
+test("miIO binds encrypted replies and retry handshakes to the same device", function()
+  local client, sockets = transport_fixture({}, {
+    {raw=client_reply(456,'{"id":1,"result":{}}')},
+    {raw=client_hello(456)}, {raw=client_hello(456)},
+  })
+  local result = client:send_raw('{"id":1}', {dev_id=123,base_stamp=100,base_time=os.time()})
+  assert(not result and #sockets==3)
+  local rpc_count = 0
+  for _, s in ipairs(sockets) do
+    assert(s.closed)
+    for _, body in ipairs(s.sent) do if #body>32 then rpc_count=rpc_count+1 end end
+  end
+  assert(rpc_count==1, "identity-changing retries must never send another RPC")
+end)
+
+test("miIO session info validates both response identities", function()
+  local client = transport_fixture({}, {{raw=client_reply(123,'{"id":1,"result":{"model":"zhimi.fan.za5"}}')}})
+  local info = assert(client:miio_info({dev_id=123,base_stamp=100,base_time=os.time()}))
+  assert(info.model=="zhimi.fan.za5")
+  client = transport_fixture({}, {{raw=client_reply(123,'{"id":2,"result":{"model":"zhimi.fan.za5"}}')}})
+  local result, err = client:miio_info({dev_id=123,base_stamp=100,base_time=os.time()})
+  assert(not result and err=="reply request identity mismatch")
+end)
+
+test("miIO malformed JSON-RPC and property results return errors", function()
+  for _, body in ipairs({'null', 'true', '42', '"response"', '{',
+    '{"id":1,"error":"failed"}', '{"id":1,"result":true}',
+    '{"id":1,"result":null}', '{"id":1,"result":[]}',
+    '{"id":1,"result":[true]}', '{"id":1,"result":[{"code":null}]}',
+    '{"id":1,"result":[{"code":0},null,{"code":-1}]}',
+    '{"id":1,"result":[{"code":0.5}]}',
+    '{"id":1,"result":{"power":{"code":0}}}',
+    '{"id":1,"result":[{"code":0}]} trailing data',
+  }) do
+    local client = assert(Client.new{ip="192.168.1.2",token=string.rep("ab",16)})
+    client.send_raw = function() return body end
+    local result, err = client:get_properties({{siid=2,piid=1,did="power"}})
+    assert(not result and err, body)
+  end
+end)
+
+test("miIO hello send failure closes socket without receiving", function()
+  local client, sockets, now = transport_fixture({send_error=true}, {{delay=1}})
+  local did = client:handshake()
+  assert(not did and sockets[1].closed and now()==100)
+end)
+
 package.preload["log"] = function()
   return { info = function() end, warn = function() end, error = function() end }
 end
@@ -997,6 +1124,387 @@ test("poll started before a command cannot roll back confirmed state", function(
   command_handlers.switch_on(nil, device)
   assert(coroutine.resume(poll))
   assert(#state.applied == 1 and state.applied[1].power == true)
+end)
+
+test("known appliance identity prevents wrong-device writes after IP or token changes", function()
+  for _, did in ipairs({0, -1, 0xFFFFFFFF, 1.5, "123", math.huge, 0/0}) do
+    assert(not Client.new{ip = "192.168.1.2", token = string.rep("ab", 16), expected_did = did})
+  end
+  local function rpc_count(sockets)
+    local count = 0
+    for _, sock in ipairs(sockets) do
+      assert(sock.closed)
+      for _, raw in ipairs(sock.sent) do if #raw > 32 then count = count + 1 end end
+    end
+    return count
+  end
+  local client, sockets = transport_fixture({expected_did = 123}, {
+    {raw = client_hello(456)}, {raw = client_hello(456)}, {raw = client_hello(456)},
+  })
+  local ok, err = client:set_property(2, 1, false, "power")
+  assert(not ok and err == "device identity changed" and rpc_count(sockets) == 0)
+  -- The first set reached the intended appliance and lost its ACK. Even a
+  -- correctly encrypted response from the same address cannot move its retry.
+  client, sockets = transport_fixture({expected_did = 123}, {
+    {raw = client_hello(123)}, {delay = 3},
+    {raw = client_hello(456)}, {raw = client_hello(456)},
+  })
+  ok, err = client:set_property(2, 1, true, "power")
+  assert(not ok and rpc_count(sockets) == 1)
+  client, sockets = transport_fixture({expected_did = 123}, {
+    {raw = client_hello(456)}, {raw = client_hello(456)},
+  })
+  assert(not client:send_raw('{"id":1}', {dev_id = 456, base_stamp = 100, base_time = os.time()}))
+  assert(rpc_count(sockets) == 0, "a caller-supplied session must not override stored identity")
+  client = transport_fixture({}, {
+    {raw = client_hello(456)}, {raw = client_reply(456, '{"id":1,"result":[{"did":"power","code":0}]}')},
+  })
+  assert(client:set_property(2, 1, false, "power"), "manual connection without a known DID remains supported")
+end)
+
+test("MiOT read results match requested identities and retain valid partial reads", function()
+  local props = {{siid = 2, piid = 1, did = "power"}, {siid = 2, piid = 3, did = "swing"}}
+  local function read(body)
+    local client = assert(Client.new{ip = "192.168.1.2", token = string.rep("ab", 16)})
+    client.send_raw = function() return body end
+    return client:get_properties(props)
+  end
+  for _, body in ipairs({
+    '{"id":1,"result":[{"code":0,"value":true}]}',
+    '{"id":1,"result":[{"did":"foreign","code":0,"value":true}]}',
+    '{"id":1,"result":[{"did":"power","code":0,"value":true},{"did":"power","code":0,"value":false}]}',
+    '{"id":1,"result":[{"did":"power","siid":3,"code":0,"value":true}]}',
+    '{"id":1,"result":[{"did":"power","piid":2,"code":0,"value":true}]}',
+    '{"id":1,"result":[{"did":"power","code":0}]}',
+    '{"id":1,"result":[{"did":"power","code":0,"value":null}]}',
+    '{"id":1,"result":[{"did":"power","code":0,"value":{}}]}',
+    '{"id":1,"result":[{"did":"power","code":0,"value":1e999}]}',
+  }) do
+    local result, err = read(body)
+    assert(not result and err, body)
+  end
+  local result = assert(read('{"id":1,"result":[{"did":"power","siid":2,"piid":1,"code":0,"value":false}]}'))
+  assert(#result == 1 and result[1].value == false, "omitted properties must not discard a useful partial read")
+  result = assert(read('{"id":1,"result":[{"did":"power","code":0,"value":false},{"did":"swing","code":-9999}]}'))
+  assert(result[1].value == false and result[2].code == -9999)
+end)
+
+test("MiOT writes and actions require the requested result identity", function()
+  local function client_with(body)
+    local client = assert(Client.new{ip = "192.168.1.2", token = string.rep("ab", 16)})
+    client.send_raw = function() return body end
+    return client
+  end
+  for _, reply in ipairs({'{"code":0}', '{"did":"foreign","code":0}',
+    '{"did":"power","siid":3,"code":0}', '{"did":"power","piid":3,"code":0}'}) do
+    local ok, err = client_with('{"id":1,"result":[' .. reply .. ']}'):set_property(2, 1, true, "power")
+    assert(not ok and err)
+  end
+  for _, reply in ipairs({'{"code":0}', '{"did":"foreign","code":0}',
+    '{"did":"reset-filter","aiid":2,"code":0}'}) do
+    local ok, err = client_with('{"id":1,"result":[' .. reply .. ']}'):action(4, 1, {}, "reset-filter")
+    assert(not ok and err)
+  end
+  assert(client_with('{"id":1,"result":[{"did":"power","siid":2,"piid":1,"code":0}]}'):set_property(2, 1, false, "power"))
+end)
+
+test("partial operating state cannot publish saved fan speed or inactive timer duration", function()
+  local emitted = {}
+  local device = {emit_event = function(_, event) emitted[#emitted + 1] = event end}
+  fan.apply_state(device, {["speed-percent"] = 55})
+  dehumidifier.apply_state(device, {["timer-remaining"] = 120})
+  assert(#emitted == 0, "saved values alone do not establish running state")
+  fan.apply_state(device, {power = false})
+  assert(emitted[#emitted].capability == "fanSpeedPercent" and emitted[#emitted].args[1] == 0)
+  emitted = {}
+  fan.apply_state(device, {power = true, ["speed-percent"] = 55})
+  assert(emitted[#emitted].args[1] == 55)
+  dehumidifier.apply_state(device, {["timer-enabled"] = true, ["timer-remaining"] = 120})
+  assert(emitted[#emitted].args[1].value == 120)
+end)
+
+test("invalid property values do not contaminate successful partial Xiaomi reads", function()
+  local emitted, online = {}, false
+  local client = {begin_session = function() return {} end, get_properties = function(_, props)
+    local result = {}
+    for _, prop in ipairs(props) do
+      result[#result + 1] = {did = prop.did, code = 0,
+        value = prop.did == "humidity" and 57 or (prop.did == "power" and "false" or {})}
+    end
+    return result
+  end}
+  local device = {label = "fan", emit_event = function(_, event) emitted[#emitted + 1] = event end,
+    get_field = function(_, key) return key == "handler_module" and fan or client end,
+    online = function() online = true end, offline = function() error("valid humidity is still available") end}
+  assert(command_handlers.refresh(nil, device) and online)
+  assert(#emitted == 1 and emitted[1].attribute == "humidity" and emitted[1].args[1] == 57)
+end)
+
+test("partial confirmation without commanded properties cannot validate optimistic state", function()
+  local device, _, state = optimistic_fixture("fan", {power = true, ["speed-percent"] = 55},
+    {{["speed-percent"] = 55}, {["speed-percent"] = 55}})
+  command_handlers.set_fan_speed_percent(nil, device, {args = {percent = 55}})
+  assert(state.offline and not state.online, "missing power leaves the optimistic command unverified")
+  assert(#state.applied == 1 and state.applied[1].power == nil)
+end)
+
+test("reattachment routes queued commands to the new client without replay or old readback", function()
+  local cosock = require "cosock"
+  local original_spawn = cosock.spawn
+  local worker, calls, applied = nil, {}, {}
+  local function client(name, value)
+    return {name = name, begin_session = function() return {} end,
+      get_properties = function() return {{did = "power", code = 0, value = value}} end}
+  end
+  local old, replacement = client("old", true), client("new", false)
+  local fields = {client = old, handler_module = {refresh_props = {{siid = 2, piid = 1, did = "power"}},
+    set_switch = function(c, value)
+      calls[#calls + 1] = c.name .. ":" .. tostring(value)
+      if #calls == 1 then coroutine.yield() end
+      return true, nil, {power = value}
+    end, apply_state = function(_, values) applied[#applied + 1] = values.power end}}
+  local device = {label = "test", get_field = function(_, key) return fields[key] end,
+    emit_event = function() end, online = function() end, offline = function() end}
+  cosock.spawn = function(fn) worker = coroutine.create(fn); assert(coroutine.resume(worker)) end
+  command_handlers.switch_on(nil, device)
+  fields.client = replacement
+  command_handlers.switch_off(nil, device)
+  assert(coroutine.resume(worker))
+  cosock.spawn = original_spawn
+  assert(#calls == 2 and calls[1] == "old:true" and calls[2] == "new:false")
+  assert(#applied == 1 and applied[1] == false)
+end)
+
+test("reattachment discards a poll or confirmation already awaiting old readback", function()
+  local cosock = require "cosock"
+  local original_spawn = cosock.spawn
+  for _, command in ipairs({false, true}) do
+    local worker, applied = nil, 0
+    local handler = {refresh_props = {{siid = 2, piid = 1, did = "power"}},
+      set_switch = function() return true, nil, {power = true} end,
+      apply_state = function() applied = applied + 1 end}
+    local fields = {handler_module = handler, client = {
+      begin_session = function() return {} end, get_properties = function()
+        coroutine.yield(); return {{did = "power", code = 0, value = true}}
+      end}}
+    local device = {label = "test", get_field = function(_, key) return fields[key] end,
+      emit_event = function() end, online = function() error("stale online result") end,
+      offline = function() error("stale offline result") end}
+    if command then
+      cosock.spawn = function(fn) worker = coroutine.create(fn); assert(coroutine.resume(worker)) end
+      command_handlers.switch_on(nil, device)
+    else
+      worker = coroutine.create(function() command_handlers.refresh(nil, device) end)
+      assert(coroutine.resume(worker))
+    end
+    fields.client = {}
+    assert(coroutine.resume(worker))
+    assert(applied == 0)
+  end
+  cosock.spawn = original_spawn
+end)
+
+test("reattachment stops unsent follow-up RPCs in a compound Xiaomi setter", function()
+  local cosock = require "cosock"
+  local original_spawn = cosock.spawn
+  local worker, writes = nil, {}
+  local old = {set_property = function(_, _, _, value, did)
+    writes[#writes + 1] = did
+    if #writes == 1 then coroutine.yield() end
+    return true
+  end}
+  local fields = {client = old, handler_module = fan}
+  local device = {label = "fan", get_field = function(_, key) return fields[key] end,
+    emit_event = function() end, online = function() end, offline = function() end}
+  cosock.spawn = function(fn) worker = coroutine.create(fn); assert(coroutine.resume(worker)) end
+  command_handlers.set_fan_speed_percent(nil, device, {args = {percent = 55}})
+  fields.client = {}
+  assert(coroutine.resume(worker))
+  cosock.spawn = original_spawn
+  assert(#writes == 1 and writes[1] == "power", "unsent speed write must not use superseded credentials")
+end)
+
+test("reattachment during publication suppresses remaining fan poll and confirmation events", function()
+  for _, command in ipairs({false, true}) do
+    local emitted, publishing, replacement = {}, false, {}
+    local values = {power = true, ["speed-percent"] = 55, swing = true,
+      ["fan-mode"] = 0, ["power-off-delay"] = 60}
+    local client = {set_property = function() return true end, begin_session = function() return {} end,
+      get_properties = function(_, props)
+        local result = {}
+        for _, prop in ipairs(props) do result[#result + 1] = {did = prop.did, code = 0, value = values[prop.did]} end
+        return result
+      end}
+    local fields = {client = client, handler_module = fan}
+    local device = {label = "fan", get_field = function(_, key) return fields[key] end,
+      online = function() publishing = true end, offline = function() end,
+      emit_event = function(_, event)
+        if publishing then
+          emitted[#emitted + 1] = event
+          if #emitted == 1 then fields.client = replacement end
+        end
+      end}
+    if command then command_handlers.switch_on(nil, device) else command_handlers.refresh_core(nil, device) end
+    assert(#emitted == 1 and emitted[1].capability == "switch",
+      "a callback replacing the attachment must suppress later old speed, mode, swing and timer events")
+    assert(fields.client == replacement)
+  end
+end)
+
+test("a new command during poll publication suppresses the rest of the older poll", function()
+  local cosock = require "cosock"
+  local original_spawn = cosock.spawn
+  local workers, emitted, first = {}, {}, true
+  local values = {power = true, ["speed-percent"] = 55, swing = true, ["fan-mode"] = 0, ["power-off-delay"] = 60}
+  local client = {set_property = function() return true end, begin_session = function() return {} end,
+    get_properties = function(_, props)
+      local result = {}
+      for _, prop in ipairs(props) do result[#result + 1] = {did = prop.did, code = 0, value = values[prop.did]} end
+      return result
+    end}
+  local fields = {client = client, handler_module = fan}
+  local device
+  device = {label = "fan", get_field = function(_, key) return fields[key] end,
+    online = function() end, offline = function() end, emit_event = function(_, event)
+      emitted[#emitted + 1] = event
+      if first then first = false; command_handlers.switch_off(nil, device) end
+    end}
+  cosock.spawn = function(fn) workers[#workers + 1] = fn end
+  command_handlers.refresh_core(nil, device)
+  cosock.spawn = original_spawn
+  assert(#workers == 1 and #emitted == 3, "only the first poll event and two new optimistic events may publish")
+  assert(emitted[1].method == "on" and emitted[2].method == "off" and emitted[3].args[1] == 0)
+end)
+
+test("reattachment during state publication suppresses stale persistent fields and alert history", function()
+  local emitted, persisted, history, publishing = 0, 0, 0, false
+  local values = {power = true, mode = 0, fault = 2, pm25 = 5, ["filter-life"] = 10, ["favorite-level"] = 3}
+  local client = {begin_session = function() return {} end, get_properties = function(_, props)
+    local result = {}
+    for _, prop in ipairs(props) do result[#result + 1] = {did = prop.did, code = 0, value = values[prop.did]} end
+    return result
+  end}
+  local fields = {client = client, handler_module = airp,
+    xiaomi_alert_sink = function(message) if message then history = history + 1 end; return true end}
+  local device = {label = "purifier", log = {warn = function() end},
+    get_field = function(_, key) return fields[key] end,
+    set_field = function(_, key, value) fields[key] = value; persisted = persisted + 1 end,
+    online = function() publishing = true end, offline = function() end,
+    emit_event = function()
+      emitted = emitted + 1
+      if publishing then fields.client = {} end
+    end}
+  command_handlers.refresh_core(nil, device)
+  assert(emitted == 1 and persisted == 0 and history == 0,
+    "old filter/fault reads must not persist latches or publish history after an event reconnects")
+end)
+
+test("reattachment during confirmation suppresses the previous command completion event", function()
+  local capabilities = require "st.capabilities"
+  local emitted, publishing = {}, false
+  local handler = {uses_filter_maintenance = true, core_props = {{siid = 2, piid = 1, did = "power"}},
+    reset_filter = function() return true, nil, {} end,
+    apply_state = function(device)
+      device:emit_event(capabilities.switch.switch.off())
+      device:emit_event(capabilities.mode.mode("스마트"))
+    end}
+  local client = {begin_session = function() return {} end,
+    get_properties = function() return {{did = "power", code = 0, value = false}} end}
+  local fields = {handler_module = handler, client = client}
+  local device = {label = "dehumidifier", get_field = function(_, key) return fields[key] end,
+    online = function() publishing = true end, offline = function() end,
+    emit_event = function(_, event)
+      emitted[#emitted + 1] = event
+      if publishing then fields.client = {} end
+    end}
+  command_handlers.reset_filter(nil, device)
+  assert(#emitted == 2 and emitted[1].args[1] == "resetting" and emitted[2].method == "off",
+    "the old reset task cannot publish its later mode or ready completion on the replacement attachment")
+end)
+
+test("reattachment inside alert endpoint publication cannot emit stale history or save its marker", function()
+  local alerts = require "alerts"
+  local history, fields = 0, {}
+  local values = {power = true, mode = 0, fault = 2, pm25 = 5, ["filter-life"] = 10, ["favorite-level"] = 3}
+  local client = {begin_session = function() return {} end, get_properties = function(_, props)
+    local result = {}
+    for _, prop in ipairs(props) do result[#result + 1] = {did = prop.did, code = 0, value = values[prop.did]} end
+    return result
+  end}
+  fields.client, fields.handler_module = client, airp
+  local device = {label = "purifier", log = {warn = function() end},
+    get_field = function(_, key) return fields[key] end,
+    set_field = function(_, key, value) fields[key] = value end,
+    online = function() end, offline = function() end, emit_event = function() end}
+  local endpoint = {model = alerts.MODEL, supports_capability = function()
+    fields.client = {}; return true
+  end, emit_event = function() history = history + 1 end}
+  alerts.attach({get_devices = function() return {endpoint} end}, device)
+  command_handlers.refresh_core(nil, device)
+  assert(history == 0 and fields.xiaomi_alert_v1_filter == nil and fields.xiaomi_alert_v1_fault == nil,
+    "a lifecycle change inside endpoint supports must be checked before its event and delivered marker")
+end)
+
+test("a new command during confirmation publication keeps its optimistic state", function()
+  local cosock = require "cosock"
+  local original_spawn = cosock.spawn
+  local workers, emitted, publishing, requested = {}, {}, false, false
+  local values = {power = true, ["speed-percent"] = 55, swing = true, ["fan-mode"] = 0}
+  local client = {set_property = function(_, _, _, value) values.power = value; return true end,
+    begin_session = function() return {} end, get_properties = function(_, props)
+      local result = {}
+      for _, prop in ipairs(props) do result[#result + 1] = {did = prop.did, code = 0, value = values[prop.did]} end
+      return result
+    end}
+  local fields = {client = client, handler_module = fan}
+  local device
+  device = {label = "fan", get_field = function(_, key) return fields[key] end,
+    online = function() publishing = true end, offline = function() end,
+    emit_event = function(_, event)
+      if not publishing then return end
+      emitted[#emitted + 1] = event
+      if not requested then
+        requested = true
+        command_handlers.switch_off(nil, device)
+        coroutine.yield()
+      end
+    end}
+  cosock.spawn = function(fn) workers[#workers + 1] = coroutine.create(fn); assert(coroutine.resume(workers[#workers])) end
+  command_handlers.switch_on(nil, device)
+  -- The first confirmed event queued a newer command. Let its optimistic
+  -- events complete and suspend before the older apply_state continues.
+  assert(#emitted == 3 and emitted[2].method == "off" and emitted[3].args[1] == 0)
+  assert(coroutine.resume(workers[1]))
+  cosock.spawn = original_spawn
+  assert(#emitted == 8, "old confirmation must not add any events between the new optimistic and confirmed off state")
+  assert(emitted[3].args[1] == 0 and emitted[4].method == "off" and emitted[5].args[1] == 0)
+  for _, event in ipairs(emitted) do
+    if event.capability == "fanSpeedPercent" then assert(event.args[1] == 0, "stale positive speed cannot overwrite cancel") end
+  end
+end)
+
+test("a queued switch command does not suppress filter reset completion on the same attachment", function()
+  local cosock = require "cosock"
+  local original_spawn = cosock.spawn
+  local worker, maintenance, power = nil, {}, false
+  local handler = {uses_filter_maintenance = true, refresh_props = {{siid = 2, piid = 1, did = "power"}},
+    reset_filter = function() coroutine.yield(); return true, nil, {} end,
+    set_switch = function(_, value) power = value; return true, nil, {power = value} end,
+    apply_state = function() end}
+  local client = {begin_session = function() return {} end,
+    get_properties = function() return {{did = "power", code = 0, value = power}} end}
+  local fields = {handler_module = handler, client = client}
+  local device = {label = "dehumidifier", get_field = function(_, key) return fields[key] end,
+    online = function() end, offline = function() end, emit_event = function(_, event)
+      if event.capability == "earthpanel38939.filterMaintenance" then maintenance[#maintenance + 1] = event.args[1] end
+    end}
+  cosock.spawn = function(fn) worker = coroutine.create(fn); assert(coroutine.resume(worker)) end
+  command_handlers.reset_filter(nil, device)
+  command_handlers.switch_on(nil, device)
+  assert(coroutine.resume(worker))
+  cosock.spawn = original_spawn
+  assert(power and #maintenance == 2 and maintenance[1] == "resetting" and maintenance[2] == "ready",
+    "an unrelated queued command must not leave completed maintenance stuck resetting")
 end)
 
 print(string.format("%d tests passed", passed))

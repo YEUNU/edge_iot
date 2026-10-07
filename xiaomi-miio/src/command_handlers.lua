@@ -22,6 +22,46 @@ local function get_handler(device)
   return device:get_field("handler_module"), device:get_field("client")
 end
 
+local function still_attached(device, handler, client)
+  local current_handler, current_client = get_handler(device)
+  return current_handler == handler and current_client == client
+end
+
+local function command_client(device, handler, client)
+  -- Compound setters may issue several RPCs. Finish an RPC already in flight,
+  -- but stop its unsent follow-up writes if preferences changed meanwhile.
+  return setmetatable({}, { __index = function(_, name)
+    local value = client[name]
+    if type(value) ~= "function" then return value end
+    return function(_, ...)
+      if not still_attached(device, handler, client) then return nil, "attachment changed" end
+      return value(client, ...)
+    end
+  end })
+end
+
+local function publication_device(device, handler, client, current)
+  current = current or function() return still_attached(device, handler, client) end
+  local mutations = { emit_event = true, set_field = true, online = true, offline = true }
+  -- SDK event publication can yield or invoke lifecycle work. Check every
+  -- publication, not just the readback before apply_state starts emitting.
+  return setmetatable({}, { __index = function(_, name)
+    local value = device[name]
+    if type(value) ~= "function" then return value end
+    return function(_, ...)
+      if mutations[name] and not current() then return nil end
+      local result = value(device, ...)
+      if name == "get_field" and select(1, ...) == "xiaomi_alert_sink" and type(result) == "function" then
+        return function(message)
+          if not current() then return false end
+          return result(message, current)
+        end
+      end
+      return result
+    end
+  end })
+end
+
 local function warn_fail(device, action, err)
   log.warn(string.format("[%s] %s failed: %s", device.label, action, tostring(err)))
 end
@@ -47,6 +87,7 @@ local function read_properties(device, handler, client, props)
   local idx = 0
   local CHUNK_SIZE = handler.chunk_size or DEFAULT_CHUNK_SIZE
   for i = 1, #props, CHUNK_SIZE do
+    if not still_attached(device, handler, client) then return nil, "attachment changed" end
     idx = idx + 1
     local chunk = {}
     for j = i, math.min(i + CHUNK_SIZE - 1, #props) do
@@ -55,13 +96,21 @@ local function read_properties(device, handler, client, props)
     if idx > 1 then cosock.socket.sleep(0.05) end
     local result, err = client:get_properties(chunk, session)
     if result then
+      local requested = {}
+      for _, prop in ipairs(chunk) do requested[prop.did] = prop end
       for _, p in ipairs(result) do
-        if tonumber(p.code) == 0 then
+        local prop = type(p) == "table" and requested[p.did]
+        local value_type = type(p) == "table" and type(p.value)
+        local valid_value = value_type == "boolean" or value_type == "string"
+          or (value_type == "number" and p.value == p.value and math.abs(p.value) < math.huge)
+        if prop and tonumber(p.code) == 0 and valid_value
+            and (not prop.value_type or value_type == prop.value_type) then
           any_ok = true
           by_did[p.did] = p.value
         else
           last_err = string.format("property %s failed with code %s",
-            tostring(p.did or "?"), tostring(p.code or "missing"))
+            tostring(type(p) == "table" and p.did or "?"),
+            tostring(type(p) == "table" and p.code or "missing"))
           log.warn(string.format("[%s] refresh chunk %d: %s",
             device.label, idx, last_err))
         end
@@ -78,22 +127,25 @@ local function read_properties(device, handler, client, props)
   return by_did
 end
 
-local function refresh_properties(device, props, action_name, during_command)
+local function refresh_properties(device, props, action_name, during_command, command_version)
   local queue = command_queues[device]
   if queue and queue.running and not during_command then return true end
-  local version = command_versions[device]
+  local version = command_version or command_versions[device]
   local handler, client = get_handler(device)
   if not (handler and client) then return false end
   local values, err = read_properties(device, handler, client, props)
   -- A poll started before a command must not overwrite the newer state.
-  if command_versions[device] ~= version then return true end
+  if command_versions[device] ~= version or not still_attached(device, handler, client) then return true end
+  local published = publication_device(device, handler, client, function()
+    return command_versions[device] == version and still_attached(device, handler, client)
+  end)
   if not values then
-    device:offline()
+    published:offline()
     warn_fail(device, action_name or "refresh", err)
     return false
   end
-  device:online()
-  handler.apply_state(device, values)
+  published:online()
+  handler.apply_state(published, values)
   return true
 end
 
@@ -150,42 +202,57 @@ local function values_match(values, expected, props, tolerances)
   return true
 end
 
-local function confirm_after_command(device, handler, client, action_name, expected)
+local function confirm_after_command(device, handler, client, action_name, expected, version)
+  if not still_attached(device, handler, client) then return false end
+  local function current()
+    return still_attached(device, handler, client) and (version == nil or command_versions[device] == version)
+  end
+  local published = publication_device(device, handler, client, current)
   if not expected or next(expected) == nil then
     return refresh_properties(device, handler.core_props or handler.refresh_props,
-      action_name .. " confirmation", true)
+      action_name .. " confirmation", true, version)
   end
 
   local props = confirmation_props(handler, expected)
   if #props == 0 then
     warn_fail(device, action_name, "no confirmation properties")
-    device:offline()
+    published:offline()
     return false
   end
 
   cosock.socket.sleep(0.5)
+  if not still_attached(device, handler, client) then return false end
   local first_values, first_err = read_properties(device, handler, client, props)
+  if not still_attached(device, handler, client) then return false end
   if values_match(first_values, expected, props, handler.confirmation_tolerances) then
-    device:online()
-    handler.apply_state(device, first_values)
+    published:online()
+    handler.apply_state(published, first_values)
     return true
   end
 
   -- Some miIO devices acknowledge a set before the new value is readable.
   -- Retry once at roughly two seconds from the command.
   cosock.socket.sleep(1.5)
+  if not still_attached(device, handler, client) then return false end
   local final_values, final_err = read_properties(device, handler, client, props)
+  if not still_attached(device, handler, client) then return false end
   if final_values then
-    device:online()
-    handler.apply_state(device, final_values)
+    local expected_complete = true
+    for did in pairs(expected) do
+      if final_values[did] == nil then expected_complete = false end
+    end
+    if expected_complete then published:online() else published:offline() end
+    handler.apply_state(published, final_values)
     if values_match(final_values, expected, props, handler.confirmation_tolerances) then return true end
-    warn_fail(device, action_name, "confirmation mismatch; rolled back to device state")
+    warn_fail(device, action_name, expected_complete
+      and "confirmation mismatch; applied available device state"
+      or "confirmation incomplete; commanded state is unavailable")
     return false
   end
 
   -- No reliable actual state is available. Keep no optimistic state marked as
   -- trustworthy and let the next core poll recover the device.
-  device:offline()
+  published:offline()
   warn_fail(device, action_name,
     final_err or first_err or "confirmation failed")
   return false
@@ -199,20 +266,26 @@ local function fire_and_confirm(_, device, action_name, fn, finished)
   command_versions[device] = (command_versions[device] or 0) + 1
   local queue = command_queues[device]
   if not queue then queue = { items = {} }; command_queues[device] = queue end
-  queue.items[#queue.items + 1] = { action = action_name, run = fn, finished = finished }
+  queue.items[#queue.items + 1] = { action = action_name, run = fn, finished = finished,
+    version = command_versions[device] }
   if queue.running then return end
   queue.running = true
   cosock.spawn(function()
     while #queue.items > 0 do
       local task = table.remove(queue.items, 1)
+      -- Credentials may change while an earlier setter is waiting for a reply.
+      -- Only unsent queued commands use the replacement attachment; an already
+      -- sent command is never replayed on it.
+      local handler, client = get_handler(device)
       local ran, failure = pcall(function()
-        local ok, err, expected = task.run(handler, client)
+        if not (handler and client) then return end
+        local ok, err, expected = task.run(handler, command_client(device, handler, client))
         if not ok then warn_fail(device, task.action, err) end
-        confirm_after_command(device, handler, client, task.action, expected)
+        confirm_after_command(device, handler, client, task.action, expected, task.version)
       end)
       if not ran then warn_fail(device, task.action, failure) end
-      if task.finished then
-        local done, err = pcall(task.finished)
+      if task.finished and still_attached(device, handler, client) then
+        local done, err = pcall(task.finished, publication_device(device, handler, client))
         if not done then warn_fail(device, task.action, err) end
       end
     end
@@ -399,9 +472,9 @@ function M.reset_filter(driver, device)
   end
   fire_and_confirm(driver, device, "reset_filter",
     function(h, c) return call_setter(h, c, "reset_filter") end,
-    function()
+    function(completed_device)
       if cap_filterMaintenance and handler and handler.uses_filter_maintenance then
-        optimistic(device, cap_filterMaintenance.status("ready"))
+        optimistic(completed_device, cap_filterMaintenance.status("ready"))
       end
     end)
 end

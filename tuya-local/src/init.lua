@@ -60,9 +60,75 @@ local function show_candidate(device, id)
   library_event(device,library.candidate(item.name,{state_change=true}))
 end
 
-local function apply(device, result, testing)
+local function finite_number(value)
+  return type(value)=='number' and value==value and value~=math.huge and value~=-math.huge
+end
+local function valid_list(values, check)
+  if type(values)~='table' then return false end
+  for key,value in pairs(values) do
+    if type(key)~='number' or key%1~=0 or key<1 or key>#values or not check(value) then return false end
+  end
+  for i=1,#values do if not check(values[i]) then return false end end
+  return true
+end
+local modes={cool=true,heat=true,auto=true,dry=true,fanOnly=true}
+local function valid_settings(settings)
+  if type(settings)~='table' then return false end
+  return (settings.power==nil or type(settings.power)=='boolean')
+    and (settings.mode==nil or modes[settings.mode]==true)
+    and (settings.fan==nil or (type(settings.fan)=='string' and #settings.fan>0 and #settings.fan<=32))
+    and (settings.target_temperature==nil or finite_number(settings.target_temperature))
+end
+local function valid_response(result)
+  if type(result)~='table' or not valid_settings(result.state) then return false end
+  if result.settings~=nil and not valid_settings(result.settings) then return false end
+  if not valid_list(result.supported_modes,function(mode)return modes[mode]==true end)
+    or not valid_list(result.supported_fans,function(fan)return type(fan)=='string' and #fan>0 and #fan<=32 end) then return false end
+  if result.supported_keys~=nil and not valid_list(result.supported_keys,function(key)
+    return type(key)=='table' and type(key.id)=='string' and #key.id>0
+  end) then return false end
+  if result.control_style~=nil and result.control_style~='state' and result.control_style~='buttons' then return false end
+  if result.settings_save_pending~=nil and type(result.settings_save_pending)~='boolean' then return false end
+  if result.temperature~=nil then
+    local t=result.temperature
+    if type(t)~='table' or not finite_number(t.min) or not finite_number(t.max) or not finite_number(t.step)
+      or t.min>t.max or t.step<=0 then return false end
+  end
+  return true
+end
+local function warn(device,text)
+  -- Logging and event publication can fail independently of LAN transmission.
+  pcall(function() device.log.warn(text) end)
+end
+local function publish(device,fn)
+  local ok=pcall(fn)
+  if not ok then warn(device,'Tuya result publication failed; command will not be replayed') end
+end
+
+local function same_credentials(left,right)
+  return left.bridgeIp==right.bridgeIp and tonumber(left.bridgePort)==tonumber(right.bridgePort)
+    and left.bridgeToken==right.bridgeToken
+end
+local function same_context(left,right)
+  return left and right and tostring(left.profile)==tostring(right.profile)
+    and (not not left.testing)==(not not right.testing) and left.keys_open==right.keys_open
+    and same_credentials(left.preferences,right.preferences)
+end
+local function current_request(device,request)
+  local setup=not not in_setup(device)
+  local profile=setup and (device:get_field('candidate_profile') or selected(device)) or selected(device)
+  return tostring(request.profile)==tostring(profile) and (not not request.testing)==setup
+    and request.keys_open==(not not device:get_field('keys_open'))
+    and same_credentials(request.preferences,credentials(device))
+end
+
+local function apply(device, result, testing, request)
+  local function emit(event)
+    -- Event publication can also yield or reenter a model-change handler.
+    if current_request(device,request) then device:emit_event(event) end
+  end
+  if not current_request(device,request) then return end
   local s = result.state
-  if type(s) ~= 'table' then device:offline(); return end
   device:set_field('has_remote_keys', #(result.supported_keys or {}) > 0)
   if device:supports_capability(remote_keys) then
     local keys={}
@@ -72,38 +138,77 @@ local function apply(device, result, testing)
     for _,id in ipairs(keys) do if id==chosen then found=true end end
     if not found then chosen=keys[1] or '' end
     device:set_field('remote_key',chosen)
-    device:emit_event(remote_keys.supportedKeys(keys,{state_change=true,visibility={displayed=false}}))
-    device:emit_event(remote_keys.key(chosen,{state_change=true}))
+    emit(remote_keys.supportedKeys(keys,{state_change=true,visibility={displayed=false}}))
+    emit(remote_keys.key(chosen,{state_change=true}))
   end
+  if not current_request(device,request) then return end
   if result.control_style=='buttons' or device:get_field('keys_open') then
     connection_note(device,'버튼 전송 기준 · 실제 상태는 확인할 수 없습니다')
-    device:online()
     return
   end
   if type(s.power) == 'boolean' then
-    device:emit_event(caps.switch.switch(s.power and 'on' or 'off'))
+    emit(caps.switch.switch(s.power and 'on' or 'off'))
   end
   local settings=result.settings or s
-  local tempcap=caps['earthpanel38939.'..(temperatures.by_id[selected(device)] or 'acTemp18To30')]
+  local tempcap=caps['earthpanel38939.'..(temperatures.by_id[tostring(request.profile)] or 'acTemp18To30')]
   if settings.target_temperature then
-    if not testing and device:supports_capability(tempcap) then device:emit_event(tempcap.temperature({value=settings.target_temperature,unit='C'},{state_change=true,visibility={displayed=false}})) end
-    device:emit_event(caps.thermostatCoolingSetpoint.coolingSetpoint({value=settings.target_temperature,unit='C'}))
+    if not testing and device:supports_capability(tempcap) then emit(tempcap.temperature({value=settings.target_temperature,unit='C'},{state_change=true,visibility={displayed=false}})) end
+    emit(caps.thermostatCoolingSetpoint.coolingSetpoint({value=settings.target_temperature,unit='C'}))
   end
   if result.temperature then
     local t = result.temperature
-    if not testing and device:supports_capability(tempcap) then device:emit_event(tempcap.temperatureRange({value={minimum=t.min,maximum=t.max,step=t.step}},{state_change=true,visibility={displayed=false}})) end
-    device:emit_event(caps.thermostatCoolingSetpoint.coolingSetpointRange({value={minimum=t.min,maximum=t.max,step=t.step},unit='C'}))
+    if not testing and device:supports_capability(tempcap) then emit(tempcap.temperatureRange({value={minimum=t.min,maximum=t.max,step=t.step}},{state_change=true,visibility={displayed=false}})) end
+    emit(caps.thermostatCoolingSetpoint.coolingSetpointRange({value={minimum=t.min,maximum=t.max,step=t.step},unit='C'}))
   end
-  device:emit_event(caps.airConditionerMode.supportedAcModes(result.supported_modes, {visibility={displayed=false}}))
+  emit(caps.airConditionerMode.supportedAcModes(result.supported_modes, {visibility={displayed=false}}))
   if device:supports_capability(mode_control) then
-    device:emit_event(mode_control.supportedModes(result.supported_modes, {state_change=true,visibility={displayed=false}}))
-    if settings.mode then device:emit_event(mode_control.mode(settings.mode)) end
+    emit(mode_control.supportedModes(result.supported_modes, {state_change=true,visibility={displayed=false}}))
+    if settings.mode then emit(mode_control.mode(settings.mode)) end
   end
-  device:emit_event(caps.airConditionerFanMode.supportedAcFanModes(result.supported_fans, {visibility={displayed=false}}))
-  if settings.mode then device:emit_event(caps.airConditionerMode.airConditionerMode(settings.mode)) end
-  if settings.fan then device:emit_event(caps.airConditionerFanMode.fanMode(settings.fan)) end
-  connection_note(device,'리모컨 명령 기준')
-  device:online()
+  emit(caps.airConditionerFanMode.supportedAcFanModes(result.supported_fans, {visibility={displayed=false}}))
+  if settings.mode then emit(caps.airConditionerMode.airConditionerMode(settings.mode)) end
+  if settings.fan then emit(caps.airConditionerFanMode.fanMode(settings.fan)) end
+  if current_request(device,request) then
+    connection_note(device,s.power==nil and '전원 미확인 · 저장된 설정 기준' or '리모컨 명령 기준')
+  end
+end
+
+local function complete_request(device,request,ok,result,err)
+  if ok and result and valid_response(result)
+    and (result.profile_id==nil or tostring(result.profile_id)==tostring(request.profile)) then
+    -- Connection status and UI publication cannot change a successful send
+    -- into a transport failure. Neither path ever repeats the command.
+    if same_credentials(request.preferences,credentials(device)) then
+      publish(device,function() device:online() end)
+    end
+    publish(device,function()
+      -- The socket may yield while a user changes the model or leaves setup.
+      -- An old result must not repaint a different model or remote-key screen.
+      if not current_request(device,request) then return end
+      if not request.testing then apply(device,result,false,request) end
+      if request.testing then
+        apply(device,result,true,request)
+        if request.changes and current_request(device,request) then note(device,'반응 확인 후 저장') end
+      elseif request.changes and current_request(device,request) then
+        note(device,'명령을 보냈습니다 · 실제 작동 상태는 확인할 수 없습니다')
+      end
+      if result.settings_save_pending and current_request(device,request) then connection_note(device,'명령 전송 완료 · 설정 저장 대기') end
+    end)
+    return true
+  else
+    if same_credentials(request.preferences,credentials(device)) and (not ok or err~='unsupported') then
+      publish(device,function() device:offline() end)
+    end
+    publish(device,function()
+      if not current_request(device,request) then return end
+      note(device,'요청 실패 · 연결 또는 지원 조합을 확인하세요')
+      if current_request(device,request) then
+        connection_note(device,err=='unsupported' and '이 조합은 지원하지 않습니다' or '브리지 연결 확인 필요')
+      end
+    end)
+    warn(device,'Tuya LAN request or response failed')
+    return false
+  end
 end
 
 local function transact(_, device, changes, profile, testing)
@@ -112,46 +217,60 @@ local function transact(_, device, changes, profile, testing)
     return
   end
   local queue=device:get_field('requests') or {}
-  -- Polls may coalesce; user commands must not be silently dropped.
-  if device:get_field('busy') and not changes then return end
   if profile==nil and in_setup(device) then
     profile=device:get_field('candidate_profile') or selected(device)
     testing=true
   end
-  table.insert(queue,{changes=changes,profile=profile or selected(device),testing=testing})
+  local prefs={}
+  for k,v in pairs(credentials(device)) do prefs[k]=v end
+  local request={changes=changes,profile=profile or selected(device),testing=testing,
+    keys_open=not not device:get_field('keys_open'),preferences=prefs}
+  -- Keep the latest requested view, even while a prior socket operation yields.
+  -- A successful command for that same view can satisfy its coalesced poll.
+  if device:get_field('busy') and not changes then
+    device:set_field('pending_refresh',request)
+    return
+  end
+  table.insert(queue,request)
   device:set_field('requests',queue)
   if device:get_field('busy') then return end
   device:set_field('busy',true)
-  while #queue>0 do
-    local request=table.remove(queue,1)
-    local prefs={}
-    for k,v in pairs(credentials(device)) do prefs[k]=v end
-    prefs.remoteIndex=tonumber(request.profile)
-    local ok,result,err=pcall(Client.request,prefs,request.changes)
-    if ok and result then
-      if not request.testing then apply(device,result) end
-      if request.testing and in_setup(device) and tostring(request.profile)==tostring(device:get_field('candidate_profile')) then
-        apply(device,result,true)
-        if request.changes then note(device,'반응 확인 후 저장') end
-      else
-        if request.changes then note(device,'명령을 보냈습니다 · 실제 작동 상태는 확인할 수 없습니다') end
+  local drained=pcall(function()
+    local previous,successful
+    while true do
+      if #queue==0 then
+        local pending=device:get_field('pending_refresh')
+        device:set_field('pending_refresh',nil)
+        if pending and (not successful or not same_context(pending,previous)) then
+          table.insert(queue,pending)
+        end
       end
-    else
-      note(device,'요청 실패 · 연결 또는 지원 조합을 확인하세요')
-      connection_note(device,err=='unsupported' and '이 조합은 지원하지 않습니다' or '브리지 연결 확인 필요')
-      if not ok or err~='unsupported' then device:offline() end
-      device.log.warn('Tuya LAN request failed')
+      if #queue==0 then break end
+      local request=table.remove(queue,1)
+      successful=false
+      local handled=pcall(function()
+        local prefs=request.preferences
+        prefs.remoteIndex=tonumber(request.profile)
+        local ok,result,err=pcall(Client.request,prefs,request.changes)
+        successful=complete_request(device,request,ok,result,err)
+      end)
+      previous=request
+      if not handled then warn(device,'Tuya request processing failed; command will not be replayed') end
     end
-  end
+  end)
+  -- Always release the worker, even if processing or publication raises.
   device:set_field('busy',false)
+  if not drained then warn(device,'Tuya request worker failed') end
 end
 
 local function refresh(driver, device)
   -- Profile changes are asynchronous; publish setup values again once attached.
-  if device:supports_capability(library) then
-    show_candidate(device,device:get_field('candidate_profile') or selected(device))
-    note(device,device:get_field('setup_note') or '제조사와 기종을 선택하세요')
-  end
+  publish(device,function()
+    if device:supports_capability(library) then
+      show_candidate(device,device:get_field('candidate_profile') or selected(device))
+      note(device,device:get_field('setup_note') or '제조사와 기종을 선택하세요')
+    end
+  end)
   transact(driver, device)
 end
 local function init(driver, device)

@@ -120,10 +120,14 @@ local function attach(device)
 
   -- Air purifier needs a slightly longer per-RPC timeout (slow when off).
   local timeout_s = (cfg.handler == "airp_cpa4") and 10 or 6
+  local saved = device:get_field("local_connection") or {}
+  local expected_did = saved.did
+    or tonumber((device.device_network_id or ""):match("^xiaomi%-miio%-(%d+)$"))
   local client, client_err = Client.new{
     ip = prefs.deviceIp,
     token = prefs.deviceToken,
     timeout_s = timeout_s,
+    expected_did = expected_did,
   }
   if not client then
     device.log.error("invalid miIO client settings: " .. tostring(client_err))

@@ -43,20 +43,22 @@ function M.initialize(_, device)
   end
 end
 
-function M.emit(endpoint, message)
+function M.emit(endpoint, message, current)
+  if current and not current() then return false end
   if not cap_message or not endpoint:supports_capability(cap_message) then
     return false
   end
+  if current and not current() then return false end
   endpoint:emit_event(cap_message.message(message, { state_change = true }))
   return true
 end
 
 function M.attach(driver, device)
   M.ensure(driver)
-  device:set_field("xiaomi_alert_sink", function(message)
+  device:set_field("xiaomi_alert_sink", function(message, current)
     local endpoint = M.ensure(driver)
     if not message then return endpoint ~= nil end
-    return endpoint and M.emit(endpoint, message) or false
+    return endpoint and M.emit(endpoint, message, current) or false
   end)
 end
 

@@ -31,13 +31,21 @@ def st_json(*args):
 
 def normalize(records):
     result = {}
+    if not isinstance(records, (list, tuple)):
+        return []
     for d in records:
-        if d.get('model') not in SUPPORTED:
+        if not isinstance(d, dict) or not isinstance(d.get('model'), str) or d['model'] not in SUPPORTED:
             continue
         try:
-            ip = ipaddress.IPv4Address(d.get('localip', ''))
+            address = d.get('localip', '')
             token = d.get('token', '')
-            did = int(d['did'])
+            if not isinstance(address, str) or not isinstance(token, str):
+                continue
+            ip = ipaddress.IPv4Address(address)
+            raw_did = d['did']
+            if type(raw_did) not in (int, str):
+                continue
+            did = int(raw_did)
             if not ip.is_private or ip.is_loopback or ip.is_unspecified or ip.is_multicast:
                 continue
             if len(token) != 32 or len(bytes.fromhex(token)) != 16 or token.lower() in ('0'*32, 'f'*32):
@@ -113,15 +121,83 @@ def qr_login(connector, path):
 
 
 def cloud_devices(connector, regions):
-    records = []
+    records, errors = [], 0
+
+    def fetch(method, *args):
+        nonlocal errors
+        try:
+            response = method(*args)
+            if not isinstance(response, dict) or ("code" in response and
+                    (type(response['code']) is not int or response['code'] != 0)):
+                raise ValueError()
+            result = response.get('result')
+            if not isinstance(result, dict):
+                raise ValueError()
+            return result
+        except Exception:
+            # API failures and third-party exceptions may contain account data.
+            errors += 1
+            return None
+
+    def rows(value):
+        nonlocal errors
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        errors += 1
+        return []
+
+    def identity(value):
+        if type(value) not in (int, str):
+            raise ValueError()
+        value = int(value)
+        if value <= 0:
+            raise ValueError()
+        return value
+
     for region in regions:
-        response = connector.get_homes(region) or {}
-        homes = [(h['id'], connector.userId) for h in response.get('result',{}).get('homelist',[])]
-        response = connector.get_dev_cnt(region) or {}
-        homes += [(h['home_id'], h['home_owner']) for h in response.get('result',{}).get('share',{}).get('share_family',[])]
-        for home, owner in dict.fromkeys(homes):
-            response = connector.get_devices(region, home, owner) or {}
-            records.extend(response.get('result',{}).get('device_info') or [])
+        homes = {}
+
+        def add_home(home, owner):
+            nonlocal errors
+            try:
+                homes[(identity(home), identity(owner))] = None
+            except (ValueError, TypeError):
+                errors += 1
+
+        result = fetch(connector.get_homes, region)
+        if result is not None:
+            if 'homelist' not in result:
+                errors += 1
+            for home in rows(result.get('homelist')):
+                if isinstance(home, dict):
+                    add_home(home.get('id'), connector.userId)
+                else:
+                    errors += 1
+        result = fetch(connector.get_dev_cnt, region)
+        if result is not None:
+            if 'share' not in result:
+                errors += 1
+            share = result.get('share')
+            if share is None:
+                share = {}
+            if isinstance(share, dict):
+                for home in rows(share.get('share_family')):
+                    if isinstance(home, dict):
+                        add_home(home.get('home_id'), home.get('home_owner'))
+                    else:
+                        errors += 1
+            else:
+                errors += 1
+        for home, owner in homes:
+            result = fetch(connector.get_devices, region, home, owner)
+            if result is not None:
+                if 'device_info' not in result:
+                    errors += 1
+                records.extend(rows(result.get('device_info')))
+    if errors:
+        raise RuntimeError('Xiaomi cloud device lookup failed; retry or select a single region')
     return normalize(records)
 
 

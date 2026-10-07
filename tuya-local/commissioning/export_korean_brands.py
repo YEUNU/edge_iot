@@ -63,6 +63,36 @@ def request_for(job):
     return 'testing/raw/command', body
 
 
+def read_request_journal(path, jobs=None, *, contiguous=True, complete=True):
+    """Validate completed requests before deciding which physical sends to skip."""
+    records = [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+    starts, results = {}, {}
+    for record in records:
+        if not isinstance(record, dict) or record.get('phase') not in ('start', 'result'):
+            raise ValueError('Unknown journal phase')
+        number = record.get('job')
+        if type(number) is not int or number < 0:
+            raise ValueError('Invalid journal job')
+        target = starts if record['phase'] == 'start' else results
+        if number in target:
+            raise ValueError('Duplicate journal phase')
+        if record['phase'] == 'result':
+            if number not in starts:
+                raise ValueError('Journal result has no preceding request')
+            if type(record.get('accepted')) is not bool:
+                raise ValueError('Invalid journal acceptance')
+        elif jobs is not None:
+            if number >= len(jobs) or any(record.get(key) != value or
+                    type(record.get(key)) is not type(value) for key, value in jobs[number].items()):
+                raise ValueError('Journal plan mismatch: manual inspection required')
+        target[number] = record
+    if complete and starts.keys() != results.keys():
+        raise ValueError('Uncertain previous request: inspect journal and Publish logs before resuming')
+    if contiguous and set(starts) != set(range(len(starts))):
+        raise ValueError('Noncontiguous journal jobs: manual inspection required')
+    return starts, results
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data', type=Path, required=True)
@@ -72,6 +102,8 @@ def main():
     parser.add_argument('--interval', type=float, default=30,
                         help='Seconds of rest after each response (minimum 5; default 30)')
     args = parser.parse_args()
+    if args.limit < 0:
+        parser.error('--limit must be nonnegative')
     if not math.isfinite(args.interval) or args.interval < 5:
         parser.error('--interval must be at least 5 seconds')
     brands, jobs = plan(args.data / 'hub-ac-inventory')
@@ -81,17 +113,14 @@ def main():
         return
     if not args.hub_covered:
         parser.error('--send requires --hub-covered')
-    import tinytuya
-    cloud = tinytuya.Cloud(**json.loads((args.data / 'cloud.json').read_text()))
-    hub = json.loads((args.data / 'config.json').read_text())['device_id']
     path = args.data / 'korean-export-requests.jsonl'
     lock = os.open(args.data/'korean-export.lock', os.O_CREAT | os.O_RDWR, 0o600)
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    records = [json.loads(s) for s in path.read_text().splitlines()] if path.exists() else []
-    started = {r['job'] for r in records if r['phase'] == 'start'}
-    completed = {r['job'] for r in records if r['phase'] == 'result'}
-    if started != completed:
-        raise RuntimeError('Uncertain previous request: inspect journal and Publish logs before resuming')
+    _, completed = read_request_journal(path, jobs)
+    requests = [request_for(job) for job in jobs]
+    import tinytuya
+    cloud = tinytuya.Cloud(**json.loads((args.data / 'cloud.json').read_text()))
+    hub = json.loads((args.data / 'config.json').read_text())['device_id']
     count = 0
     with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600), 'a') as stream:
         def record(value):
@@ -105,7 +134,7 @@ def main():
                 break
             began = time.time()
             record(dict(job, job=number, phase='start', start_ms=int(began * 1000)))
-            endpoint, body = request_for(job)
+            endpoint, body = requests[number]
             result = cloud._tuyaplatform('infrareds/' + hub + '/' + endpoint,
                 action='POST', ver='v2.0', post=body)
             accepted = result.get('success') is True and result.get('result') is True

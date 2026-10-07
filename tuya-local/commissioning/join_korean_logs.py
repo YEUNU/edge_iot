@@ -10,30 +10,43 @@ import json
 import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from export_korean_brands import plan, read_request_journal
 
 
 def join(journal, rows, timezone='Asia/Seoul'):
     starts, results, logs = {}, {}, {}
     for record in journal:
+        if not isinstance(record, dict) or record.get('phase') not in ('start', 'result'):
+            raise ValueError('Unknown request journal phase')
+        if type(record.get('job')) is not int or record['job'] < 0:
+            raise ValueError('Invalid request journal job')
+        if record['phase'] == 'result' and type(record.get('accepted')) is not bool:
+            raise ValueError('Invalid request journal acceptance')
+        if record['phase'] == 'result' and record['job'] not in starts:
+            raise ValueError('Journal result has no preceding request')
         target = starts if record['phase'] == 'start' else results
         if record['job'] in target:
             raise ValueError('Duplicate request journal phase')
         target[record['job']] = record
     for row in rows:
-        if row.get('command', {}).get('control') != 'send_ir':
+        if not isinstance(row, dict) or not isinstance(row.get('command'), dict) or row['command'].get('control') != 'send_ir':
             continue
         key = row['time']
         serialized = json.dumps(row['command'], sort_keys=True)
         logs.setdefault(key, {})[serialized] = row['command']
     # Publish occurs before the API response and can cross a second boundary.
     # Only accept a log second attributable to exactly one request interval.
-    windows, owners = {}, {}
+    windows, owners, epoch_seconds = {}, {}, {}
+    def valid_stamp(value):
+        return type(value) in (int, float) and 0 <= value <= 253402300799999
     for number, request in starts.items():
         response = results.get(number, {})
         if not response.get('accepted') or not response.get('response_ms'):
             continue
         stamp = response['response_ms']
         began, ended = request.get('start_ms', stamp), response.get('end_ms', stamp)
+        if not all(valid_stamp(value) for value in (stamp, began, ended)):
+            continue
         if ended < began or ended-began > 10000 or abs(ended-stamp) > 2000:
             continue
         seconds = []
@@ -41,7 +54,30 @@ def join(journal, rows, timezone='Asia/Seoul'):
             second = datetime.datetime.fromtimestamp(value, ZoneInfo(timezone)).strftime('%Y-%m-%d %H:%M:%S')
             seconds.append(second)
             owners.setdefault(second, set()).add(number)
+            epoch_seconds[second] = value
         windows[number] = seconds
+    # An uncertain send can still have emitted IR. Its known interval must
+    # compete with accepted requests for attribution; absence of a result is
+    # never evidence that a nearby Publish belongs to another command.
+    for number, request in starts.items():
+        if number in windows:
+            continue
+        response = results.get(number, {})
+        stamp = response.get('response_ms')
+        began = request.get('start_ms', stamp)
+        ended = response.get('end_ms', stamp)
+        if not valid_stamp(began):
+            for candidates in owners.values():
+                candidates.add(number)
+            continue
+        lower = int(began // 1000)
+        upper = int(ended // 1000) if valid_stamp(ended) and ended >= began else None
+        if valid_stamp(stamp):
+            lower = min(lower, int(stamp // 1000))
+            if upper is not None:upper = max(upper, int(stamp // 1000))
+        for second, value in epoch_seconds.items():
+            if value >= lower and (upper is None or value <= upper):
+                owners[second].add(number)
     captured, missing = [], []
     claimed = set()
     for number, request in sorted(starts.items()):
@@ -56,7 +92,7 @@ def join(journal, rows, timezone='Asia/Seoul'):
             continue
         second, candidates = matches[0]
         command = next(iter(candidates.values()))
-        if (command.get('type') != 0 or not isinstance(command.get('head'), str)
+        if (type(command.get('type')) is not int or command['type'] != 0 or not isinstance(command.get('head'), str)
                 or not command['head'] or not isinstance(command.get('key1'), str)
                 or not command['key1'] or len(json.dumps(command)) > 3072):
             missing.append({'job': number, 'reason': 'unsupported_payload'})
@@ -88,13 +124,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data', type=Path, required=True)
     args = parser.parse_args()
-    journal = [json.loads(line) for line in (args.data/'korean-export-requests.jsonl').read_text().splitlines()]
+    _,jobs=plan(args.data/'hub-ac-inventory')
+    def validated_records(path, contiguous):
+        starts,results=read_request_journal(path,jobs,contiguous=contiguous,complete=False)
+        return [record for number in sorted(starts)
+                for record in (starts[number],results.get(number)) if record is not None]
+    journal = validated_records(args.data/'korean-export-requests.jsonl',True)
     rows = []
     for path in sorted(args.data.glob('korean-console-*.json')):
         rows.extend(json.loads(path.read_text()))
     joined = [join(journal, rows)]
     for path in sorted(args.data.glob('korean-recapture-*.jsonl')):
-        attempt = [json.loads(line) for line in path.read_text().splitlines()]
+        attempt = validated_records(path,False)
         joined.append(join(attempt, rows))
     result = merge_results(joined)
     target = args.data/'korean-captured.json'

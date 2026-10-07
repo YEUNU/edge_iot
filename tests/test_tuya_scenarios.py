@@ -10,6 +10,7 @@ import unittest
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from unittest.mock import patch
 from test_tuya_local import config, FakeDevice, ROOT, ON, Controller, DeviceError
 
 sys.path.insert(0,str(ROOT/'tuya-local/commissioning'))
@@ -164,5 +165,106 @@ class ScenarioTests(unittest.TestCase):
             self.assertEqual(result['profile_id'],profile)
             self.assertEqual(result['state']['mode'],changes['mode'])
         self.assertEqual(len(c.device.sent),len(cases))
+
+    def test_pending_save_survives_profile_switch_and_restart_without_replaying_ir(self):
+        cfg = self.rich_config()
+        cfg['profiles'] = {'456': {'name': 'Other', 'codes': copy.deepcopy(cfg['codes'])}}
+        with tempfile.TemporaryDirectory() as directory:
+            cfg['settings_path'] = str(Path(directory) / 'settings.json')
+            c = Controller(cfg, factory=FakeDevice)
+            with patch('controller.os.replace', side_effect=PermissionError('denied')):
+                self.assertTrue(c.command({'target_temperature': 26}, '123')['settings_save_pending'])
+                self.assertTrue(c.command({'mode': 'heat'}, '456')['settings_save_pending'])
+            self.assertEqual(len(c.device.sent), 2)
+            self.assertFalse(c.status('123')['settings_save_pending'])
+            self.assertEqual(len(c.device.sent), 3)
+            self.assertEqual(json.loads(c.device.sent[-1]['201']), {'control': 'study_exit'})
+            restarted = Controller(cfg, factory=FakeDevice)
+            self.assertEqual(restarted.settings['target_temperature'], 26)
+            self.assertEqual(restarted.status('456')['settings']['mode'], 'heat')
+            self.assertEqual(restarted.state, {})
+
+    def test_save_failure_health_profile_switch_recovery_and_restart_preserve_all_settings(self):
+        cfg = self.rich_config()
+        cfg['profiles'] = {'456': {'name': 'Other', 'codes': copy.deepcopy(cfg['codes'])}}
+        expected = {'123': {'mode': 'cool', 'fan': 'auto', 'target_temperature': 26},
+                    '456': {'mode': 'heat', 'fan': 'low', 'target_temperature': 30}}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'settings.json'
+            path.mkdir()  # A real filesystem failure, without modifying operating permissions.
+            cfg['settings_path'] = str(path)
+            c = Controller(cfg, factory=FakeDevice)
+            first = c.command({'target_temperature': 26}, '123')
+            self.assertTrue(first['settings_save_pending'])
+            self.assertEqual(first['settings'], expected['123'])
+
+            switched = c.status('456')
+            self.assertTrue(switched['settings_save_pending'])
+            self.assertEqual(switched['state'], {})
+            second = c.command({'mode': 'heat'}, '456')
+            self.assertTrue(second['settings_save_pending'])
+            self.assertEqual(second['settings'], expected['456'])
+
+            path.rmdir()
+            recovered = c.status('123')
+            self.assertFalse(recovered['settings_save_pending'])
+            self.assertEqual(recovered['settings'], expected['123'])
+            self.assertEqual(recovered['state'], {})
+            self.assertEqual(json.loads(path.read_text()), expected)
+            payloads = [json.loads(payload['201']) for payload in c.device.sent]
+            self.assertEqual([payload['control'] for payload in payloads],
+                             ['send_ir', 'study_exit', 'send_ir', 'study_exit'])
+            self.assertEqual([payload['key1'] for payload in payloads if payload['control'] == 'send_ir'],
+                             ['0coolauto26', '0heatlow30'])
+
+            restarted = Controller(cfg, factory=FakeDevice)
+            self.assertEqual(restarted.settings, expected['123'])
+            self.assertEqual(restarted.state, {})
+            self.assertEqual(restarted.device.sent, [])
+            for profile, settings in expected.items():
+                snapshot = restarted.status(profile)
+                self.assertEqual(snapshot['settings'], settings)
+                self.assertEqual(snapshot['state'], {})
+                self.assertFalse(snapshot['settings_save_pending'])
+            self.assertEqual([json.loads(payload['201']) for payload in restarted.device.sent],
+                             [{'control': 'study_exit'}, {'control': 'study_exit'}])
+
+    def test_socket_exceptions_recover_only_with_non_ir_health_probes(self):
+        class SocketFailure(FakeDevice):
+            fail = False
+            def status(self):
+                if self.fail: raise TimeoutError('lost response')
+                return super().status()
+            def close(self): self.fail = False
+        c = Controller(config(), factory=SocketFailure)
+        c.command({'power': True})
+        before = copy.deepcopy(c.state)
+        c.device.fail = True
+        with self.assertRaises(DeviceError): c.command({'power': False})
+        self.assertEqual(len(c.device.sent), 2, 'uncertain IR must not be retried')
+        self.assertEqual(c.state, before)
+        self.assertTrue(c.status()['reachable'])
+        self.assertEqual(len(c.device.sent), 4)
+        for payload in c.device.sent[2:]:
+            self.assertEqual(json.loads(payload['201']), {'control': 'study_exit'})
+
+    def test_malformed_hub_replies_never_establish_state_or_repeat_ir(self):
+        for reply in (None, [], True, 123, {}, {'dps': None}, {'dps': []}, {'Err': 'timeout', 'dps': {}}):
+            with self.subTest(reply=reply):
+                class Malformed(FakeDevice):
+                    def status(self): return reply
+                    def close(self): pass
+                c = Controller(config(), factory=Malformed)
+                with self.assertRaises(DeviceError): c.command({'power': True})
+                self.assertEqual(c.state, {})
+                self.assertEqual(len(c.device.sent), 1)
+                original = c.device
+                with self.assertRaises(DeviceError): c.status()
+                self.assertEqual(len(original.sent), 3)
+                self.assertIsNot(c.device, original)
+                self.assertEqual(len(c.device.sent), 1)
+                for payload in original.sent[1:]:
+                    self.assertEqual(json.loads(payload['201']), {'control': 'study_exit'})
+                self.assertEqual(json.loads(c.device.sent[-1]['201']), {'control': 'study_exit'})
 
 if __name__=='__main__':unittest.main()

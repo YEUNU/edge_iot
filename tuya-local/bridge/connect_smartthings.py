@@ -7,6 +7,7 @@ and reconnects locally thereafter. Tokens are never included in CLI commands.
 """
 import argparse
 import hashlib
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -16,6 +17,43 @@ import tempfile
 import time
 import ipaddress
 import uuid
+from pairing import PairingStore
+
+
+def dispatch_enrollment(args):
+    args.state_dir.mkdir(mode=0o700,parents=True,exist_ok=True)
+    # Keep ownership through dispatch, receipt checking and cleanup. The bridge
+    # uses a separate short lock so it can redeem while this CLI is waiting.
+    with (args.state_dir/'enrollment.owner.lock').open('a') as owner:
+        os.chmod(owner.name,0o600)
+        try:
+            fcntl.flock(owner,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise SystemExit('Another enrollment is running for this state directory') from None
+        store=PairingStore(args.state_dir)
+        ticket=secrets.token_hex(32)
+        record={'ticket_hash':hashlib.sha256(ticket.encode()).hexdigest(),'device_id':args.device,'expires_at':time.time()+120}
+        tmp=None
+        try:
+            store.publish(record)
+            command={'component':'main','capability':'earthpanel38939.acLocalLink','command':'enroll','arguments':[args.address,args.port,ticket]}
+            fd,tmp=tempfile.mkstemp(prefix='ir-enroll-',suffix='.json')
+            with os.fdopen(fd,'w') as out:json.dump(command,out)
+            result=subprocess.run(['smartthings','devices:commands',args.device,'-i',tmp],capture_output=True,text=True)
+            if result.returncode:
+                raise SystemExit('SmartThings enrollment dispatch failed: '+(result.stderr or result.stdout).replace(ticket,'[redacted]')[:1200])
+            deadline=time.monotonic()+35
+            while time.monotonic()<deadline:
+                if store.redeemed(ticket,args.device):
+                    print('Enrollment ticket redeemed by hub. Verify device connection status.');return
+                time.sleep(1)
+            raise SystemExit('Ticket not redeemed. Check driver update and LAN address, then retry.')
+        finally:
+            try:
+                if tmp is not None:os.unlink(tmp)
+            finally:
+                # Only this invocation's unconsumed ticket may be revoked.
+                store.revoke(ticket,args.device)
 
 
 def main():
@@ -38,29 +76,6 @@ def main():
             parser.error('Set TUYA_BIND_IP in bridge/.env or supply --address with the LAN address.')
     uuid.UUID(args.device);ipaddress.IPv4Address(args.address)
     if not 0<args.port<=65535:parser.error('invalid port')
-    args.state_dir.mkdir(mode=0o700,parents=True,exist_ok=True)
-    ticket=secrets.token_hex(32)
-    record={'ticket_hash':hashlib.sha256(ticket.encode()).hexdigest(),'device_id':args.device,'expires_at':time.time()+120}
-    path=args.state_dir/'enrollment.json'
-    fd,tmp=tempfile.mkstemp(dir=args.state_dir,prefix='.enrollment-')
-    with os.fdopen(fd,'w') as out:json.dump(record,out)
-    os.replace(tmp,path)
-    commands=[{'component':'main','capability':'earthpanel38939.acLocalLink','command':'enroll','arguments':[args.address,args.port,ticket]}]
-    fd,tmp=tempfile.mkstemp(prefix='ir-enroll-',suffix='.json')
-    try:
-        with os.fdopen(fd,'w') as out:json.dump(commands[0],out)
-        result=subprocess.run(['smartthings','devices:commands',args.device,'-i',tmp],capture_output=True,text=True)
-        if result.returncode:
-            raise SystemExit('SmartThings enrollment dispatch failed: '+(result.stderr or result.stdout).replace(ticket,'[redacted]')[:1200])
-        deadline=time.monotonic()+35
-        while time.monotonic()<deadline:
-            if not path.exists():
-                print('Enrollment ticket redeemed by hub. Verify device connection status.');return
-            time.sleep(1)
-        raise SystemExit('Ticket not redeemed. Check driver update and LAN address, then retry.')
-    finally:
-        os.unlink(tmp)
-        # Unconsumed tickets are revoked on failure, not left waiting on the LAN.
-        path.unlink(missing_ok=True)
+    dispatch_enrollment(args)
 
 if __name__=='__main__':main()

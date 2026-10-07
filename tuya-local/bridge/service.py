@@ -11,6 +11,8 @@ from pairing import PairingStore
 
 
 class Handler(BaseHTTPRequestHandler):
+    request_timeout = 5
+
     def log_message(self, *_):
         pass  # Do not log paths, request bodies, or credentials.
 
@@ -25,7 +27,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def setup(self):
         super().setup()
-        self.connection.settimeout(5)
+        self.connection.settimeout(self.request_timeout)
 
     def authorized(self):
         supplied = self.headers.get('Authorization', '').encode()
@@ -52,38 +54,54 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(404, {'error': 'not found'})
             return
         try:
-            if self.headers.get('Transfer-Encoding'):
-                raise ValueError('chunked requests unsupported')
-            size = int(self.headers.get('Content-Length', '0'))
-            if not 0 < size <= 2048:
-                raise ValueError('invalid body length')
-            changes = json.loads(self.rfile.read(size))
+            changes = self.read_json_body(2048)
         except (ValueError, OSError):
             self.reply(400, {'error': 'invalid JSON body or length'})
             return
         self.run_device(lambda: self.server.controller.command(changes, self.headers.get('X-IR-Profile')))
 
+    def read_json_body(self, limit):
+        lengths = self.headers.get_all('Content-Length', [])
+        if self.headers.get_all('Transfer-Encoding') or len(lengths) != 1:
+            raise ValueError('ambiguous request framing')
+        length = lengths[0].strip()
+        if not length.isascii() or not length.isdecimal():
+            raise ValueError('invalid body length')
+        size = int(length)
+        if not 0 < size <= limit:
+            raise ValueError('invalid body length')
+        body = self.rfile.read(size)
+        if len(body) != size:
+            raise ValueError('incomplete request body')
+        return json.loads(body)
+
     def pair(self):
         try:
-            size=int(self.headers.get('Content-Length','0'))
-            if self.headers.get('Transfer-Encoding') or not 0<size<=512:raise ValueError()
-            request=json.loads(self.rfile.read(size))
+            request=self.read_json_body(512)
             store=getattr(self.server,'pairing',None)
-            if not store or not store.redeem(request.get('ticket'),request.get('device_id')):
-                self.reply(403,{'error':'enrollment unavailable'});return
-            self.reply(200,{'api_token':self.server.controller.config['api_token']})
+            accepted=store and store.redeem(request.get('ticket'),request.get('device_id'))
         except (ValueError,AttributeError,OSError):
             self.reply(400,{'error':'invalid enrollment request'})
+            return
+        if not accepted:
+            self.reply(403,{'error':'enrollment unavailable'})
+            return
+        # Redeeming a ticket is final even when the client loses the response.
+        self.reply(200,{'api_token':self.server.controller.config['api_token']})
 
     def run_device(self, operation):
         try:
-            self.reply(200, operation())
+            result = operation()
         except ValueError as exc:
             self.reply(400, {'error': str(exc)})
         except DeviceError as exc:
             self.reply(502, {'error': str(exc)})
         except Exception:
             self.reply(502, {'error': 'device communication failed'})
+        else:
+            # A disconnected HTTP client cannot undo device delivery. Do not
+            # turn response-write failure into a second, contradictory reply.
+            self.reply(200, result)
 
 
 def main():
