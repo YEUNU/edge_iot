@@ -10,25 +10,19 @@ import json
 import os
 import time
 from pathlib import Path
-from export_korean_brands import plan, request_for
+from export_korean_brands import plan, request_for, read_request_journal
 
 
 def unresolved(data):
     _, jobs = plan(data/'hub-ac-inventory')
-    records = [json.loads(s) for s in (data/'korean-export-requests.jsonl').read_text().splitlines()]
-    starts = {r['job'] for r in records if r['phase']=='start'}
-    results = {r['job'] for r in records if r['phase']=='result'}
-    if starts != set(range(len(jobs))) or results != starts:
+    starts, _ = read_request_journal(data/'korean-export-requests.jsonl', jobs)
+    if set(starts) != set(range(len(jobs))):
         raise ValueError('The primary export must finish before recapturing gaps')
     for path in data.glob('korean-recapture-*.jsonl'):
-        attempt = [json.loads(s) for s in path.read_text().splitlines()]
-        began = {r['job'] for r in attempt if r['phase']=='start'}
-        ended = {r['job'] for r in attempt if r['phase']=='result'}
-        if began != ended:
-            raise ValueError('Uncertain previous recapture requires inspection')
+        read_request_journal(path, jobs, contiguous=False)
     report = json.loads((data/'korean-captured.json').read_text())
     missing = sorted({r['job'] for r in report['missing']})
-    if any(n < 0 or n >= len(jobs) for n in missing):
+    if any(type(n) is not int or n < 0 or n >= len(jobs) for n in missing):
         raise ValueError('Invalid gap report')
     return [(n, jobs[n]) for n in missing]
 
@@ -40,6 +34,8 @@ def main():
     parser.add_argument('--hub-covered', action='store_true')
     parser.add_argument('--limit', type=int, default=0)
     args = parser.parse_args()
+    if args.limit < 0:
+        parser.error('--limit must be nonnegative')
     lock = os.open(args.data/'korean-export.lock', os.O_CREAT | os.O_RDWR, 0o600)
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     jobs = unresolved(args.data)

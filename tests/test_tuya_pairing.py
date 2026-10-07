@@ -30,6 +30,127 @@ class PairingTests(unittest.TestCase):
         (self.path/'enrollment.json').unlink()
         self.assertFalse(self.store.redeem(self.ticket,self.device))
 
+    def test_revoke_only_removes_its_own_ticket_and_receipt_is_bound(self):
+        self.store.revoke('b'*64,self.device)
+        self.assertTrue((self.path/'enrollment.json').exists())
+        self.assertFalse(self.store.redeemed(self.ticket,self.device))
+        self.assertTrue(self.store.redeem(self.ticket,self.device))
+        self.assertTrue(self.store.redeemed(self.ticket,self.device))
+        self.assertFalse(self.store.redeemed('b'*64,self.device))
+        self.assertFalse(self.store.redeemed(self.ticket,'other'))
+        self.write()
+        self.store.revoke(self.ticket,self.device)
+        self.assertFalse((self.path/'enrollment.json').exists())
+
+    def test_publish_cannot_replace_record_during_validation_and_consume(self):
+        import threading
+        from unittest.mock import patch
+        read_done=threading.Event(); release=threading.Event(); published=threading.Event()
+        new_record=dict(self.record,ticket_hash=hashlib.sha256(('b'*64).encode()).hexdigest())
+        original_read=self.store.read
+        def blocked_read(path):
+            record=original_read(path)
+            read_done.set()
+            self.assertTrue(release.wait(2))
+            return record
+        outcome=[]
+        with patch.object(self.store,'read',side_effect=blocked_read):
+            reader=threading.Thread(target=lambda:outcome.append(self.store.redeem(self.ticket,self.device)))
+            reader.start()
+            self.assertTrue(read_done.wait(2))
+            def publish():
+                PairingStore(self.path).publish(new_record)
+                published.set()
+            writer=threading.Thread(target=publish);writer.start()
+            try:
+                self.assertFalse(published.wait(0.05))
+            finally:
+                release.set();reader.join(2);writer.join(2)
+        self.assertFalse(reader.is_alive());self.assertFalse(writer.is_alive())
+        self.assertEqual(outcome,[True])
+        self.assertEqual(json.loads((self.path/'enrollment.used.json').read_text()),self.record)
+        self.assertEqual(json.loads((self.path/'enrollment.json').read_text()),new_record)
+
+    def test_two_consumers_cannot_redeem_same_ticket(self):
+        import threading
+        gate=threading.Barrier(3);outcome=[]
+        def redeem():
+            gate.wait()
+            outcome.append(PairingStore(self.path).redeem(self.ticket,self.device))
+        workers=[threading.Thread(target=redeem) for _ in range(2)]
+        for worker in workers:worker.start()
+        gate.wait()
+        for worker in workers:worker.join(2);self.assertFalse(worker.is_alive())
+        self.assertEqual(sorted(outcome),[False,True])
+
+    def test_invalid_expiry_or_shape_fails_closed(self):
+        for value in (True,'1000',float('inf'),float('nan'),10**1000):
+            self.record['expires_at']=value;self.write()
+            with self.subTest(value=value):self.assertFalse(self.store.redeem(self.ticket,self.device))
+        (self.path/'enrollment.json').write_text('[]')
+        self.assertFalse(self.store.redeem(self.ticket,self.device))
+
+
+class ConnectOwnershipTests(unittest.TestCase):
+    def setUp(self):
+        from types import SimpleNamespace
+        self.tmp=tempfile.TemporaryDirectory()
+        self.path=Path(self.tmp.name)
+        self.args=SimpleNamespace(state_dir=self.path,device='owned-device',address='192.0.2.1',port=8766)
+    def tearDown(self):self.tmp.cleanup()
+
+    def test_dispatch_waits_for_its_own_redemption_receipt(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        import connect_smartthings as connect
+        def dispatch(command,**kwargs):
+            request=json.loads(Path(command[-1]).read_text())
+            self.assertTrue(PairingStore(self.path).redeem(request['arguments'][2],self.args.device))
+            return SimpleNamespace(returncode=0,stdout='',stderr='')
+        with patch.object(connect.subprocess,'run',side_effect=dispatch), patch('builtins.print') as output:
+            connect.dispatch_enrollment(self.args)
+        self.assertIn('redeemed',output.call_args[0][0])
+
+    def test_missing_ticket_is_not_a_successful_redemption(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        import connect_smartthings as connect
+        def dispatch(*args,**kwargs):
+            (self.path/'enrollment.json').unlink()
+            return SimpleNamespace(returncode=0,stdout='',stderr='')
+        with patch.object(connect.subprocess,'run',side_effect=dispatch), \
+             patch.object(connect.time,'monotonic',side_effect=[0,0,36]), \
+             patch.object(connect.time,'sleep'), patch('builtins.print') as output:
+            with self.assertRaisesRegex(SystemExit,'not redeemed'):connect.dispatch_enrollment(self.args)
+        output.assert_not_called()
+
+    def test_overlapping_dispatch_does_not_overwrite_first_ticket(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        import connect_smartthings as connect
+        def dispatch(command,**kwargs):
+            first=(self.path/'enrollment.json').read_text()
+            with self.assertRaisesRegex(SystemExit,'Another enrollment'):
+                connect.dispatch_enrollment(self.args)
+            self.assertEqual((self.path/'enrollment.json').read_text(),first)
+            return SimpleNamespace(returncode=1,stdout='',stderr='rejected')
+        with patch.object(connect.subprocess,'run',side_effect=dispatch):
+            with self.assertRaisesRegex(SystemExit,'dispatch failed'):connect.dispatch_enrollment(self.args)
+        self.assertFalse((self.path/'enrollment.json').exists())
+
+    def test_command_file_failure_revokes_ticket_before_any_dispatch(self):
+        from unittest.mock import patch
+        import connect_smartthings as connect
+        original=connect.tempfile.mkstemp
+        def fail_command_file(*args,**kwargs):
+            if kwargs.get('prefix')=='ir-enroll-':raise OSError('disk full')
+            return original(*args,**kwargs)
+        with patch.object(connect.tempfile,'mkstemp',side_effect=fail_command_file), \
+             patch.object(connect.subprocess,'run') as dispatch:
+            with self.assertRaises(OSError):connect.dispatch_enrollment(self.args)
+        dispatch.assert_not_called()
+        self.assertFalse((self.path/'enrollment.json').exists())
+
 
 class PairingHttpTests(unittest.TestCase):
     def test_only_valid_one_time_ticket_returns_token(self):

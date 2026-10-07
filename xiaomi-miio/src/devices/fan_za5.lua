@@ -72,6 +72,10 @@ M.refresh_props = {
   { siid = SIID_ENV,        piid = PIID_HUM,             did = "humidity" },
   { siid = SIID_ENV,        piid = PIID_TEMP,            did = "temperature" },
 }
+local boolean_props = { power = true, swing = true, lock = true, alarm = true }
+for _, prop in ipairs(M.refresh_props) do
+  prop.value_type = boolean_props[prop.did] and "boolean" or "number"
+end
 
 local function select_props(wanted)
   local selected = {}
@@ -126,8 +130,10 @@ function M.apply_state(device, p)
   end
 
   local speed_percent = p["speed-percent"]
-  if speed_percent ~= nil then
-    local effective = (power == false) and 0 or speed_percent
+  if power == false or (power == true and speed_percent ~= nil) then
+    -- The speed property is the saved setting even while switched off.
+    -- A partial response cannot establish effective motor speed without power.
+    local effective = power == false and 0 or speed_percent
     events.emit(device, capabilities.fanSpeedPercent, capabilities.fanSpeedPercent.percent(effective))
   end
 

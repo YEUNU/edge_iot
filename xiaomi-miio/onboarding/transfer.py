@@ -6,6 +6,7 @@ may claim the bundle. Xiaomi device tokens never appear in SmartThings commands.
 import hashlib
 import hmac
 import json
+import math
 import secrets
 import struct
 import threading
@@ -35,6 +36,8 @@ def decode(key, raw):
 
 class Transfer:
     def __init__(self, address, hub, device_id, devices, ttl=120):
+        if not isinstance(ttl, (int, float)) or isinstance(ttl, bool) or not 0 < ttl <= 120 or not math.isfinite(ttl):
+            raise ValueError('transfer TTL must be between 0 and 120 seconds')
         self.key = secrets.token_bytes(16)
         self.device_id, self.devices = device_id, devices
         self.hub, self.deadline = hub, time.monotonic() + ttl
@@ -52,47 +55,82 @@ class Transfer:
                 self.connection.settimeout(5)
                 if self.client_address[0] != transfer.hub or time.monotonic() >= transfer.deadline:
                     self.send_error(403); return
+                acknowledged = False
+                response_started = False
                 try:
-                    length = int(self.headers.get('Content-Length', '0'))
+                    lengths = self.headers.get_all('Content-Length') if hasattr(self.headers, 'get_all') else [self.headers.get('Content-Length')]
+                    if self.headers.get('Transfer-Encoding') is not None or not lengths or len(lengths) != 1:
+                        raise ValueError()
+                    value = str(lengths[0]).strip()
+                    if not value.isascii() or not value.isdigit():
+                        raise ValueError()
+                    length = int(value)
                     if not 32 < length <= 16384:
                         raise ValueError()
-                    request = decode(transfer.key, self.rfile.read(length))
-                    if request.get('device_id') != transfer.device_id:
+                    raw = self.rfile.read(length)
+                    if len(raw) != length:
+                        raise ValueError()
+                    request = decode(transfer.key, raw)
+                    if not isinstance(request, dict) or request.get('device_id') != transfer.device_id:
                         raise ValueError()
                     with transfer.lock:
+                        if time.monotonic() >= transfer.deadline:
+                            raise ValueError()
                         if self.path == '/bundle' and not transfer.claimed:
                             transfer.claimed = True
-                            reply = {'device_id': transfer.device_id, 'devices': transfer.devices}
+                            reply = {'device_id': transfer.device_id, 'devices': transfer.devices,
+                                     'expires_in': transfer.deadline - time.monotonic()}
                         elif self.path == '/ack' and transfer.claimed and transfer.result is None:
                             result = request.get('result')
-                            if not isinstance(result, dict):
+                            counters = ('updated', 'requested', 'failed')
+                            if not isinstance(result, dict) or set(result) != set(counters) or any(
+                                type(result[name]) is not int or result[name] < 0 for name in counters
+                            ) or sum(result.values()) != len(transfer.devices):
                                 raise ValueError()
                             transfer.result = result
+                            acknowledged = True
                             reply = {'ok': True}
                         else:
                             raise ValueError()
                     body = encode(transfer.key, reply)
+                    response_started = True
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/octet-stream')
                     self.send_header('Content-Length', str(len(body)))
                     self.end_headers()
                     self.wfile.write(body)
-                    if self.path == '/ack':
-                        transfer.done.set()
                 except (ValueError, TypeError, KeyError, OSError):
-                    self.send_error(400, 'Invalid or expired enrollment request')
+                    if not response_started:
+                        self.send_error(400, 'Invalid or expired enrollment request')
+                finally:
+                    # Receipt of a valid result is sufficient confirmation for
+                    # the helper, even when the hub loses the HTTP reply.
+                    if acknowledged:
+                        transfer.done.set()
 
         self.server = ThreadingHTTPServer((address, 0), Handler)
         self.server.daemon_threads = True
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.closed = False
 
     def start(self):
-        self.thread.start()
+        with self.lock:
+            if self.closed:
+                raise RuntimeError('transfer already closed')
+            if self.thread.ident is None:
+                self.thread.start()
         return self.server.server_port
 
     def close(self):
-        self.server.shutdown()
+        with self.lock:
+            if self.closed:
+                return
+            self.closed = True
+            self.deadline = 0
+        if self.thread.ident is not None:
+            self.server.shutdown()
         self.server.server_close()
-        self.thread.join(timeout=3)
+        if self.thread.ident is not None:
+            self.thread.join(timeout=3)
         self.devices = []
         self.key = b''

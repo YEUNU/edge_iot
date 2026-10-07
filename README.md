@@ -95,6 +95,9 @@ Each refresh performs one MiIO handshake and reads properties in small chunks.
 Individual MiOT result codes and packet checksums are validated before state is
 applied. Commands emit an optimistic UI event, execute asynchronously, and then
 refresh the real device state.
+Once an appliance DID is known, control sessions keep that identity even if an
+address or token changes. Replies must match the requested MiOT attributes;
+readbacks from a replaced connection cannot update the current device UI.
 
 ## Repository layout
 
@@ -129,8 +132,23 @@ Run the regression tests:
 
 ```bash
 lua tests/run.lua .
+lua tests/test_xiaomi_discovery.lua .
+lua tests/test_xiaomi_enrollment.lua .
+lua tests/test_xiaomi_ui.lua .
 python3 -m unittest discover -s tests -p 'test_notifier*.py'
 ```
+
+After installing the [Xiaomi onboarding dependencies](xiaomi-miio/onboarding/README.md),
+run all Python regression tests with the same environment:
+
+```sh
+xiaomi-miio/onboarding/.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
+```
+
+Regression tests use scripted transports and loopback servers. They cover device
+identity conflicts, pending enrollment and expiry, malformed and partial replies,
+command queue recovery, storage failures, OAuth rotation, and per-device health.
+They do not replace appliance, hub SDK, or mobile app verification.
 
 Build packages without uploading:
 

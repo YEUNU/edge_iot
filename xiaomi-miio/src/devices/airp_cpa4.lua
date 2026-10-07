@@ -81,6 +81,10 @@ M.refresh_props = {
   { siid = SIID_SCREEN,  piid = PIID_BRIGHT,      did = "brightness" },
   { siid = SIID_CUSTOM,  piid = PIID_FAVORITE_LEVEL, did = "favorite-level" },
 }
+local boolean_props = { power = true, alarm = true, lock = true }
+for _, prop in ipairs(M.refresh_props) do
+  prop.value_type = boolean_props[prop.did] and "boolean" or "number"
+end
 
 local function select_props(wanted)
   local selected = {}

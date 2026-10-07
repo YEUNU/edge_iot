@@ -43,7 +43,8 @@ def validate(config):
             raise ValueError('duplicate IR state')
         seen.add(key)
         command = entry['command']
-        if not isinstance(command, dict) or command.get('control') != 'send_ir' or command.get('type') != 0:
+        if (not isinstance(command, dict) or command.get('control') != 'send_ir'
+                or type(command.get('type')) is not int or command['type'] != 0):
             raise ValueError('only explicit send_ir commands are allowed')
         if not isinstance(command.get('head'), str) or not isinstance(command.get('key1'), str):
             raise ValueError('IR command requires head/key1')
@@ -61,7 +62,8 @@ def validate(config):
         if not isinstance(identifier, str) or not identifier or identifier in identifiers:
             raise ValueError('invalid or duplicate remote key')
         identifiers.add(identifier)
-        if (command.get('control') != 'send_ir' or command.get('type') != 0
+        if (not isinstance(command, dict) or command.get('control') != 'send_ir'
+                or type(command.get('type')) is not int or command['type'] != 0
                 or not isinstance(command.get('head'), str) or not command['head']
                 or not isinstance(command.get('key1'), str) or not command['key1']
                 or len(json.dumps(command)) > 3072):
@@ -81,9 +83,11 @@ def state_key(state):
     if state['mode'] not in ('cool', 'heat', 'auto', 'dry', 'fanOnly') or (not isinstance(state['fan'], str) or not state['fan'] or len(state['fan']) > 32):
         raise ValueError('unsupported mode or fan')
     temp = state['target_temperature']
-    if type(temp) not in (int,float) or not math.isfinite(temp) or not -20 <= temp <= 60:
+    if type(temp) not in (int,float) or not -20 <= temp <= 60 or not math.isfinite(temp):
         raise ValueError('temperature must be finite Celsius within the codebook range')
-    return '%s/%s/%g' % (state['mode'], state['fan'], temp)
+    # Numeric tuple equality preserves 18 == 18.0 without rounding nearby
+    # temperatures into an installed code (as %g's six digits would do).
+    return (state['mode'], state['fan'], temp)
 
 
 class Controller:
@@ -106,11 +110,12 @@ class Controller:
             for item in json.loads((catalog_dir / 'index.json').read_text())['profiles']:
                 self.catalog[str(item['remote_index'])] = dict(item, path=catalog_dir / (str(item['remote_index'])+'.json.gz'))
         self.saved_settings = {}
+        self.settings_save_pending = False
         if config.get('settings_path'):
             try:
                 saved=json.loads(Path(config['settings_path']).read_text())
                 if isinstance(saved,dict):self.saved_settings=saved
-            except (OSError,ValueError):pass
+            except (OSError,ValueError,RecursionError):pass
         self.profile_id = str(config['remote_index'])
         self.codes = {state_key(e['state']): e for e in config['codes']}
         self.lock = threading.Lock()
@@ -144,22 +149,44 @@ class Controller:
             except (ValueError,TypeError):pass
 
     def _remember_settings(self):
-        self.saved_settings[self.profile_id]=dict(self.settings)
-        if self.config.get('settings_path'):
-            path=Path(self.config['settings_path']);path.parent.mkdir(parents=True,exist_ok=True)
-            fd,tmp=tempfile.mkstemp(dir=path.parent,prefix='.settings-')
-            try:
-                with os.fdopen(fd,'w') as f:json.dump(self.saved_settings,f)
-                os.replace(tmp,path)
-            finally:
-                if os.path.exists(tmp):os.unlink(tmp)
+        self.saved_settings[self.profile_id] = dict(self.settings)
+        self.settings_save_pending = bool(self.config.get('settings_path'))
+        self._persist_settings()
+
+    def _persist_settings(self):
+        """Retry only the local save, never an already transmitted IR command."""
+        if not self.settings_save_pending:
+            return
+        temporary = None
+        try:
+            path = Path(self.config['settings_path'])
+            path.parent.mkdir(parents=True, exist_ok=True)
+            fd, temporary = tempfile.mkstemp(dir=path.parent, prefix='.settings-')
+            with os.fdopen(fd, 'w') as stream:
+                json.dump(self.saved_settings, stream)
+            os.replace(temporary, path)
+        except OSError:
+            # IR delivery succeeded. Storage failure must not report a failed
+            # command or invite a second transmission; a later poll saves again.
+            return
+        else:
+            self.settings_save_pending = False
+        finally:
+            if temporary is not None:
+                try:
+                    os.unlink(temporary)
+                except OSError:
+                    pass  # Cleanup failure cannot change the command result.
 
     def _send(self, payload):
-        response = self.device.set_multiple_values(payload, nowait=True)
-        if isinstance(response, dict) and 'Err' in response:
-            raise DeviceError('IR hub LAN send failed')
-        response = self.device.status()
-        if not isinstance(response, dict) or 'Err' in response or 'dps' not in response:
+        try:
+            response = self.device.set_multiple_values(payload, nowait=True)
+            if isinstance(response, dict) and 'Err' in response:
+                raise DeviceError('IR hub LAN send failed')
+            response = self.device.status()
+        except OSError as exc:
+            raise DeviceError('IR hub LAN operation failed; command delivery uncertain') from exc
+        if not isinstance(response, dict) or 'Err' in response or not isinstance(response.get('dps'), dict):
             raise DeviceError('IR hub unreachable after send; command delivery uncertain')
         return response
 
@@ -189,6 +216,7 @@ class Controller:
                 'profile_name': self.profiles[self.profile_id].get('name',self.profile_id),
                 'default_state': self.profiles[self.profile_id].get('default_state',{}),
                 'settings': dict(self.settings),
+                'settings_save_pending': self.settings_save_pending,
                 'control_style': self.profiles[self.profile_id].get('control_style', 'state'),
                 'supported_keys': [{'id': k['id'], 'name': k.get('name', k['id'])}
                                    for k in self.profiles[self.profile_id].get('keys', [])
@@ -200,6 +228,7 @@ class Controller:
 
     def status(self, profile_id=None):
         with self.lock:
+            self._persist_settings()
             self._select(profile_id)
             # IR hubs can ignore DP_QUERY after reboot. A harmless study_exit wakes
             # the local channel and elicits a DP response without emitting IR.
@@ -264,7 +293,9 @@ class Controller:
                     key = state_key(target)
             if key not in self.codes:
                 raise ValueError('no mapped IR code for requested mode/fan/temperature')
-            command = self.codes[key]['command']
+            entry = self.codes[key]
+            target = dict(entry['state'])
+            command = entry['command']
             self._transmit_ir(command)
             self.state = target
             if target['power']:

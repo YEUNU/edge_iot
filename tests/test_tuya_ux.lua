@@ -155,3 +155,312 @@ raw.back(nil,d)
 assert(profile=='tuya-local-ac.buttons.v1')
 request_override=nil
 print('Button-only selection, trial, save and back routing passed')
+
+-- Delivery results must survive failures in events, presence updates and logs.
+fields.active_profile=original;fields.candidate_profile=original
+fields.setup_open=false;fields.setup_closed=true;fields.keys_open=false
+local real_emit,real_online,real_offline,real_warn=d.emit_event,d.online,d.offline,d.log.warn
+local function good_response()
+ return {state={},supported_modes={'cool'},supported_fans={'auto'},supported_keys={}}
+end
+for _,failure in ipairs({'event','online','log'}) do
+ local first=true;local before=#calls;d.is_online=false
+ request_override=function()
+  if first then first=false;h.switch.off(nil,d) end
+  return good_response()
+ end
+ function d:emit_event(e)
+  if failure=='event' or failure=='log' then error('event publishing failed') end
+  return real_emit(self,e)
+ end
+ function d:online()
+  if failure=='online' then error('presence publishing failed') end
+  return real_online(self)
+ end
+ d.log.warn=function()if failure=='log' then error('logger failed') end end
+ h.switch.on(nil,d)
+ assert(#calls==before+2,'publishing failures must not block queued commands')
+ assert(calls[before+1].changes.power==true and calls[before+2].changes.power==false,'delivery order must be preserved')
+ assert(not fields.busy and #fields.requests==0,'worker must release after publishing failure')
+ if failure~='online' then assert(d.is_online==true,'event failure must not reverse a successful LAN result') end
+ d.emit_event=real_emit;d.online=real_online;d.log.warn=real_warn
+ h.switch.on(nil,d)
+ assert(#calls==before+3,'future commands must recover without replaying earlier IR')
+end
+print('Event, online-status and logger exceptions preserve delivery and queue progress')
+
+for _,failure in ipairs({'unreachable','exception','offline'}) do
+ local first=true;local before=#calls
+ request_override=function()
+  if first then
+   first=false;h.switch.off(nil,d)
+   if failure=='exception' then error('transport exception') end
+   return nil,'unreachable'
+  end
+  return good_response()
+ end
+ if failure=='offline' then function d:offline()error('presence publishing failed')end end
+ h.switch.on(nil,d)
+ d.offline=real_offline
+ assert(#calls==before+2 and d.is_online==true,'failed request must not block its queued successor')
+ assert(not fields.busy and #fields.requests==0,'worker must release on all failure paths')
+end
+print('Transport and offline-status exceptions allow the next queued command')
+
+local malformed={
+ false,123,'invalid',{},
+ {state=false,supported_modes={'cool'},supported_fans={'auto'}},
+ {state={power='on'},supported_modes={'cool'},supported_fans={'auto'}},
+ {state={target_temperature=0/0},supported_modes={'cool'},supported_fans={'auto'}},
+ {state={target_temperature=math.huge},supported_modes={'cool'},supported_fans={'auto'}},
+ {state={mode='invalid'},supported_modes={'cool'},supported_fans={'auto'}},
+ {state={},supported_modes=false,supported_fans={'auto'}},
+ {state={},supported_modes={'invalid'},supported_fans={'auto'}},
+ {state={},supported_modes={named='cool'},supported_fans={'auto'}},
+ {state={},supported_modes={'cool'},supported_fans={true}},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},supported_keys=123},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},supported_keys={'power'}},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},supported_keys={{id=false}}},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},supported_keys={{id=''}}},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},settings=false},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},settings={fan=123}},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},settings={target_temperature=true}},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},temperature=false},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},temperature={min=18,max=30,step=0}},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},temperature={min=30,max=18,step=1}},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},temperature={min=18,max=math.huge,step=1}},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},temperature={min='18',max=30,step=1}},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},control_style='invalid'},
+ {state={},supported_modes={'cool'},supported_fans={'auto'},settings_save_pending='true'},
+}
+for _,response in ipairs(malformed) do
+ local first=true;local before=#calls
+ request_override=function()
+  if first then first=false;h.switch.off(nil,d);return response end
+  return good_response()
+ end
+ h.switch.on(nil,d)
+ assert(#calls==before+2,'malformed responses must not block or repeat requests')
+ assert(not fields.busy and #fields.requests==0 and d.is_online==true,'next valid response must recover')
+end
+print(#malformed..' malformed response shapes reject safely and allow queue recovery')
+
+request_override=function()local response=good_response();response.settings_save_pending=true;return response end
+local before=#calls;local event_start=#events
+h.switch.on(nil,d)
+assert(#calls==before+1,'pending storage must not trigger another command')
+local storage_warning=false
+for i=event_start+1,#events do
+ local e=events[i]
+ if e.cap=='earthpanel38939.acLocalLink' and e.attr=='status' and e.value=='명령 전송 완료 · 설정 저장 대기' then storage_warning=true end
+end
+assert(storage_warning,'successful IR with pending storage needs a separate status')
+request_override=function()return good_response()end
+function d:emit_event()error('setup event failed')end
+h.refresh.refresh(nil,d)
+d.emit_event=real_emit
+assert(#calls==before+2 and calls[#calls].changes==nil,'setup publishing failure must not prevent a health poll')
+assert(not fields.busy and #fields.requests==0)
+request_override=nil
+print('Storage-pending status and polling survive UI errors without IR replay')
+
+-- A LAN operation can yield while the user saves another model. Its old
+-- command result cannot repaint that model, and the latest poll must survive.
+local function reset_view()
+ request_override=nil
+ fields.active_profile=original;fields.candidate_profile=original
+ fields.setup_open=false;fields.setup_closed=true;fields.keys_open=false
+ fields.bridge_credentials={bridgeToken='valid',bridgeIp='192.168.1.49',bridgePort=8766}
+ fields.pending_refresh=nil
+end
+local function response_for(p,temperature,mode)
+ return {profile_id=tostring(p.remoteIndex),state={},
+  settings={mode=mode or 'cool',fan='auto',target_temperature=temperature},
+  supported_modes={mode or 'cool'},supported_fans={'auto'},supported_keys={},
+  temperature={min=16,max=30,step=1}}
+end
+local function no_old_state(start)
+ for i=start+1,#events do
+  local e=events[i]
+  assert(not (e.cap=='switch' and e.attr=='switch' and e.value=='on'),'old power must not repaint a changed model')
+  assert(not (e.cap=='airConditionerMode' and e.attr=='airConditionerMode' and e.value=='heat'),'old mode must not repaint a changed model')
+  assert(not (e.cap=='thermostatCoolingSetpoint' and e.attr=='coolingSetpoint' and e.value.value==30),'old temperature must not repaint a changed model')
+ end
+end
+reset_view()
+local changed=false;before=#calls;event_start=#events
+request_override=function(p,c)
+ if not changed then
+  changed=true
+  link.configure(nil,d)
+  library.setCandidate(nil,d,{args={candidate='1000048'}})
+  library.setCandidate(nil,d,{args={candidate='1000047'}})
+  library.applyCode(nil,d)
+  local result=response_for(p,30,'heat');result.state={power=true,mode='heat',fan='auto',target_temperature=30}
+  return result
+ end
+ assert(p.remoteIndex==1000047 and c==nil,'the latest saved model needs a health poll')
+ return response_for(p,16)
+end
+h.switch.on(nil,d)
+assert(fields.active_profile=='1000047' and #calls==before+2,'model changes must coalesce into the latest required poll')
+assert(calls[before+1].changes.power==true and calls[before+2].changes==nil,'an old IR command must never be replayed')
+assert(not fields.busy and #fields.requests==0 and fields.pending_refresh==nil)
+no_old_state(event_start)
+print('Saving another model during a LAN request drops old UI values and polls the latest model')
+
+-- Leaving setup while a test is in flight must also preserve its return poll.
+reset_view();link.configure(nil,d);library.setCandidate(nil,d,{args={candidate='1000047'}})
+changed=false;before=#calls;event_start=#events
+request_override=function(p,c)
+ if not changed then
+  changed=true;link.done(nil,d)
+  local result=response_for(p,30,'heat');result.state={power=true,mode='heat',fan='auto',target_temperature=30}
+  return result
+ end
+ assert(p.remoteIndex==tonumber(original) and c==nil,'cancelled testing must poll the saved model')
+ return response_for(p,18)
+end
+h.switch.on(nil,d)
+assert(#calls==before+2 and fields.active_profile==original and not fields.setup_open)
+no_old_state(event_start)
+assert(fields.setup_note~='명령을 보냈습니다 · 실제 작동 상태는 확인할 수 없습니다','an obsolete completion must not overwrite the new view note')
+print('Cancelling an in-flight trial polls the saved model without publishing trial state')
+
+-- Queued commands retain their arrival-time profile and connection. A later
+-- refresh is satisfied by the final command only when its view also matches.
+reset_view();changed=false;before=#calls;event_start=#events
+request_override=function(p,c)
+ if not changed then
+  changed=true
+  h.switch.off(nil,d)
+  link.configure(nil,d)
+  library.setCandidate(nil,d,{args={candidate='1000047'}})
+  library.applyCode(nil,d)
+  h.switch.on(nil,d)
+  h.refresh.refresh(nil,d)
+  local result=response_for(p,30,'heat');result.state={power=true,mode='heat',fan='auto',target_temperature=30}
+  return result
+ end
+ if p.remoteIndex==tonumber(original) then
+  assert(c.power==false,'queued old-model commands must retain their profile')
+  return response_for(p,18)
+ end
+ assert(p.remoteIndex==1000047 and c.power==true,'new-model command must keep its place in the queue')
+ return response_for(p,16)
+end
+h.switch.on(nil,d)
+assert(#calls==before+3,'the last matching command must satisfy the coalesced poll')
+no_old_state(event_start)
+assert(not fields.busy and #fields.requests==0 and fields.pending_refresh==nil)
+print('Queued commands preserve order and profile while the newest matching command satisfies refresh')
+
+-- A mismatched bridge response cannot establish state. A queued command and
+-- later poll can recover without replaying the already issued command.
+reset_view();changed=false;before=#calls;event_start=#events
+request_override=function(p,c)
+ if not changed then
+  changed=true;h.switch.off(nil,d)
+  local result=response_for(p,30,'heat');result.profile_id='1000047'
+  result.state={power=true,mode='heat',fan='auto',target_temperature=30}
+  return result
+ end
+ assert(c.power==false)
+ return response_for(p,18)
+end
+h.switch.on(nil,d)
+assert(#calls==before+2 and d.is_online==true and not fields.busy)
+no_old_state(event_start)
+request_override=nil
+print('Mismatched profile responses reject safely and preserve queued command recovery')
+
+-- Profile changes can happen inside event publication too. Every later event
+-- must recheck the model rather than relying on a previously cached decision.
+reset_view();changed=false;before=#calls
+request_override=function(p)
+ local result=response_for(p,p.remoteIndex==1000047 and 16 or 30,p.remoteIndex==1000047 and 'cool' or 'heat')
+ if p.remoteIndex~=1000047 then result.state={power=true,mode='heat',fan='auto',target_temperature=30} end
+ return result
+end
+local changed_at
+function d:emit_event(e)
+ if not changed and e.cap=='earthpanel38939.acRemoteKeys' and e.attr=='supportedKeys' then
+  changed=true
+  link.configure(nil,d)
+  library.setCandidate(nil,d,{args={candidate='1000047'}})
+  library.applyCode(nil,d)
+  changed_at=#events
+ end
+ return real_emit(self,e)
+end
+h.switch.on(nil,d)
+d.emit_event=real_emit
+assert(changed and #calls==before+2 and fields.active_profile=='1000047')
+no_old_state(changed_at)
+assert(not fields.busy and fields.pending_refresh==nil)
+request_override=nil
+print('Reentrant model changes during event publication stop later old-model events')
+
+-- Remembered settings do not prove an absolute power state after restart,
+-- model selection or an extra remote button. Keep the distinction visible.
+reset_view()
+local function connection_text()
+ for i=#events,1,-1 do
+  local e=events[i]
+  if e.cap=='earthpanel38939.acLocalLink' and e.attr=='status' then return e.value end
+ end
+end
+request_override=function(p)return response_for(p,18)end
+h.refresh.refresh(nil,d)
+assert(connection_text()=='전원 미확인 · 저장된 설정 기준','unknown state must be distinguished from remembered settings')
+request_override=function(p)
+ local result=response_for(p,18);result.state={power=true,mode='cool',fan='auto',target_temperature=18}
+ return result
+end
+h.switch.on(nil,d)
+assert(connection_text()=='리모컨 명령 기준','a transmitted absolute state should keep the normal command-based label')
+fields.keys_open=true;fields.remote_key='extra'
+request_override=function(p,c)
+ local result=response_for(p,18);result.supported_keys={{id='extra'}}
+ return result
+end
+raw.sendKey(nil,d)
+assert(connection_text()=='버튼 전송 기준 · 실제 상태는 확인할 수 없습니다','remote-button view must keep its button transmission label')
+raw.back(nil,d)
+assert(connection_text()=='전원 미확인 · 저장된 설정 기준','returning after a button must not imply an established power state')
+request_override=function(p)
+ local result=response_for(p,18);result.control_style='buttons';result.supported_keys={{id='power'}}
+ return result
+end
+h.refresh.refresh(nil,d)
+assert(connection_text()=='버튼 전송 기준 · 실제 상태는 확인할 수 없습니다','button-only profile must retain its absolute-state warning')
+request_override=nil
+print('Unknown power and remembered settings are distinguished while button-view warnings stay intact')
+
+reset_view();changed=false;before=#calls
+request_override=function(p)
+ if p.remoteIndex==tonumber(original) then return nil,'unreachable' end
+ return response_for(p,16)
+end
+function d:emit_event(e)
+ if not changed and e.cap=='earthpanel38939.acModelLibrary' and e.attr=='status'
+   and e.value=='요청 실패 · 연결 또는 지원 조합을 확인하세요' then
+  changed=true
+  link.configure(nil,d)
+  library.setCandidate(nil,d,{args={candidate='1000047'}})
+  library.applyCode(nil,d)
+  changed_at=#events
+ end
+ return real_emit(self,e)
+end
+h.switch.on(nil,d)
+d.emit_event=real_emit
+assert(changed and #calls==before+2 and d.is_online==true and fields.active_profile=='1000047')
+for i=changed_at+1,#events do
+ local e=events[i]
+ assert(not (e.cap=='earthpanel38939.acLocalLink' and e.attr=='status' and e.value=='브리지 연결 확인 필요'),
+  'failure publication must recheck the model after a note event reenters setup')
+end
+assert(not fields.busy and fields.pending_refresh==nil)
+request_override=nil
+print('Failure-note reentry cannot publish an old connection error in the new model view')

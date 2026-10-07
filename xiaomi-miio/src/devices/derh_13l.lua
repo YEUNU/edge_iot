@@ -110,6 +110,11 @@ M.refresh_props = {
   { siid = 8, piid = 2, did = "timer-minutes" },
   { siid = 8, piid = 3, did = "timer-remaining" },
 }
+local boolean_props = { power = true, alarm = true, lock = true,
+  ["dry-after-off"] = true, ["warming-up"] = true, ["timer-enabled"] = true }
+for _, prop in ipairs(M.refresh_props) do
+  prop.value_type = boolean_props[prop.did] and "boolean" or "number"
+end
 
 local function select_props(wanted)
   local selected = {}
@@ -157,7 +162,8 @@ function M.apply_state(device, p)
   if p["warming-up"] ~= nil and cap_warmingUp then
     events.emit(device, cap_warmingUp, cap_warmingUp.warmingUp(p["warming-up"] and "yes" or "no"))
   end
-  if cap_timer and (p["timer-enabled"] == false or p["timer-remaining"] ~= nil) then
+  if cap_timer and (p["timer-enabled"] == false
+      or (p["timer-enabled"] == true and p["timer-remaining"] ~= nil)) then
     events.emit(device, cap_timer, cap_timer.minutes({
       value = p["timer-enabled"] == false and 0 or p["timer-remaining"], unit = "min" }))
   end

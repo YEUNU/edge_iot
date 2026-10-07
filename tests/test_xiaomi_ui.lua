@@ -43,4 +43,13 @@ assert(physical.health=='OFFLINE','a real unconfigured appliance must remain off
 local ready=device('xiaomi.setup',{deviceModel='fan_za5',deviceIp='192.168.1.2',deviceToken=string.rep('12',16)})
 config.lifecycle_handlers.init({},ready)
 assert(ready:get_field('client') and refreshes==1,'completed setup must attach and verify real device')
+assert(ready:get_field('client').expected_did==nil,'manual setup has no learned identity yet')
+local known=device('zhimi.fan.za5',{deviceIp='192.168.1.2',deviceToken=string.rep('12',16)})
+known:set_field('local_connection',{ip='192.168.1.2',token=string.rep('12',16),did=123,model='zhimi.fan.za5'})
+config.lifecycle_handlers.init({},known)
+assert(known:get_field('client').expected_did==123,'persisted appliance DID must constrain control')
+local unrestored=device('zhimi.fan.za5',{deviceIp='192.168.1.2',deviceToken=string.rep('12',16)})
+unrestored.device_network_id='xiaomi-miio-456'
+config.lifecycle_handlers.init({},unrestored)
+assert(unrestored:get_field('client').expected_did==456,'canonical network identity must survive missing stored fields')
 print('PASS: setup health, default model, incomplete edits, real appliance and enrollment transition')

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """SmartThings device notifications. Standard-library-only, single process owner."""
 import argparse
+import datetime as dt
 import fcntl
+import http.client
 import json
 import logging
+import math
 import os
 from pathlib import Path
 import signal
@@ -59,56 +62,140 @@ class RequestError(Exception):
         super().__init__(f"HTTP {status}")
 
 
+def object_value(value, error="invalid-response"):
+    if not isinstance(value, dict):
+        raise RequestError(error)
+    return value
+
+
+def object_field(value, key):
+    return object_value(object_value(value).get(key, {}))
+
+
+def valid_token(value):
+    return isinstance(value, str) and bool(value) and all(33 <= ord(c) <= 126 for c in value)
+
+
+def valid_cli_transfer(value):
+    if (not isinstance(value, dict) or set(value) != {"profile", "refreshTokenHash"}
+            or not isinstance(value.get("profile"), str)
+            or not value["profile"] or value["profile"] == "default"
+            or not isinstance(value.get("refreshTokenHash"), str)
+            or len(value["refreshTokenHash"]) != 64
+            or any(c not in "0123456789abcdef" for c in value["refreshTokenHash"])):
+        return False
+    try:
+        value["profile"].encode()
+    except UnicodeError:
+        return False
+    return True
+
+
+def finite_number(value):
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
+def timestamp_value(value):
+    if not isinstance(value, str) or "T" not in value:
+        return None
+    try:
+        stamp = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except (ValueError, OverflowError):
+        return None
+    return stamp if stamp.tzinfo is not None else None
+
+
+def valid_timestamp(value):
+    return timestamp_value(value) is not None
+
+
+def occurrence_stamp(value):
+    return timestamp_value(value.get("timestamp") if isinstance(value, dict) else value)
+
+
+def same_occurrence(left, right):
+    return (isinstance(left, dict) and isinstance(right, dict)
+            and left.get("value") == right.get("value")
+            and occurrence_stamp(left) is not None
+            and occurrence_stamp(left) == occurrence_stamp(right))
+
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None  # Never forward credentials to another destination.
 
 
 def request_json(url, method="GET", data=None, token=None, form=False, accept="application/json"):
-    headers = {"Accept": accept}
-    body = None
-    if data is not None:
-        body = (urllib.parse.urlencode(data) if form else
-                json.dumps(data, ensure_ascii=False)).encode()
-        headers["Content-Type"] = ("application/x-www-form-urlencoded" if form
-                                   else "application/json")
-    if token:
-        headers["Authorization"] = "Bearer " + token
-    req = urllib.request.Request(url, data=body, headers=headers, method=method)
     try:
+        headers = {"Accept": accept}
+        body = None
+        if data is not None:
+            body = (urllib.parse.urlencode(data) if form else
+                    json.dumps(data, ensure_ascii=False)).encode()
+            headers["Content-Type"] = ("application/x-www-form-urlencoded" if form
+                                       else "application/json")
+        if token:
+            headers["Authorization"] = "Bearer " + token
+        req = urllib.request.Request(url, data=body, headers=headers, method=method)
         # Python's default SSL context verifies both CA chain and hostname.
         with urllib.request.build_opener(NoRedirect).open(req, timeout=15) as response:
-            result = json.load(response)
-            if not isinstance(result, dict):
-                raise ValueError("expected object")
-            return result
+            return object_value(json.load(response))
     except urllib.error.HTTPError as exc:
         raise RequestError(exc.code) from None
-    except (urllib.error.URLError, TimeoutError, ValueError):
+    except (OSError, http.client.HTTPException, ValueError, RecursionError):
         raise RequestError("transport/invalid-response") from None
 
 
 class Auth:
     def __init__(self, path, request=request_json, clock=time.time):
         self.path, self.request, self.clock = Path(path), request, clock
-        self.data = json.loads(self.path.read_text())
+        self.data = object_value(json.loads(self.path.read_text()), "invalid-auth")
+        if (not all(valid_token(self.data.get(k)) for k in ("accessToken", "refreshToken"))
+                or not finite_number(self.data.get("expiresAt"))
+                or ("refreshAt" in self.data and (not finite_number(self.data["refreshAt"])
+                    or self.data["refreshAt"] > self.data["expiresAt"]))
+                or ("cliTransfer" in self.data and not valid_cli_transfer(self.data["cliTransfer"]))):
+            raise RequestError("invalid-auth")
+        self.pending_data = None
 
     def refresh(self):
-        result = self.request(TOKEN_URL, "POST", {
-            "grant_type": "refresh_token", "client_id": CLI_CLIENT_ID,
-            "refresh_token": self.data["refreshToken"],
-        }, form=True)
-        if not all(result.get(k) for k in ("access_token", "refresh_token", "expires_in")):
-            raise RequestError("invalid-token-response")
-        updated = {"accessToken": result["access_token"],
-                   "refreshToken": result["refresh_token"],
-                   "expiresAt": self.clock() + float(result["expires_in"])}
-        save_json(self.path, updated)  # Save rotated refresh token before any API call.
-        self.data = updated
+        if self.pending_data is None:
+            result = object_value(self.request(TOKEN_URL, "POST", {
+                "grant_type": "refresh_token", "client_id": CLI_CLIENT_ID,
+                "refresh_token": self.data["refreshToken"],
+            }, form=True), "invalid-token-response")
+            lifetime = result.get("expires_in")
+            if isinstance(lifetime, bool) or not isinstance(lifetime, (int, float, str)):
+                raise RequestError("invalid-token-response")
+            try:
+                lifetime = float(lifetime)
+            except (ValueError, OverflowError):
+                raise RequestError("invalid-token-response") from None
+            now = self.clock()
+            if (not all(valid_token(result.get(k)) for k in ("access_token", "refresh_token"))
+                    or not finite_number(lifetime) or lifetime <= 0
+                    or not finite_number(now + lifetime)):
+                raise RequestError("invalid-token-response")
+            self.pending_data = {"accessToken": result["access_token"],
+                                 "refreshToken": result["refresh_token"],
+                                 "expiresAt": now + lifetime,
+                                 "refreshAt": now + lifetime - min(3600, lifetime / 10)}
+            if "cliTransfer" in self.data:
+                self.pending_data["cliTransfer"] = dict(self.data["cliTransfer"])
+        # A temporary write failure must not discard an already rotated token.
+        # Retry persistence before using it or requesting another rotation.
+        save_json(self.path, self.pending_data)
+        self.data = self.pending_data
+        self.pending_data = None
         logging.info("OAuth refreshed and saved")
 
     def token(self):
-        if self.clock() >= self.data["expiresAt"] - 3600:
+        if self.pending_data is not None or self.clock() >= self.data.get("refreshAt", self.data["expiresAt"] - 3600):
             self.refresh()
         return self.data["accessToken"]
 
@@ -125,13 +212,16 @@ class Client:
         if path.startswith("/devices/") and (path.count("/") == 2 or path.endswith("/preferences")):
             options["accept"] = "application/vnd.smartthings+json;v=20170916"
             base = "https://api.smartthings.com"
+        # An OAuth endpoint rejection is an authentication failure, not a
+        # device API 401. Only the latter permits one refresh and API retry.
+        token = self.auth.token()
         try:
-            return self.request(base + path, method, data, token=self.auth.token(), **options)
+            return object_value(self.request(base + path, method, data, token=token, **options))
         except RequestError as exc:
             if exc.status != 401:
                 raise
         self.auth.refresh()
-        return self.request(base + path, method, data, token=self.auth.token(), **options)
+        return object_value(self.request(base + path, method, data, token=self.auth.token(), **options))
 
     def notify(self, location, device, message):
         text = {"title": device["label"], "body": message}
@@ -145,26 +235,74 @@ class Client:
 
 
 def conditions(device, status):
-    main = status.get("components", {}).get("main", {})
+    main = object_field(object_field(status, "components"), "main")
     definitions = [("fault", "earthpanel38939.deviceFault", "fault", FAULTS[device["model"]])]
     if device["model"] == "zhimi.airp.cpa4":
         definitions.append(("filter", "earthpanel38939.filterAlert", "status", {
             "normal": None, "replace": "필터 수명이 10% 이하예요. 교체할 필터를 준비해 주세요.",
         }))
     for key, cap, attr, messages in definitions:
-        reading = main.get(cap, {}).get(attr, {})
+        try:
+            reading = object_field(object_field(main, cap), attr)
+        except RequestError:
+            # Fault and filter warnings are independent. One malformed reading
+            # cannot discard a valid warning from the other capability.
+            continue
         value, stamp = reading.get("value"), reading.get("timestamp")
         # Missing/unknown reads never clear a warning. Timestamp distinguishes
         # recurrence even if normal -> warning happened between our polls.
-        if isinstance(value, str) and value in messages and isinstance(stamp, str):
+        if isinstance(value, str) and value in messages and valid_timestamp(stamp):
             yield key, {"value": value, "timestamp": stamp}, messages[value]
 
 
 class Monitor:
     def __init__(self, config, state_path, client, clock=time.time):
         self.config, self.path, self.client, self.clock = config, Path(state_path), client, clock
-        self.state = json.loads(self.path.read_text()) if self.path.exists() else {}
+        try:
+            self.state = object_value(json.loads(self.path.read_text()), "invalid-state") if self.path.exists() else {}
+            # Reject corrupt but parseable JSON before accepting any pushes;
+            # it must remain possible to persist the complete dedup state.
+            json.dumps(self.state, ensure_ascii=False, allow_nan=False).encode()
+        except (ValueError, RecursionError):
+            raise RequestError("invalid-state") from None
         self.retry = {}
+        self.started_at = self.clock()
+        self.cloud_reads = {device["id"]: None for device in config["devices"]}
+        if config.get("testDeviceId"):
+            self.cloud_reads[config["testDeviceId"]] = None
+        self.state_dirty = False
+
+    def save_state(self):
+        self.state_dirty = True
+        self.flush_state()
+
+    def flush_state(self):
+        if not self.state_dirty:
+            return
+        try:
+            save_json(self.path, self.state)
+        except OSError as exc:
+            logging.warning("notification state save unavailable (%s)", exc)
+        else:
+            self.state_dirty = False
+
+    def health(self, checked):
+        return {"lastPollAt": self.clock(), "startedAt": self.started_at,
+                "lastCloudReadAt": max((stamp for stamp in self.cloud_reads.values() if stamp is not None), default=0),
+                "deviceCloudReads": dict(self.cloud_reads), "checkedDevices": checked,
+                "pendingRetries": len(self.retry), "stateSaved": not self.state_dirty}
+
+    def defer_push(self, state_key, occurrence, pending, label, key, error):
+        delay = min(pending[2] * 2 if pending else 30, 900)
+        self.retry[state_key] = (occurrence, self.clock() + delay, delay)
+        logging.warning("push retry %s %s in %ss (%s)", label, key, delay, error)
+
+    def current_occurrence(self, key, occurrence):
+        stamp = occurrence_stamp(occurrence)
+        saved = occurrence_stamp(self.state.get(key))
+        pending = self.retry.get(key)
+        pending_stamp = occurrence_stamp(pending[0]) if pending else None
+        return all(previous is None or stamp >= previous for previous in (saved, pending_stamp))
 
     def poll_test(self):
         device_id = self.config.get("testDeviceId")
@@ -172,25 +310,39 @@ class Monitor:
             return
         try:
             status = self.client.api("/devices/" + device_id + "/status")
-            reading = status.get("components", {}).get("main", {}).get(
-                "earthpanel38939.latestAlert", {}).get("message", {})
+            reading = object_field(object_field(object_field(object_field(status, "components"), "main"),
+                                                "earthpanel38939.latestAlert"), "message")
             stamp = reading.get("timestamp")
-            if not isinstance(stamp, str):
+            if not valid_timestamp(stamp) or not isinstance(reading.get("value"), str):
                 return
             key = "test:" + device_id
+            if not self.current_occurrence(key, stamp):
+                return
+            self.cloud_reads[device_id] = self.clock()
             if key not in self.state:
                 self.state[key] = stamp  # Do not replay historical button requests on installation.
-                save_json(self.path, self.state)
+                self.save_state()
                 return
-            if self.state[key] == stamp:
+            pending = self.retry.get(key)
+            if pending and occurrence_stamp(pending[0]) != occurrence_stamp(stamp):
+                self.retry.pop(key)
+                pending = None
+            if occurrence_stamp(self.state[key]) == occurrence_stamp(stamp):
                 return
             if reading.get("value") == "직접 알림 테스트 요청입니다. 실제 기기 고장이 아닙니다.":
-                self.client.notify(self.config["locationId"], {"id": device_id, "label": "Xiaomi 알림"},
-                                   "Mac 알림 서비스가 정상 동작합니다. 루틴 없이 보낸 테스트입니다.")
+                if pending and self.clock() < pending[1]:
+                    return
+                try:
+                    self.client.notify(self.config["locationId"], {"id": device_id, "label": "Xiaomi 알림"},
+                                       "Mac 알림 서비스가 정상 동작합니다. 루틴 없이 보낸 테스트입니다.")
+                except (RequestError, OSError) as exc:
+                    self.defer_push(key, stamp, pending, "Xiaomi 알림", "test", exc)
+                    return
                 logging.info("app test push accepted")
             self.state[key] = stamp
-            save_json(self.path, self.state)
-        except RequestError as exc:
+            self.retry.pop(key, None)
+            self.save_state()
+        except (RequestError, OSError) as exc:
             logging.warning("test request unavailable (%s)", exc)
 
     def poll(self):
@@ -198,36 +350,45 @@ class Monitor:
         checked = 0
         for device in self.config["devices"]:
             try:
-                health = self.client.api("/devices/" + device["id"] + "/health")
-                if health.get("state") != "ONLINE":
+                health = object_value(self.client.api("/devices/" + device["id"] + "/health"))
+                if health.get("state") not in ("ONLINE", "OFFLINE"):
+                    raise RequestError("invalid-device-health")
+                if health["state"] == "OFFLINE":
                     checked += 1
+                    self.cloud_reads[device["id"]] = self.clock()
                     continue
                 status = self.client.api("/devices/" + device["id"] + "/status")
-                checked += 1
-                for key, occurrence, message in conditions(device, status):
+                readings = [(key, occurrence, message) for key, occurrence, message in conditions(device, status)
+                            if self.current_occurrence(device["id"] + ":" + key, occurrence)]
+                expected = 2 if device["model"] == "zhimi.airp.cpa4" else 1
+                if len(readings) == expected:
+                    checked += 1
+                    self.cloud_reads[device["id"]] = self.clock()
+                else:
+                    logging.warning("status incomplete %s", device["label"])
+                for key, occurrence, message in readings:
                     state_key = device["id"] + ":" + key
-                    if self.state.get(state_key) == occurrence:
-                        continue
                     pending = self.retry.get(state_key)
-                    if pending and pending[0] != occurrence:
+                    if pending and not same_occurrence(pending[0], occurrence):
                         self.retry.pop(state_key)
                         pending = None
+                    if same_occurrence(self.state.get(state_key), occurrence):
+                        continue
                     if message:
                         if pending and self.clock() < pending[1]:
                             continue
                         try:
                             self.client.notify(self.config["locationId"], device, message)
-                        except RequestError as exc:
-                            delay = min(pending[2] * 2 if pending else 30, 900)
-                            self.retry[state_key] = (occurrence, self.clock() + delay, delay)
-                            logging.warning("push retry %s %s in %ss (%s)", device["label"], key, delay, exc)
+                        except (RequestError, OSError) as exc:
+                            self.defer_push(state_key, occurrence, pending, device["label"], key, exc)
                             continue
                         logging.info("push accepted %s %s=%s", device["label"], key, occurrence["value"])
                     self.state[state_key] = occurrence
                     self.retry.pop(state_key, None)
-                    save_json(self.path, self.state)
-            except RequestError as exc:
+                    self.save_state()
+            except (RequestError, OSError) as exc:
                 logging.warning("status unavailable %s (%s)", device["label"], exc)
+        self.flush_state()
         return checked
 
 
@@ -266,14 +427,12 @@ def main():
         signal.signal(signal.SIGTERM, stop)
         signal.signal(signal.SIGINT, stop)
         logging.info("notification service started (%s devices)", len(config["devices"]))
-        last_cloud_read = 0
         while running:
             checked = monitor.poll()
-            if checked:
-                last_cloud_read = time.time()
-            save_json(args.home / "health.json", {"lastPollAt": time.time(),
-                      "lastCloudReadAt": last_cloud_read, "checkedDevices": checked,
-                      "pendingRetries": len(monitor.retry)})
+            try:
+                save_json(args.home / "health.json", monitor.health(checked))
+            except OSError as exc:
+                logging.warning("health state save unavailable (%s)", exc)
             if args.once:
                 return
             for _ in range(config.get("pollSeconds", 15)):
