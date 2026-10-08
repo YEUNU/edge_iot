@@ -596,7 +596,7 @@ local function alert_device(cache, supported)
     end,
     emit_event = function(_, event)
       emitted[#emitted + 1] = event
-      local value = event.args[1]
+      local value = event.method or event.args[1]
       cache[event.capability .. "." .. event.attribute] =
         type(value) == "table" and value.value or value
     end,
@@ -1505,6 +1505,84 @@ test("a queued switch command does not suppress filter reset completion on the s
   cosock.spawn = original_spawn
   assert(power and #maintenance == 2 and maintenance[1] == "resetting" and maintenance[2] == "ready",
     "an unrelated queued command must not leave completed maintenance stuck resetting")
+end)
+
+test("unchanged Xiaomi control values do not repeat SDK publications", function()
+  local samples = {
+    {fan, {power=true, ["speed-percent"]=55, swing=true, angle=90, ["fan-mode"]=0,
+      ["power-off-delay"]=120, lock=true, alarm=false, indicator=50}},
+    {airp, {power=true, mode=0, alarm=false, lock=true, brightness=1, ["favorite-level"]=7}},
+    {dehumidifier, {power=true, mode=0, target=55, alarm=false, led=1, lock=true,
+      ["dry-after-off"]=true, ["dry-left-seconds"]=120, ["warming-up"]=false,
+      ["timer-enabled"]=true, ["timer-remaining"]=60}},
+  }
+  for _, sample in ipairs(samples) do
+    local handler, values = sample[1], sample[2]
+    local device, emitted, cache = alert_device()
+    handler.apply_state(device, values)
+    local first = #emitted
+    assert(first > 0)
+    for _ = 1, 100 do handler.apply_state(device, values) end
+    assert(#emitted == first, "only the initial control snapshot should be published")
+    handler.apply_state(device, {lock=false})
+    assert(#emitted == first + 1 and cache["earthpanel38939.childLock.lock"] == "unlocked")
+  end
+end)
+
+test("Xiaomi sensor and history publication cadence remains unchanged", function()
+  local samples = {
+    {fan, {humidity=57, temperature=25}, 2},
+    {airp, {pm25=7, ["filter-life"]=60}, 2},
+    {dehumidifier, {humidity=57, temperature=25}, 3},
+  }
+  for _, sample in ipairs(samples) do
+    local device, emitted = alert_device()
+    sample[1].apply_state(device, sample[2])
+    local first = #emitted
+    for _ = 1, 9 do sample[1].apply_state(device, sample[2]) end
+    assert(#emitted == first + 9 * sample[3], "sensor/history samples must retain their cadence")
+  end
+end)
+
+test("Xiaomi control dedup respects exposed profiles and SDK restored values", function()
+  local cap = "earthpanel38939.childLock"
+  for _, handler in ipairs({fan, airp, dehumidifier}) do
+    local supported = {}
+    local device, emitted, cache = alert_device(nil, supported)
+    handler.apply_state(device, {lock=true})
+    assert(#emitted == 0 and cache[cap .. ".lock"] == nil)
+    supported[cap] = true
+    handler.apply_state(device, {lock=true})
+    assert(#emitted == 1 and cache[cap .. ".lock"] == "locked")
+    local restarted, restored_events = alert_device(cache, supported)
+    handler.apply_state(restarted, {lock=true})
+    assert(#restored_events == 0)
+    handler.apply_state(restarted, {lock=false})
+    assert(#restored_events == 1)
+  end
+end)
+
+test("failed Xiaomi control publication retries the same value", function()
+  for _, handler in ipairs({fan, airp, dehumidifier}) do
+    local device, emitted = alert_device()
+    local emit = device.emit_event
+    device.emit_event = function() error("SDK publication unavailable") end
+    assert(not pcall(handler.apply_state, device, {lock=true}))
+    device.emit_event = emit
+    handler.apply_state(device, {lock=true})
+    handler.apply_state(device, {lock=true})
+    assert(#emitted == 1, "failed publications must not consume the control value")
+  end
+end)
+
+test("a confirmed Xiaomi control rolls back the newer optimistic SDK value", function()
+  local device, emitted, cache = alert_device()
+  fan.apply_state(device, {power=true, ["speed-percent"]=20})
+  device:emit_event(require("st.capabilities").fanSpeedPercent.percent(55))
+  local before = #emitted
+  fan.apply_state(device, {power=true, ["speed-percent"]=20})
+  assert(#emitted == before + 1 and cache["fanSpeedPercent.percent"] == 20,
+    "dedup must compare the current SDK value, not a previous physical read")
 end)
 
 print(string.format("%d tests passed", passed))

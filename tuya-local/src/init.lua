@@ -7,15 +7,21 @@ local library = caps['earthpanel38939.acModelLibrary']
 local connection = caps['earthpanel38939.acLocalLink']
 local remote_keys = caps['earthpanel38939.acRemoteKeys']
 local mode_control = caps['earthpanel38939.acModeControl']
+local cached_emit
 local function connection_note(device,text)
-  if device:supports_capability(connection) then device:emit_event(connection.status(text)) end
+  if device:supports_capability(connection) then
+    cached_emit(device,connection.ID..'.status',text,function() return connection.status(text) end)
+  end
 end
-local function library_event(device,event)
-  if device:supports_capability(library) then device:emit_event(event) end
+local function library_event(device,event,key,value)
+  if device:supports_capability(library) then
+    if key then cached_emit(device,library.ID..'.'..key,value,function() return event end)
+    else device:emit_event(event) end
+  end
 end
-local function note(device,text)
-  device:set_field('setup_note',text)
-  library_event(device,library.status(text,{state_change=true}))
+local function note(device,text,cached)
+  if device:get_field('setup_note')~=text then device:set_field('setup_note',text) end
+  library_event(device,library.status(text,{state_change=true}),cached and 'status' or nil,text)
 end
 local function credentials(device)
   return device:get_field('bridge_credentials') or device.preferences
@@ -24,6 +30,9 @@ local function in_setup(device)
   return device:get_field('setup_open') or (device.preferences.changeModel and not device:get_field('setup_closed'))
 end
 local function update_view(device)
+  -- Profile attachment is asynchronous. A newly attached view needs its first
+  -- complete publication even when its values match the preceding view.
+  device:set_field('published_events',nil)
   local setup=in_setup(device)
   local active=catalog[tostring(device:get_field('active_profile') or 104800501)] or {}
   local candidate=catalog[tostring(device:get_field('candidate_profile') or 104800501)] or {}
@@ -48,16 +57,16 @@ local function show_candidate(device, id)
   end
   local item=catalog[id]
   if not item then note(device,'등록되지 않은 코드셋'); return end
-  device:set_field('candidate_profile',id,{persist=true})
+  if device:get_field('candidate_profile')~=id then device:set_field('candidate_profile',id,{persist=true}) end
   local brand=device:get_field('candidate_brand')
   if not brand or not matches_brand(item,brand) then brand=item.brand end
-  device:set_field('candidate_brand',brand,{persist=true})
+  if device:get_field('candidate_brand')~=brand then device:set_field('candidate_brand',brand,{persist=true}) end
   local candidates={}
   for key,p in pairs(catalog) do if matches_brand(p,brand) then table.insert(candidates,p.name) end end
   table.sort(candidates)
-  library_event(device,library.brand(brand,{state_change=true}))
-  library_event(device,library.supportedCandidates(candidates,{state_change=true,visibility={displayed=false}}))
-  library_event(device,library.candidate(item.name,{state_change=true}))
+  library_event(device,library.brand(brand,{state_change=true}),'brand',brand)
+  library_event(device,library.supportedCandidates(candidates,{state_change=true,visibility={displayed=false}}),'supportedCandidates',candidates)
+  library_event(device,library.candidate(item.name,{state_change=true}),'candidate',item.name)
 end
 
 local function finite_number(value)
@@ -122,10 +131,49 @@ local function current_request(device,request)
     and same_credentials(request.preferences,credentials(device))
 end
 
+local function same_value(left,right)
+  if type(left)~=type(right) then return false end
+  if type(left)~='table' then return left==right end
+  for key,value in pairs(left) do if not same_value(value,right[key]) then return false end end
+  for key in pairs(right) do if left[key]==nil then return false end end
+  return true
+end
+local function copy_value(value)
+  if type(value)~='table' then return value end
+  local copied={}
+  for key,item in pairs(value) do copied[key]=copy_value(item) end
+  return copied
+end
+local function publication_context(device)
+  local testing=not not in_setup(device)
+  return {profile=testing and (device:get_field('candidate_profile') or selected(device)) or selected(device),
+    testing=testing,keys_open=not not device:get_field('keys_open'),preferences=credentials(device)}
+end
+cached_emit=function(device,key,value,event,request)
+  if request and not current_request(device,request) then return end
+  local context=publication_context(device)
+  local cache=device:get_field('published_events')
+  if not cache or not same_context(cache.context,context) then
+    cache={context=copy_value(context),values={},pending={}}
+    device:set_field('published_events',cache)
+  end
+  if same_value(cache.values[key],value) then return end
+  local token={}
+  cache.pending[key]=token
+  cache.values[key]=nil
+  device:emit_event(event())
+  -- An event may yield, fail, or reenter a view-change handler. Only remember a
+  -- successful publication while this same cache and view are still current.
+  if device:get_field('published_events')==cache and cache.pending[key]==token
+    and same_context(context,publication_context(device)) then
+    cache.pending[key]=nil
+    cache.values[key]=copy_value(value)
+  end
+end
+
 local function apply(device, result, testing, request)
-  local function emit(event)
-    -- Event publication can also yield or reenter a model-change handler.
-    if current_request(device,request) then device:emit_event(event) end
+  local function emit(key,value,event)
+    cached_emit(device,key,value,event,request)
   end
   if not current_request(device,request) then return end
   local s = result.state
@@ -138,38 +186,47 @@ local function apply(device, result, testing, request)
     for _,id in ipairs(keys) do if id==chosen then found=true end end
     if not found then chosen=keys[1] or '' end
     device:set_field('remote_key',chosen)
-    emit(remote_keys.supportedKeys(keys,{state_change=true,visibility={displayed=false}}))
-    emit(remote_keys.key(chosen,{state_change=true}))
+    emit(remote_keys.ID..'.supportedKeys',keys,function() return remote_keys.supportedKeys(keys,{state_change=true,visibility={displayed=false}}) end)
+    -- Publishing the list may yield to a newer user selection in this same
+    -- view. Preserve it instead of displaying the earlier snapshot selection.
+    if device:get_field('remote_key')==chosen then
+      emit(remote_keys.ID..'.key',chosen,function() return remote_keys.key(chosen,{state_change=true}) end)
+    end
   end
   if not current_request(device,request) then return end
   if result.control_style=='buttons' or device:get_field('keys_open') then
-    connection_note(device,'버튼 전송 기준 · 실제 상태는 확인할 수 없습니다')
+    connection_note(device,result.settings_save_pending and '명령 전송 완료 · 설정 저장 대기'
+      or '버튼 전송 기준 · 실제 상태는 확인할 수 없습니다')
     return
   end
   if type(s.power) == 'boolean' then
-    emit(caps.switch.switch(s.power and 'on' or 'off'))
+    local power=s.power and 'on' or 'off'
+    emit('switch.switch',power,function() return caps.switch.switch(power) end)
   end
   local settings=result.settings or s
   local tempcap=caps['earthpanel38939.'..(temperatures.by_id[tostring(request.profile)] or 'acTemp18To30')]
   if settings.target_temperature then
-    if not testing and device:supports_capability(tempcap) then emit(tempcap.temperature({value=settings.target_temperature,unit='C'},{state_change=true,visibility={displayed=false}})) end
-    emit(caps.thermostatCoolingSetpoint.coolingSetpoint({value=settings.target_temperature,unit='C'}))
+    local value={value=settings.target_temperature,unit='C'}
+    if not testing and device:supports_capability(tempcap) then emit(tempcap.ID..'.temperature',value,function() return tempcap.temperature(value,{state_change=true,visibility={displayed=false}}) end) end
+    emit('thermostatCoolingSetpoint.coolingSetpoint',value,function() return caps.thermostatCoolingSetpoint.coolingSetpoint(value) end)
   end
   if result.temperature then
     local t = result.temperature
-    if not testing and device:supports_capability(tempcap) then emit(tempcap.temperatureRange({value={minimum=t.min,maximum=t.max,step=t.step}},{state_change=true,visibility={displayed=false}})) end
-    emit(caps.thermostatCoolingSetpoint.coolingSetpointRange({value={minimum=t.min,maximum=t.max,step=t.step},unit='C'}))
+    local range={minimum=t.min,maximum=t.max,step=t.step}
+    if not testing and device:supports_capability(tempcap) then emit(tempcap.ID..'.temperatureRange',range,function() return tempcap.temperatureRange({value=range},{state_change=true,visibility={displayed=false}}) end) end
+    emit('thermostatCoolingSetpoint.coolingSetpointRange',range,function() return caps.thermostatCoolingSetpoint.coolingSetpointRange({value=range,unit='C'}) end)
   end
-  emit(caps.airConditionerMode.supportedAcModes(result.supported_modes, {visibility={displayed=false}}))
+  emit('airConditionerMode.supportedAcModes',result.supported_modes,function() return caps.airConditionerMode.supportedAcModes(result.supported_modes, {visibility={displayed=false}}) end)
   if device:supports_capability(mode_control) then
-    emit(mode_control.supportedModes(result.supported_modes, {state_change=true,visibility={displayed=false}}))
-    if settings.mode then emit(mode_control.mode(settings.mode)) end
+    emit(mode_control.ID..'.supportedModes',result.supported_modes,function() return mode_control.supportedModes(result.supported_modes, {state_change=true,visibility={displayed=false}}) end)
+    if settings.mode then emit(mode_control.ID..'.mode',settings.mode,function() return mode_control.mode(settings.mode) end) end
   end
-  emit(caps.airConditionerFanMode.supportedAcFanModes(result.supported_fans, {visibility={displayed=false}}))
-  if settings.mode then emit(caps.airConditionerMode.airConditionerMode(settings.mode)) end
-  if settings.fan then emit(caps.airConditionerFanMode.fanMode(settings.fan)) end
+  emit('airConditionerFanMode.supportedAcFanModes',result.supported_fans,function() return caps.airConditionerFanMode.supportedAcFanModes(result.supported_fans, {visibility={displayed=false}}) end)
+  if settings.mode then emit('airConditionerMode.airConditionerMode',settings.mode,function() return caps.airConditionerMode.airConditionerMode(settings.mode) end) end
+  if settings.fan then emit('airConditionerFanMode.fanMode',settings.fan,function() return caps.airConditionerFanMode.fanMode(settings.fan) end) end
   if current_request(device,request) then
-    connection_note(device,s.power==nil and '전원 미확인 · 저장된 설정 기준' or '리모컨 명령 기준')
+    connection_note(device,result.settings_save_pending and '명령 전송 완료 · 설정 저장 대기'
+      or (s.power==nil and '전원 미확인 · 저장된 설정 기준' or '리모컨 명령 기준'))
   end
 end
 
@@ -268,7 +325,7 @@ local function refresh(driver, device)
   publish(device,function()
     if device:supports_capability(library) then
       show_candidate(device,device:get_field('candidate_profile') or selected(device))
-      note(device,device:get_field('setup_note') or '제조사와 기종을 선택하세요')
+      note(device,device:get_field('setup_note') or '제조사와 기종을 선택하세요',true)
     end
   end)
   transact(driver, device)
@@ -318,7 +375,7 @@ local definition={
     [remote_keys.ID]={
       selectKey=function(_,v,c)
         v:set_field('remote_key',c.args.key)
-        v:emit_event(remote_keys.key(c.args.key))
+        cached_emit(v,remote_keys.ID..'.key',c.args.key,function() return remote_keys.key(c.args.key) end)
       end,
       sendKey=function(d,v)
         local key=v:get_field('remote_key')

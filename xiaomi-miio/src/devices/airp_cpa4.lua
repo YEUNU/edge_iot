@@ -122,13 +122,14 @@ function M.on_init(device)  emit_supported_modes(device) end
 function M.apply_state(device, p)
   local power = p["power"]
   if power ~= nil then
-    events.emit(device, capabilities.switch,
+    events.emit_changed(device, capabilities.switch, "switch", power and "on" or "off",
       power and capabilities.switch.switch.on() or capabilities.switch.switch.off())
   end
 
   local mode = p["mode"]
   if mode ~= nil and MODE_LABELS[mode] then
-    events.emit(device, capabilities.mode, capabilities.mode.mode(MODE_LABELS[mode]))
+    events.emit_changed(device, capabilities.mode, "mode", MODE_LABELS[mode],
+      capabilities.mode.mode(MODE_LABELS[mode]))
   end
 
   local pm25 = p["pm25"]
@@ -184,18 +185,20 @@ function M.apply_state(device, p)
 
   local alarm = p["alarm"]
   if alarm ~= nil and cap_alarmBuzzer then
-    events.emit(device, cap_alarmBuzzer, cap_alarmBuzzer.buzzer(alarm and "on" or "off"))
+    events.emit_changed(device, cap_alarmBuzzer, "buzzer", alarm and "on" or "off",
+      cap_alarmBuzzer.buzzer(alarm and "on" or "off"))
   end
 
   local lock = p["lock"]
   if lock ~= nil and cap_childLock then
-    events.emit(device, cap_childLock, cap_childLock.lock(lock and "locked" or "unlocked"))
+    events.emit_changed(device, cap_childLock, "lock", lock and "locked" or "unlocked",
+      cap_childLock.lock(lock and "locked" or "unlocked"))
   end
 
   local bright = p["brightness"]
   if bright ~= nil then
     if cap_indicatorMode then
-      events.emit(device, cap_indicatorMode,
+      events.emit_changed(device, cap_indicatorMode, "indicator", BRIGHT_TO_LIGHT_MODE[bright] or "off",
         cap_indicatorMode.indicator(BRIGHT_TO_LIGHT_MODE[bright] or "off"))
     end
   end
@@ -204,7 +207,8 @@ function M.apply_state(device, p)
   if favorite_level ~= nil and cap_favoriteLevel then
     -- This is the saved manual setting, not the currently running motor speed.
     -- Power off must not overwrite the saved 0–14 manual setting.
-    events.emit(device, cap_favoriteLevel, cap_favoriteLevel.level(favorite_level))
+    events.emit_changed(device, cap_favoriteLevel, "level", favorite_level,
+      cap_favoriteLevel.level(favorite_level))
   end
 end
 

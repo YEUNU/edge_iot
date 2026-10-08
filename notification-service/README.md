@@ -84,6 +84,11 @@ python3 -m unittest discover -s tests -p 'test_notifier*.py'
 lua tests/run.lua .
 ```
 
+HTTPS 요청은 검증된 TLS 신뢰 설정을 재사용합니다. 요청별 handler와 인증 헤더는
+따로 만들며, 인증서·호스트 이름 검증과 redirect 차단을 유지합니다.
+`python3 scripts/benchmark_notifier_tls.py`는 저장소 루트에서 네트워크 연결 없이
+TLS 설정 초기화 비용만 비교합니다. 연결·handshake·알림 도착 시간은 측정하지 않습니다.
+
 ## 알림 조건과 동작
 
 - 제습기: 물통 가득 참, 센서·내부 통신·팬 모터 오류, 필터 청소, 과부하,

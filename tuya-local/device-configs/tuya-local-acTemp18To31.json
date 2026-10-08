@@ -54,12 +54,7 @@
       "capability": "earthpanel38939.acLocalLink",
       "version": 1,
       "values": [],
-      "patch": [
-        {
-          "op": "remove",
-          "path": "/0"
-        }
-      ]
+      "patch": []
     }
   ],
   "automation": {

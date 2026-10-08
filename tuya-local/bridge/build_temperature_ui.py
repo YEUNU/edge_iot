@@ -24,6 +24,8 @@ for slug,(lo,hi) in ranges.items():
  presentation={'dashboard':{'states':[],'actions':[]},'detailView':[{'label':'설정 온도','displayType':'slider','slider':{'value':'temperature.value','unit':'temperature.unit','command':'setTemperature','range':[lo,hi],'step':1,'supportedValues':'temperatureRange.value'}}],'automation':{'conditions':[],'actions':[]}}
  for name,obj in [(slug+'.json',cap),(slug+'-presentation.json',presentation)]:
   (root/'capabilities'/name).write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n')
+ translation={'tag':'ko','label':'설정 온도','attributes':{},'commands':{}}
+ (root/'translations'/(slug+'.ko.json')).write_text(json.dumps(translation,ensure_ascii=False,indent=2)+'\n')
  name='tuya-local-ac.'+slug+'.v1'
  text=base.replace('name: tuya-local-ac.v1','name: '+name).replace('      - id: thermostatCoolingSetpoint','      - id: earthpanel38939.'+slug+'\n        version: 1\n      - id: thermostatCoolingSetpoint')
  profile_path=root/'profiles'/('tuya-local-'+slug+'.yml')

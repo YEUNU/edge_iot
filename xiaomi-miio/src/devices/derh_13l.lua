@@ -152,34 +152,37 @@ function M.on_init(device)  emit_supported_modes(device) end
 
 function M.apply_state(device, p)
   if p["dry-after-off"] ~= nil and cap_dryAfterOff then
-    events.emit(device, cap_dryAfterOff,
+    events.emit_changed(device, cap_dryAfterOff, "dryAfterOff", p["dry-after-off"] and "on" or "off",
       cap_dryAfterOff.dryAfterOff(p["dry-after-off"] and "on" or "off"))
   end
   if p["dry-left-seconds"] ~= nil and cap_dryRemaining then
-    events.emit(device, cap_dryRemaining,
+    events.emit_changed(device, cap_dryRemaining, "remainingMinutes", math.ceil(p["dry-left-seconds"] / 60),
       cap_dryRemaining.remainingMinutes({ value = math.ceil(p["dry-left-seconds"] / 60), unit = "min" }))
   end
   if p["warming-up"] ~= nil and cap_warmingUp then
-    events.emit(device, cap_warmingUp, cap_warmingUp.warmingUp(p["warming-up"] and "yes" or "no"))
+    events.emit_changed(device, cap_warmingUp, "warmingUp", p["warming-up"] and "yes" or "no",
+      cap_warmingUp.warmingUp(p["warming-up"] and "yes" or "no"))
   end
   if cap_timer and (p["timer-enabled"] == false
       or (p["timer-enabled"] == true and p["timer-remaining"] ~= nil)) then
-    events.emit(device, cap_timer, cap_timer.minutes({
+    events.emit_changed(device, cap_timer, "minutes", p["timer-enabled"] == false and 0 or p["timer-remaining"],
+      cap_timer.minutes({
       value = p["timer-enabled"] == false and 0 or p["timer-remaining"], unit = "min" }))
   end
   local power = p["power"]
   if power ~= nil then
-    events.emit(device, capabilities.switch,
+    events.emit_changed(device, capabilities.switch, "switch", power and "on" or "off",
       power and capabilities.switch.switch.on() or capabilities.switch.switch.off())
   end
 
   local mode = p["mode"]
   if mode ~= nil and cap_targetHumidity then
-    events.emit(device, cap_targetHumidity,
+    events.emit_changed(device, cap_targetHumidity, "adjustable", (mode == 0 or mode == 1) and "yes" or "no",
       cap_targetHumidity.adjustable((mode == 0 or mode == 1) and "yes" or "no"))
   end
   if mode ~= nil and MODE_LABELS[mode] then
-    events.emit(device, capabilities.mode, capabilities.mode.mode(MODE_LABELS[mode]))
+    events.emit_changed(device, capabilities.mode, "mode", MODE_LABELS[mode],
+      capabilities.mode.mode(MODE_LABELS[mode]))
   end
 
   local fault = p["fault"]
@@ -198,7 +201,7 @@ function M.apply_state(device, p)
 
   local target = p["target"]
   if target ~= nil and cap_targetHumidity then
-    events.emit(device, cap_targetHumidity,
+    events.emit_changed(device, cap_targetHumidity, "targetHumidity", target,
       cap_targetHumidity.targetHumidity({ value = target, unit = "%" }))
   end
 
@@ -219,18 +222,20 @@ function M.apply_state(device, p)
 
   local alarm = p["alarm"]
   if alarm ~= nil and cap_alarmBuzzer then
-    events.emit(device, cap_alarmBuzzer, cap_alarmBuzzer.buzzer(alarm and "on" or "off"))
+    events.emit_changed(device, cap_alarmBuzzer, "buzzer", alarm and "on" or "off",
+      cap_alarmBuzzer.buzzer(alarm and "on" or "off"))
   end
 
   local led = p["led"]
   if led ~= nil and cap_indicatorMode then
-    events.emit(device, cap_indicatorMode,
+    events.emit_changed(device, cap_indicatorMode, "indicator", LED_TO_MODE[led] or "off",
       cap_indicatorMode.indicator(LED_TO_MODE[led] or "off"))
   end
 
   local lock = p["lock"]
   if lock ~= nil and cap_childLock then
-    events.emit(device, cap_childLock, cap_childLock.lock(lock and "locked" or "unlocked"))
+    events.emit_changed(device, cap_childLock, "lock", lock and "locked" or "unlocked",
+      cap_childLock.lock(lock and "locked" or "unlocked"))
   end
 
 end

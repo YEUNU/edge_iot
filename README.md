@@ -150,6 +150,31 @@ identity conflicts, pending enrollment and expiry, malformed and partial replies
 command queue recovery, storage failures, OAuth rotation, and per-device health.
 They do not replace appliance, hub SDK, or mobile app verification.
 
+Reproduce the host CPU benchmarks without device or network traffic:
+
+```sh
+lua scripts/benchmark_miio.lua . 1000
+python3 scripts/benchmark_notifier_tls.py --iterations 100 --repeats 5
+python3 scripts/benchmark_tuya.py
+```
+
+The MiIO benchmark accepts another checkout as its first argument for comparison.
+The Tuya benchmark accepts `--source-root` and uses the public catalog and mocked
+hub/SDK clients. Browsing all 72 profiles retained 16.43 MB before the cache limit
+and 0.43 MB afterward; ten unchanged daily polls emitted 120 events before and
+none after the initial snapshot, with all ten health reads retained.
+On the development host, parsing 1,000 fixed 144-byte encrypted replies took
+2.196 s before the AES change and 0.313 s afterward. TLS trust configuration
+initialization took 2.805 ms per connection with the default context and 0.0026 ms
+with the notifier's reused verified context. These measure local processing,
+not network, TLS handshake, hub, or appliance response times.
+
+Repeated Xiaomi control values use the SDK's latest state to avoid duplicate
+publications. Sensor/history samples and fault, alert, and maintenance policies
+retain their existing cadence. Local UI checks also verify visible Tuya connection
+feedback and Korean labels for every catalog temperature range; see the dated
+[UI audit](smartthings/UI_AUDIT.md) and [Tuya results](tuya-local/TEST_RESULTS.md).
+
 Build packages without uploading:
 
 ```bash
