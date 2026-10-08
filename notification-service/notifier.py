@@ -21,6 +21,7 @@ API = "https://api.smartthings.com/v1"
 TOKEN_URL = "https://auth-global.api.smartthings.com/oauth/token"
 CLI_CLIENT_ID = "d18cf96e-c626-4433-bf51-ddbb10c5d1ed"
 DEFAULT_HOME = Path.home() / "Library/Application Support/Xiaomi Notifications"
+MAX_JSON_DEPTH = 64
 FAULTS = {
     "xiaomi.derh.13l": {
         "noFault": None, "defrost": None,
@@ -38,6 +39,10 @@ FAULTS = {
         "motorStuck": "모터 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
         "sensorLost": "센서 연결 오류가 감지됐어요. 기기 상태를 확인해 주세요.",
     },
+}
+FILTERS = {
+    "normal": None,
+    "replace": "필터 수명이 10% 이하예요. 교체할 필터를 준비해 주세요.",
 }
 
 
@@ -71,6 +76,31 @@ def object_value(value, error="invalid-response"):
 
 def object_field(value, key):
     return object_value(object_value(value).get(key, {}))
+
+
+def parse_json(raw):
+    """Bound nesting before the decoder, whose recursion limit varies by Python."""
+    if isinstance(raw, (bytes, bytearray)):
+        # Match json.loads' BOM and UTF-8/16/32 decoding for response bodies.
+        raw = raw.decode(json.detect_encoding(raw), "surrogatepass")
+    depth, quoted, escaped = 0, False, False
+    for char in raw:
+        if quoted:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                quoted = False
+        elif char == '"':
+            quoted = True
+        elif char in "[{":
+            depth += 1
+            if depth > MAX_JSON_DEPTH:
+                raise ValueError("JSON nesting limit exceeded")
+        elif char in "]}":
+            depth -= 1
+    return json.loads(raw)
 
 
 def valid_token(value):
@@ -126,6 +156,27 @@ def same_occurrence(left, right):
             and occurrence_stamp(left) == occurrence_stamp(right))
 
 
+def same_condition(left, right):
+    return (isinstance(left, dict) and isinstance(right, dict)
+            and left.get("value") == right.get("value")
+            and occurrence_stamp(left) is not None
+            and occurrence_stamp(right) is not None)
+
+
+def episode_notified(record, messages):
+    if not isinstance(record, dict) or occurrence_stamp(record) is None:
+        return set()
+    value = record.get("value")
+    if not isinstance(value, str) or value not in messages or not messages[value]:
+        return set()
+    values = record.get("notified")
+    if isinstance(values, list) and all(isinstance(item, str) and messages.get(item) for item in values):
+        return set(values)
+    # Older records were only written after a successful push. Their current
+    # warning is therefore already notified even without the new episode list.
+    return {value}
+
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None  # Never forward credentials to another destination.
@@ -153,7 +204,7 @@ def request_json(url, method="GET", data=None, token=None, form=False, accept="a
         # opener/handler and credentials, with redirects still disabled.
         https = urllib.request.HTTPSHandler(context=HTTPS_CONTEXT)
         with urllib.request.build_opener(NoRedirect, https).open(req, timeout=15) as response:
-            return object_value(json.load(response))
+            return object_value(parse_json(response.read()))
     except urllib.error.HTTPError as exc:
         raise RequestError(exc.code) from None
     except (OSError, http.client.HTTPException, ValueError, RecursionError):
@@ -247,9 +298,7 @@ def conditions(device, status):
     main = object_field(object_field(status, "components"), "main")
     definitions = [("fault", "earthpanel38939.deviceFault", "fault", FAULTS[device["model"]])]
     if device["model"] == "zhimi.airp.cpa4":
-        definitions.append(("filter", "earthpanel38939.filterAlert", "status", {
-            "normal": None, "replace": "필터 수명이 10% 이하예요. 교체할 필터를 준비해 주세요.",
-        }))
+        definitions.append(("filter", "earthpanel38939.filterAlert", "status", FILTERS))
     for key, cap, attr, messages in definitions:
         try:
             reading = object_field(object_field(main, cap), attr)
@@ -258,8 +307,8 @@ def conditions(device, status):
             # cannot discard a valid warning from the other capability.
             continue
         value, stamp = reading.get("value"), reading.get("timestamp")
-        # Missing/unknown reads never clear a warning. Timestamp distinguishes
-        # recurrence even if normal -> warning happened between our polls.
+        # Missing/unknown reads never clear a warning. Timestamps reject stale
+        # reads; only an observed value change can distinguish a new condition.
         if isinstance(value, str) and value in messages and valid_timestamp(stamp):
             yield key, {"value": value, "timestamp": stamp}, messages[value]
 
@@ -268,7 +317,7 @@ class Monitor:
     def __init__(self, config, state_path, client, clock=time.time):
         self.config, self.path, self.client, self.clock = config, Path(state_path), client, clock
         try:
-            self.state = object_value(json.loads(self.path.read_text()), "invalid-state") if self.path.exists() else {}
+            self.state = object_value(parse_json(self.path.read_text()), "invalid-state") if self.path.exists() else {}
             # Reject corrupt but parseable JSON before accepting any pushes;
             # it must remain possible to persist the complete dedup state.
             json.dumps(self.state, ensure_ascii=False, allow_nan=False).encode()
@@ -284,6 +333,12 @@ class Monitor:
     def save_state(self):
         self.state_dirty = True
         self.flush_state()
+
+    def save_condition(self, key, occurrence, notified):
+        saved = dict(occurrence, notified=sorted(notified))
+        if self.state.get(key) != saved:
+            self.state[key] = saved
+            self.save_state()
 
     def flush_state(self):
         if not self.state_dirty:
@@ -378,23 +433,45 @@ class Monitor:
                 for key, occurrence, message in readings:
                     state_key = device["id"] + ":" + key
                     pending = self.retry.get(state_key)
-                    if pending and not same_occurrence(pending[0], occurrence):
+                    messages = FAULTS[device["model"]] if key == "fault" else FILTERS
+                    saved = self.state.get(state_key)
+                    previous_value = saved.get("value") if isinstance(saved, dict) else None
+                    warning_open = isinstance(previous_value, str) and messages.get(previous_value)
+                    if not message and (warning_open or pending):
+                        previous = (occurrence_stamp(saved), occurrence_stamp(pending[0]) if pending else None)
+                        if any(stamp is not None and occurrence_stamp(occurrence) <= stamp for stamp in previous):
+                            # Conflicting values at the same timestamp have no
+                            # known order. Recovery must follow the warning.
+                            continue
+                    if pending and not same_condition(pending[0], occurrence):
                         self.retry.pop(state_key)
                         pending = None
-                    if same_occurrence(self.state.get(state_key), occurrence):
-                        continue
-                    if message:
+                    elif pending and not same_occurrence(pending[0], occurrence):
+                        # A refreshed cloud timestamp does not create a new
+                        # warning or reset its retry deadline/backoff. Still
+                        # retain the latest timestamp to reject stale recovery.
+                        pending = (occurrence, pending[1], pending[2])
+                        self.retry[state_key] = pending
+                    notified = episode_notified(self.state.get(state_key), messages)
+                    if message and occurrence["value"] not in notified:
                         if pending and self.clock() < pending[1]:
+                            self.save_condition(state_key, occurrence, notified)
                             continue
                         try:
                             self.client.notify(self.config["locationId"], device, message)
                         except (RequestError, OSError) as exc:
+                            # Persist the newest observation even on failure so
+                            # restart cannot accept an older recovery reading.
+                            # The failed warning is still absent from notified.
+                            self.save_condition(state_key, occurrence, notified)
                             self.defer_push(state_key, occurrence, pending, device["label"], key, exc)
                             continue
                         logging.info("push accepted %s %s=%s", device["label"], key, occurrence["value"])
-                    self.state[state_key] = occurrence
+                        notified.add(occurrence["value"])
+                    elif not message:
+                        notified.clear()
                     self.retry.pop(state_key, None)
-                    self.save_state()
+                    self.save_condition(state_key, occurrence, notified)
             except (RequestError, OSError) as exc:
                 logging.warning("status unavailable %s (%s)", device["label"], exc)
         self.flush_state()
