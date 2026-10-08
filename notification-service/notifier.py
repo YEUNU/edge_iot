@@ -10,6 +10,7 @@ import math
 import os
 from pathlib import Path
 import signal
+import ssl
 import tempfile
 import time
 import urllib.error
@@ -130,6 +131,12 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None  # Never forward credentials to another destination.
 
 
+HTTPS_CONTEXT = ssl.create_default_context()
+HTTPS_CONTEXT.set_alpn_protocols(["http/1.1"])
+if HTTPS_CONTEXT.post_handshake_auth is not None:
+    HTTPS_CONTEXT.post_handshake_auth = True
+
+
 def request_json(url, method="GET", data=None, token=None, form=False, accept="application/json"):
     try:
         headers = {"Accept": accept}
@@ -142,8 +149,10 @@ def request_json(url, method="GET", data=None, token=None, form=False, accept="a
         if token:
             headers["Authorization"] = "Bearer " + token
         req = urllib.request.Request(url, data=body, headers=headers, method=method)
-        # Python's default SSL context verifies both CA chain and hostname.
-        with urllib.request.build_opener(NoRedirect).open(req, timeout=15) as response:
+        # Reuse verified trust configuration; each request keeps its own
+        # opener/handler and credentials, with redirects still disabled.
+        https = urllib.request.HTTPSHandler(context=HTTPS_CONTEXT)
+        with urllib.request.build_opener(NoRedirect, https).open(req, timeout=15) as response:
             return object_value(json.load(response))
     except urllib.error.HTTPError as exc:
         raise RequestError(exc.code) from None

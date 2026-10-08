@@ -18,6 +18,8 @@ end
 -- The SDK keeps the latest emitted attribute state across driver restarts.
 -- Only suppress after checking the active profile: a hidden capability must
 -- still be populated when it becomes available after a profile update.
+-- Callers choose attributes explicitly: sensor/history samples and deliberate
+-- maintenance or alert events retain their own publication policies.
 function M.emit_changed(device, capability, attribute, value, event)
   if not event or not M.supports(device, capability) then return false end
   if type(device.get_latest_state) == "function"

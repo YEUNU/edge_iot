@@ -272,6 +272,7 @@ local function reset_view()
  fields.setup_open=false;fields.setup_closed=true;fields.keys_open=false
  fields.bridge_credentials={bridgeToken='valid',bridgeIp='192.168.1.49',bridgePort=8766}
  fields.pending_refresh=nil
+ fields.published_events=nil
 end
 local function response_for(p,temperature,mode)
  return {profile_id=tostring(p.remoteIndex),state={},
@@ -464,3 +465,191 @@ end
 assert(not fields.busy and fields.pending_refresh==nil)
 request_override=nil
 print('Failure-note reentry cannot publish an old connection error in the new model view')
+
+-- Poll the same absolute state through the actual daily profile capabilities.
+-- Values are published once; every refresh still performs its LAN health read.
+reset_view()
+local supports_before=d.supports_capability
+function d:supports_capability(cap)
+ return cap.ID~='earthpanel38939.acModelLibrary' and cap.ID~='earthpanel38939.acRemoteKeys'
+end
+local stable=response_for({remoteIndex=tonumber(original)},24)
+stable.state={power=true,mode='cool',fan='auto',target_temperature=24}
+request_override=function(p)stable.profile_id=tostring(p.remoteIndex);return stable end
+before=#calls;event_start=#events
+h.refresh.refresh(nil,d)
+assert(#events==event_start+12,'a new daily view must publish every state and capability value')
+event_start=#events
+for _=1,10 do h.refresh.refresh(nil,d) end
+assert(#events==event_start and #calls==before+11,'unchanged polls must retain health reads without duplicate UI events')
+print('Ten unchanged daily polls emit zero duplicate events and preserve all health reads')
+
+-- Shared decoded arrays may be mutated by the next response. Cached values
+-- must be independent so a genuinely changed supported-mode list is visible.
+stable.supported_modes[2]='heat';event_start=#events
+h.refresh.refresh(nil,d)
+assert(#events==event_start+2,'changed mode lists must update both supported-mode capabilities')
+event_start=#events;h.refresh.refresh(nil,d)
+assert(#events==event_start,'the newly published list must also coalesce')
+
+-- Reconnection, model changes and returning from extra buttons need a fresh
+-- full publication even when the new view happens to contain the same values.
+for _,change in ipairs({'connection','model','keys'}) do
+ if change=='connection' then fields.bridge_credentials.bridgeIp='192.168.1.50'
+ elseif change=='model' then fields.active_profile='1000047'
+ else fields.keys_open=true;h.refresh.refresh(nil,d);fields.keys_open=false end
+ event_start=#events;h.refresh.refresh(nil,d)
+ assert(#events==event_start+12,'each changed connection or view must republish its values')
+end
+print('Copied arrays and connection/model/key-view changes retain complete publication')
+
+-- A failed event is never marked as delivered. Retry that value on the next
+-- poll without re-emitting values that were already published successfully.
+stable.settings.target_temperature=25;stable.state.target_temperature=25
+local failed_event=true;local failed_count=0
+function d:emit_event(e)
+ if e.cap=='thermostatCoolingSetpoint' and e.attr=='coolingSetpoint' and failed_event then
+  failed_count=failed_count+1;failed_event=false;error('temporary event failure')
+ end
+ return real_emit(self,e)
+end
+h.refresh.refresh(nil,d);event_start=#events
+h.refresh.refresh(nil,d)
+assert(failed_count==1 and #events==event_start+1,'only the unpublished temperature event should be retried')
+assert(events[#events].attr=='coolingSetpoint' and events[#events].value.value==25)
+d.emit_event=real_emit
+
+stable.settings_save_pending=true;failed_event=true;failed_count=0
+function d:emit_event(e)
+ if e.cap=='earthpanel38939.acLocalLink' and e.value=='명령 전송 완료 · 설정 저장 대기' and failed_event then
+  failed_count=failed_count+1;failed_event=false;error('temporary status failure')
+ end
+ return real_emit(self,e)
+end
+h.refresh.refresh(nil,d);event_start=#events;h.refresh.refresh(nil,d)
+assert(failed_count==1 and #events==event_start+1,'a failed pending-save status must be published again')
+event_start=#events;h.refresh.refresh(nil,d)
+assert(#events==event_start,'pending-save polls must not alternate between ordinary and pending status')
+d.emit_event=real_emit;stable.settings_save_pending=false
+print('Failed state/status events retry safely and stable pending-save status does not flicker')
+
+-- Setup attachment remains asynchronous, and explicit repeated test commands
+-- still publish completion feedback even when their resulting values match.
+reset_view();local attached=false
+function d:supports_capability(cap)
+ if cap.ID=='earthpanel38939.acModelLibrary' then return attached end
+ return true
+end
+link.configure(nil,d);attached=true;event_start=#events
+h.refresh.refresh(nil,d)
+assert(#events==event_start+4,'newly attached setup controls need brand, choices, candidate and note')
+event_start=#events
+for _=1,10 do h.refresh.refresh(nil,d) end
+assert(#events==event_start,'unchanged setup polls must also avoid duplicate events')
+event_start=#events;before=#calls
+h.switch.on(nil,d);h.switch.on(nil,d)
+assert(#calls==before+2 and #events==event_start+2,'each repeated test command must still send and publish completion feedback')
+assert(events[#events].value=='반응 확인 후 저장')
+print('Asynchronous setup attachment and repeated command completion feedback are preserved')
+
+-- Selecting a now-unavailable key must not leave its label behind when the
+-- next response restores the first available key from a cached earlier list.
+reset_view();fields.keys_open=true;d.supports_capability=supports_before
+request_override=function(p)
+ local result=response_for(p,24);result.supported_keys={{id='first'},{id='second'}};return result
+end
+h.refresh.refresh(nil,d);raw.selectKey(nil,d,{args={key='unavailable'}})
+event_start=#events;h.refresh.refresh(nil,d)
+assert(fields.remote_key=='first' and #events==event_start+1,'poll must correct a previously selected unavailable key')
+assert(events[#events].attr=='key' and events[#events].value=='first')
+request_override=nil
+print('Remote-key selection and correction share one successful-publication cache')
+
+-- A button-only view can inherit a pending settings save from a previously
+-- selected absolute-state profile. It must show one stable pending label and
+-- restore its state warning once saving succeeds.
+reset_view()
+local button_pending=true
+request_override=function(p)
+ return {profile_id=tostring(p.remoteIndex),state={},settings={},control_style='buttons',
+  supported_modes={},supported_fans={},supported_keys={{id='power'}},settings_save_pending=button_pending}
+end
+event_start=#events;h.refresh.refresh(nil,d)
+local status_count=0
+for i=event_start+1,#events do
+ local e=events[i]
+ if e.cap=='earthpanel38939.acLocalLink' then
+  status_count=status_count+1
+  assert(e.value=='명령 전송 완료 · 설정 저장 대기','pending save must take precedence over the button label')
+ end
+end
+assert(status_count==1,'the pending button view must publish a single connection label')
+event_start=#events
+for _=1,10 do h.refresh.refresh(nil,d)end
+assert(#events==event_start,'stable button/save-pending polls must not flicker or duplicate events')
+button_pending=false;event_start=#events;h.refresh.refresh(nil,d)
+assert(#events==event_start+1 and connection_text()=='버튼 전송 기준 · 실제 상태는 확인할 수 없습니다',
+ 'save recovery must restore the button transmission warning once')
+request_override=nil
+print('Button-only pending-save status stays stable and restores the warning after recovery')
+
+-- An event can synchronously publish another value for the same attribute.
+-- The outer event must not overwrite the newer cache, and a failed inner
+-- event must leave that attribute eligible for repair on the next poll.
+for _,inner in ipairs({'unavailable','second','failed'}) do
+ reset_view();fields.keys_open=true;d.supports_capability=supports_before
+ request_override=function(p)
+  local result=response_for(p,24);result.supported_keys={{id='first'},{id='second'}};return result
+ end
+ h.refresh.refresh(nil,d);raw.selectKey(nil,d,{args={key='second'}})
+ local injected=false
+ function d:emit_event(e)
+  if inner=='failed' and e.cap=='earthpanel38939.acRemoteKeys' and e.attr=='key' and e.value=='unavailable' then
+   error('inner publication failed')
+  end
+  real_emit(self,e)
+  if e.cap=='earthpanel38939.acRemoteKeys' and e.attr=='key' and e.value=='first' and not injected then
+   injected=true
+   local ok=pcall(raw.selectKey,nil,d,{args={key=inner=='failed' and 'unavailable' or inner}})
+   assert(ok==(inner~='failed'))
+  end
+ end
+ raw.selectKey(nil,d,{args={key='first'}});d.emit_event=real_emit
+ event_start=#events;h.refresh.refresh(nil,d)
+ assert(injected)
+ if inner=='second' then
+  assert(fields.remote_key=='second' and #events==event_start,'a successful newer valid selection must remain current')
+  assert(events[#events].value=='second','reselecting the old cached value inside an in-flight event must publish it')
+ else
+  assert(fields.remote_key=='first' and #events==event_start+1,'the poll must repair an unavailable or unpublished nested selection')
+  assert(events[#events].attr=='key' and events[#events].value=='first')
+ end
+end
+request_override=nil
+print('Nested same-attribute publications preserve the newest successful value and retry failed repairs')
+
+-- Updating the available list can yield to a selection before the snapshot
+-- publishes its own selected key. The visible value must match sendKey's field.
+reset_view();fields.keys_open=true;d.supports_capability=supports_before
+request_override=function(p)
+ local result=response_for(p,24);result.supported_keys={{id='first'},{id='second'}};return result
+end
+local selected_during_list=false
+function d:emit_event(e)
+ real_emit(self,e)
+ if e.cap=='earthpanel38939.acRemoteKeys' and e.attr=='supportedKeys' and not selected_during_list then
+  selected_during_list=true
+  raw.selectKey(nil,d,{args={key='second'}})
+ end
+end
+h.refresh.refresh(nil,d);d.emit_event=real_emit
+assert(selected_during_list and fields.remote_key=='second')
+local visible_key
+for _,e in ipairs(events) do
+ if e.cap=='earthpanel38939.acRemoteKeys' and e.attr=='key' then visible_key=e.value end
+end
+assert(visible_key=='second','a list publication must preserve the newer visible user selection')
+event_start=#events;h.refresh.refresh(nil,d)
+assert(#events==event_start and fields.remote_key=='second','the next poll must keep the successful latest selection')
+request_override=nil
+print('Publishing remote-key choices preserves selections made while the list event is in flight')

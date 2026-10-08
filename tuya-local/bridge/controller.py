@@ -9,6 +9,7 @@ import threading
 import gzip
 import os
 import tempfile
+from collections import OrderedDict
 from pathlib import Path
 
 
@@ -91,6 +92,10 @@ def state_key(state):
 
 
 class Controller:
+    # Browsing code sets must not retain the entire decompressed catalog. Keep
+    # explicit configured profiles and a few recently used catalog profiles.
+    catalog_cache_size = 4
+
     def __init__(self, config, factory=None):
         config = dict(config)
         catalog_dir = Path(config.get('catalog_dir', Path(__file__).parent / 'catalog'))
@@ -104,6 +109,7 @@ class Controller:
             merged = dict(config, **profile)
             merged['remote_index'] = int(index)
             self.profiles[str(index)] = validate(merged)
+        self._catalog_cache = OrderedDict()
         self.catalog = {}
         catalog_dir = Path(config.get('catalog_dir', Path(__file__).parent / 'catalog'))
         if (catalog_dir / 'index.json').exists():
@@ -195,6 +201,7 @@ class Controller:
         if profile_id not in self.profiles and profile_id in self.catalog:
             profile = json.loads(gzip.decompress(self.catalog[profile_id]['path'].read_bytes()))
             self.profiles[profile_id] = validate(dict(self.config, **profile))
+            self._catalog_cache[profile_id] = None
         if profile_id not in self.profiles:
             raise ValueError('code set is not installed on this bridge')
         if profile_id != self.profile_id:
@@ -204,6 +211,11 @@ class Controller:
             self.state = {}
             self.profile_id = profile_id
             self._restore_settings()
+        if profile_id in self._catalog_cache:
+            self._catalog_cache.move_to_end(profile_id)
+            while len(self._catalog_cache) > self.catalog_cache_size:
+                stale, _ = self._catalog_cache.popitem(last=False)
+                del self.profiles[stale]
 
     def _snapshot(self):
         on = [e['state'] for e in self.codes.values() if e['state']['power']]

@@ -63,17 +63,6 @@ local function xtime(b)
   return (((b << 1) & 0xFF) ~ (((b >> 7) & 1) * 0x1b)) & 0xFF
 end
 
--- GF(2^8) multiplication. Used in mix-columns (small constants 0x09/0x0b/0x0d/0x0e).
-local function gmul(a, b)
-  local r = 0
-  for _ = 1, 8 do
-    if (b & 1) ~= 0 then r = r ~ a end
-    a = xtime(a)
-    b = b >> 1
-  end
-  return r & 0xFF
-end
-
 local function key_expansion(key)
   -- key: 16 raw bytes. Returns 11 round keys of 16 bytes each, indexed 1..11.
   local W = {}            -- 44 words of 4 bytes each, W[1..44]
@@ -160,14 +149,19 @@ local function mix_columns(state)
 end
 
 local function inv_mix_columns(state)
+  -- Precondition each column, then reuse the forward transform. In GF(2^8),
+  -- the resulting coefficients are the inverse matrix's 0e/0b/0d/09.
+  -- This avoids 64 general multiplications (512 bit loops) per round.
   for c = 0, 3 do
     local i = c * 4
-    local s0, s1, s2, s3 = state[i+1], state[i+2], state[i+3], state[i+4]
-    state[i+1] = gmul(s0, 0x0e) ~ gmul(s1, 0x0b) ~ gmul(s2, 0x0d) ~ gmul(s3, 0x09)
-    state[i+2] = gmul(s0, 0x09) ~ gmul(s1, 0x0e) ~ gmul(s2, 0x0b) ~ gmul(s3, 0x0d)
-    state[i+3] = gmul(s0, 0x0d) ~ gmul(s1, 0x09) ~ gmul(s2, 0x0e) ~ gmul(s3, 0x0b)
-    state[i+4] = gmul(s0, 0x0b) ~ gmul(s1, 0x0d) ~ gmul(s2, 0x09) ~ gmul(s3, 0x0e)
+    local u = xtime(xtime(state[i+1] ~ state[i+3]))
+    local v = xtime(xtime(state[i+2] ~ state[i+4]))
+    state[i+1] = state[i+1] ~ u
+    state[i+2] = state[i+2] ~ v
+    state[i+3] = state[i+3] ~ u
+    state[i+4] = state[i+4] ~ v
   end
+  mix_columns(state)
 end
 
 local function encrypt_block(state, round_keys)

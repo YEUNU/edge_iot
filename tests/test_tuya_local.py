@@ -430,5 +430,50 @@ class ButtonRemoteTests(unittest.TestCase):
         c.command({'power':True})
         self.assertEqual(c.command({'key':'temperature_up'})['state'], {})
 
+
+class CatalogCacheTests(unittest.TestCase):
+    def setUp(self):
+        cfg = config()
+        # A configured override takes precedence over the on-disk catalog and
+        # remains available after browsing enough profiles to evict the cache.
+        cfg['profiles'] = {'2132': {'name': 'Configured override', 'codes': copy.deepcopy(cfg['codes'])}}
+        self.c = Controller(cfg, factory=FakeDevice)
+
+    def test_catalog_browsing_is_bounded_and_configured_profiles_are_retained(self):
+        for profile in self.c.catalog:
+            result = self.c.status(profile)
+            self.assertEqual(result['profile_id'], profile)
+            self.assertEqual(result['state'], {})
+            self.assertLessEqual(len(self.c._catalog_cache), self.c.catalog_cache_size)
+            self.assertIn(self.c.profile_id, self.c.profiles)
+        self.assertEqual(len(self.c.profiles), 2 + self.c.catalog_cache_size)
+        self.assertEqual(self.c.status('2132')['profile_name'], 'Configured override')
+        self.assertTrue(self.c.command({'power': True}, '123')['state']['power'])
+        self.assertEqual(json.loads(self.c.device.sent[-1]['201']), ON)
+
+    def test_recent_profile_reuse_avoids_reload_and_eviction_preserves_settings(self):
+        from controller import gzip
+        with patch('controller.gzip.decompress', wraps=gzip.decompress) as decompress:
+            self.c.status('2607')
+            for profile in ('2616', '2807', '2847'):
+                self.c.status(profile)
+            self.c.status('2607')
+            self.assertEqual(decompress.call_count, 4)
+            self.c.status('3227')
+            self.assertIn('2607', self.c.profiles)
+            self.assertNotIn('2616', self.c.profiles)
+        target = next(entry for entry in self.c.profiles['2607']['codes']
+                      if entry['state'].get('power') and entry['state']['target_temperature'] == 26)
+        self.c.command(dict(target['state']), '2607')
+        settings = dict(self.c.settings)
+        for profile in ('2616', '2807', '2847', '3227', '3237'):
+            self.c.status(profile)
+        self.assertNotIn('2607', self.c.profiles)
+        result = self.c.status('2607')
+        self.assertEqual(result['settings'], settings)
+        self.assertEqual(result['state'], {})
+        self.c.command({'power': True}, '2607')
+        self.assertEqual(json.loads(self.c.device.sent[-1]['201']), target['command'])
+
 if __name__ == '__main__':
     unittest.main()

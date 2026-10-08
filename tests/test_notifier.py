@@ -687,7 +687,33 @@ class RequestTests(unittest.TestCase):
             with self.assertRaises(n.RequestError) as raised:
                 n.request_json("https://unused.example.test")
             self.assertEqual(raised.exception.status, 429)
-            opener.assert_called_once_with(n.NoRedirect)
+            self.assertEqual(opener.call_args.args[0],n.NoRedirect)
+            self.assertIs(opener.call_args.args[1]._context,n.HTTPS_CONTEXT)
+
+    def test_requests_share_verified_tls_context_but_keep_handlers_and_credentials_separate(self):
+        with patch.object(n.urllib.request,"build_opener") as opener:
+            opener.return_value.open.return_value.__enter__.return_value=io.BytesIO(b'{}')
+            n.request_json("https://unused.example.test",token="first-token")
+            opener.return_value.open.return_value.__enter__.return_value=io.BytesIO(b'{}')
+            n.request_json("https://unused.example.test",token="second-token")
+            calls=opener.call_args_list
+            self.assertEqual(len(calls),2)
+            first,second=(call.args[1] for call in calls)
+            self.assertIsNot(first,second)
+            self.assertIs(first._context,n.HTTPS_CONTEXT)
+            self.assertIs(second._context,n.HTTPS_CONTEXT)
+            requests=opener.return_value.open.call_args_list
+            self.assertEqual(requests[0].args[0].get_header("Authorization"),"Bearer first-token")
+            self.assertEqual(requests[1].args[0].get_header("Authorization"),"Bearer second-token")
+        self.assertEqual(n.HTTPS_CONTEXT.verify_mode,n.ssl.CERT_REQUIRED)
+        self.assertTrue(n.HTTPS_CONTEXT.check_hostname)
+        self.assertIsNone(n.NoRedirect().redirect_request(None,None,302,"redirect",{},"https://other.example.test"))
+
+    def test_certificate_verification_failure_remains_a_request_error(self):
+        with patch.object(n.urllib.request,"build_opener") as opener:
+            opener.return_value.open.side_effect=n.ssl.SSLCertVerificationError("untrusted certificate")
+            with self.assertRaises(n.RequestError):
+                n.request_json("https://unused.example.test",token="test-token")
 
 
 if __name__ == "__main__":

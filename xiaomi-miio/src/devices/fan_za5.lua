@@ -125,7 +125,7 @@ function M.on_init(device)  emit_supported(device) end
 function M.apply_state(device, p)
   local power = p["power"]
   if power ~= nil then
-    events.emit(device, capabilities.switch,
+    events.emit_changed(device, capabilities.switch, "switch", power and "on" or "off",
       power and capabilities.switch.switch.on() or capabilities.switch.switch.off())
   end
 
@@ -134,51 +134,59 @@ function M.apply_state(device, p)
     -- The speed property is the saved setting even while switched off.
     -- A partial response cannot establish effective motor speed without power.
     local effective = power == false and 0 or speed_percent
-    events.emit(device, capabilities.fanSpeedPercent, capabilities.fanSpeedPercent.percent(effective))
+    events.emit_changed(device, capabilities.fanSpeedPercent, "percent", effective,
+      capabilities.fanSpeedPercent.percent(effective))
   end
 
   local swing = p["swing"]
   if swing ~= nil then
-    events.emit(device, capabilities.fanOscillationMode,
+    events.emit_changed(device, capabilities.fanOscillationMode, "fanOscillationMode",
+      swing and "horizontal" or "fixed",
       capabilities.fanOscillationMode.fanOscillationMode(swing and "horizontal" or "fixed"))
     if cap_oscillationControl then
-      events.emit(device, cap_oscillationControl,
+      events.emit_changed(device, cap_oscillationControl, "fanOscillationMode",
+        swing and "horizontal" or "fixed",
         cap_oscillationControl.fanOscillationMode(swing and "horizontal" or "fixed"))
     end
   end
 
   local angle = p["angle"]
   if angle ~= nil and cap_oscillationAngle then
-    events.emit(device, cap_oscillationAngle, cap_oscillationAngle.degrees(angle))
+    events.emit_changed(device, cap_oscillationAngle, "degrees", angle,
+      cap_oscillationAngle.degrees(angle))
   end
 
   local fan_mode = p["fan-mode"]
   if fan_mode ~= nil and MODE_LABELS[fan_mode] then
-    events.emit(device, capabilities.mode, capabilities.mode.mode(MODE_LABELS[fan_mode]))
+    events.emit_changed(device, capabilities.mode, "mode", MODE_LABELS[fan_mode],
+      capabilities.mode.mode(MODE_LABELS[fan_mode]))
   end
 
   local lock = p["lock"]
   if lock ~= nil and cap_childLock then
-    events.emit(device, cap_childLock, cap_childLock.lock(lock and "locked" or "unlocked"))
+    events.emit_changed(device, cap_childLock, "lock", lock and "locked" or "unlocked",
+      cap_childLock.lock(lock and "locked" or "unlocked"))
   end
 
   local delay = p["power-off-delay"]
   if delay ~= nil and cap_powerOffTimer then
-    events.emit(device, cap_powerOffTimer,
+    events.emit_changed(device, cap_powerOffTimer, "minutes", math.floor(delay / 60),
       cap_powerOffTimer.minutes({ value = math.floor(delay / 60), unit = "min" }))
   end
 
   local alarm = p["alarm"]
   if alarm ~= nil and cap_alarmBuzzer then
-    events.emit(device, cap_alarmBuzzer, cap_alarmBuzzer.buzzer(alarm and "on" or "off"))
+    events.emit_changed(device, cap_alarmBuzzer, "buzzer", alarm and "on" or "off",
+      cap_alarmBuzzer.buzzer(alarm and "on" or "off"))
   end
 
   local indicator = p["indicator"]
   if indicator ~= nil then
-    events.emit(device, cap_indicatorMode,
+    events.emit_changed(device, cap_indicatorMode, "indicator", indicator_mode(indicator),
       cap_indicatorMode.indicator(indicator_mode(indicator)))
     -- Backward compatibility while a hub is still applying the new profile.
-    events.emit(device, capabilities.switchLevel, capabilities.switchLevel.level(indicator))
+    events.emit_changed(device, capabilities.switchLevel, "level", indicator,
+      capabilities.switchLevel.level(indicator))
   end
 
   local hum = p["humidity"]
