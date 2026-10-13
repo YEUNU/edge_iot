@@ -67,6 +67,7 @@ class PublicDataTests(unittest.TestCase):
             'ip': '192.0.2.83',
             'mac': '02:00:00:00:00:01',
             'householdId': 'fixture-household-only',
+            'userId': 'fixture-user-only-12345',
             'testDeviceId': 'fixture-test-device-only',
         }
         for field, value in cases.items():

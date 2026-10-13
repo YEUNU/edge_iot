@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PRIVATE_KEYS = {
     'localkey', 'apitoken', 'apikey', 'apisecret', 'deviceid', 'locationid',
     'hubid', 'uid', 'ownerid', 'accesstoken', 'refreshtoken', 'clientsecret',
-    'devicetoken', 'token', 'did', 'homeid', 'householdid', 'accountid',
+    'devicetoken', 'token', 'did', 'homeid', 'householdid', 'accountid', 'userid',
     'password', 'passwd', 'email', 'username', 'testdeviceid', 'parentdeviceid',
 }
 ADDRESS_KEYS = {'ip', 'localip', 'bindip', 'mac', 'macaddress'}
