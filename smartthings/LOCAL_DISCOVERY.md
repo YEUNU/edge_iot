@@ -1,163 +1,38 @@
-# Xiaomi local discovery verification — 2026-09-16
+# Xiaomi 로컬 검색과 최초 등록
 
-The driver discovers miIO devices over UDP/54321, broadcasts twice and also probes
-known addresses. It repeats discovery at startup and every five minutes. Nearby
-scan and Refresh on the existing setup device also invoke discovery.
+허브는 UDP/54321 hello를 두 번 브로드캐스트하고 기존 주소도 직접 조회합니다.
+시작 시·5분마다·주변 검색·설정 기기의 새로고침에서 실행하며 Xiaomi Cloud를 호출하지 않습니다.
 
-A hello response is not authenticated. A nonzero/non-FF checksum is treated only
-as a candidate token. An encrypted miIO.info response naming a supported model
-must succeed before credentials are persisted or a device is created. Existing
-preferences are reused for previously configured devices. Discovery never calls
-Xiaomi Cloud. No host bridge is used for control or discovery.
+## 인증과 주소 갱신
 
-## Confirmed on physical devices
+hello 응답은 인증된 응답이 아닙니다. 0이나 FF가 아닌 checksum도 후보 토큰으로만 취급합니다.
+암호화된 `miio.info`에서 지원 모델과 DID를 확인한 뒤에만 인증값을 저장하고 등록합니다.
+기존 기기는 저장된 토큰을 사용하며, 인증된 새 주소를 허브에 보관합니다.
 
-- Air purifier, fan and dehumidifier:
-  direct hello replies received; all three omit a usable token.
-- The actual SmartThings Station authenticated all three using existing tokens
-  after installing the discovery driver (hub logs at 21:16 KST).
-- Fan command sent through SmartThings: speed 35 → 36. Independent encrypted LAN
-  read returned speed-percent=36, power=true. Independent read after restoration confirmed 35.
-- Existing physical device IDs were retained. The setup placeholder is not a
-  connected physical device.
-- 42 existing Lua regression tests pass. Additional tests cover malformed hello,
-  token sentinels, authenticated creation, failed authentication, pending creation
-  deduplication, credential restoration, IP migration and missing tokens.
+로그인 가져오기와 LAN 검색은 `discovery.create_device`의 같은 등록 경로를 사용합니다.
+비동기 생성 요청 중에는 인증값을 갱신하되 요청을 중복 생성하지 않습니다. 120초가 지나면
+다시 요청할 수 있으며, 실패해도 인증된 토큰은 재발견에 쓸 수 있도록 보관합니다.
+기기 DID를 우선해 기존 항목을 찾으므로 다른 기기가 같은 IP를 사용해도 혼동하지 않습니다.
 
-- Final installed version confirmed via hub API:
-  `2026-09-16T12:21:40.659970537`.
-- Air purifier: SmartThings auto → sleep, independent LAN read mode=1;
-  restored auto and independently read mode=0.
-- Dehumidifier: SmartThings target humidity 55 → 60; independent LAN read
-  target=60; restored 55, independent LAN read and hub poll confirm target=55.
+## 최초 로그인
 
-## Actual hub integration with a simulated miIO device
+토큰을 공개하지 않는 기기는 LAN 검색만으로 새로 인증할 수 없습니다.
+[QR 로그인 도우미](../xiaomi-miio/onboarding/README.md)는 최초 등록 때 Xiaomi 계정에서
+토큰을 조회하고 암호화된 LAN 묶음으로 허브에 전달합니다. 허브가 각 기기에 직접 인증한 뒤
+완료를 응답하면 도우미가 종료합니다. 이후 제어에는 Mac이나 Xiaomi 로그인이 필요 없습니다.
 
-The explicitly started `tests/miio_hub_emulator.lua` fixture bound UDP/54321 on
-the test host's LAN address and accepted traffic only from the SmartThings Station. Its public
-fixture key and DID 2130706001 are not household credentials.
+고정된 20개 기기 제한은 없습니다. 실제 전송 패킷은 16KiB 이내여야 하며, 도우미가
+서버를 열기 전에 크기를 확인합니다. 전송키는 120초 안에 만료되고 허브는 완료 응답용
+10초를 남겨 둡니다. 수명 안에 인증하지 못한 항목은 실패로 보고합니다.
+`등록 요청`은 비동기 요청 수이므로 실제 생성·ONLINE 여부는 추가 확인해야 합니다.
 
-- 21:20 KST: exposing a candidate key allowed the actual hub to authenticate,
-  create a temporary test device, and poll it.
-- SmartThings preferences confirmed no manually configured token. A SmartThings
-  speed command produced encrypted writes power=true and speed=42 at the fixture.
-- The fixture was restarted in hidden-token mode, then the driver code was
-  updated. The hub logged the device's new init at 21:21:55. A subsequent command
-  reached the fixture (speed=43), and SmartThings status reported 43. This verifies
-  hub credential persistence across driver restart without token rediscovery.
-- 21:22:24: the test record was deleted. Another local scan at 21:22:29 found the
-  hidden-token fixture but correctly declined enrollment. API enumeration
-  confirmed zero remaining fixture records and the five original Xiaomi records.
-- Existing real appliances authenticated again after the final driver update.
+## 검증 범위
 
-This is real SmartThings enrollment/control of a protocol simulator, not evidence
-that a new physical Xiaomi model exposes its key. Both test processes were stopped
-when verification finished. No runtime bridge is required by the deployed driver.
+자동 검사는 토큰 sentinel·잘못된 hello·인증 실패·DID 충돌·주소 갱신·저장값 복원,
+21개 등록·과대 묶음·희소 배열·만료·재사용·생성 실패와 재시도를 포함합니다.
+명령은 [공통 검증 안내](VERIFICATION.md)에 있습니다.
 
-## Not yet established
-
-- Physical enrollment of a NEW device exposing its token. Available appliances
-  do not expose one; mock authentication tests are not physical enrollment proof.
-- Actual DHCP address change recovery; tested with simulated discovery only.
-- Comprehensive command matrix on all three appliances after the final package.
-- Physical motor/sensor behavior beyond the command checks recorded above.
-  Phone UI rendering was subsequently checked with ADB; see [UI audit](UI_AUDIT.md).
-- Full internet disconnection test. Source inspection establishes no Xiaomi
-  Cloud requests by this driver, not lack of cloud traffic from device firmware.
-
-A short-lived SmartThings-to-bridge pairing ticket cannot obtain an unknown miIO
-key. It only transports credentials already known by that bridge. New devices
-that hide their token cannot be enrolled without another authorized key source.
-The requested universal cloud-free, zero-token-input enrollment is not achieved.
-
-## Physical fan with deletion-equivalent empty discovery state
-
-User-requested test: assume the fan has been removed and is being added afresh.
-`tests/miio_fresh_enrollment.lua` ran the production discovery code with empty
-`get_devices()`, an empty datastore, and no preferences/tokens. It consumed fresh
-UDP responses from the actual fan (household identifiers omitted). An additional
-unicast probe separated token availability from broadcast reachability.
-
-Observed results:
-
-```
-broadcast_found=true
-physical_reply did=<redacted> token_candidate=false
-fresh_authenticated_registration_requests=0
-fresh_credentials_saved=false
-```
-
-The fan is discoverable, but does not disclose its local key, so fresh automatic
-registration cannot authenticate. This is a deletion-equivalent discovery-state
-test on the host using physical responses, NOT actual deletion/recreation of the
-SmartThings record and NOT a factory reset. The existing fan record was retained;
-SmartThings health was ONLINE and reported speed remained 35. It did not consume
-saved household credentials to make the fresh-registration test pass.
-
-## Scope update: one-time Xiaomi login authorized
-
-The user subsequently authorized Xiaomi account login for initial onboarding.
-The deployed driver still controls appliances exclusively over LAN. A separate,
-short-lived `xiaomi-miio/onboarding/onboard.py` QR helper retrieves credentials
-and transfers them to the hub using an expiring encrypted LAN exchange.
-
-Deployment: `2026-09-16T12:34:49.37600868`. The actual setup device exposes
-`earthpanel38939.xiaomiLocalLink`, and its capability presentation was created.
-Four Python integration tests passed, including real Python HTTP ↔ Lua packet
-exchange, corrupted packet rejection, expiry and single-use behavior. Existing
-42 Lua regressions and discovery/imported-token preference tests passed.
-
-At this checkpoint QR login approval is pending. Real Xiaomi account token
-retrieval and real-hub import through this new helper are not yet verified.
-The prior simulator and local discovery results do not substitute for that test.
-The `Xiaomi 기기 설정` record remains necessary as the enrollment command endpoint.
-
-### Actual hub import transport verified; account login still pending
-
-At 21:40 KST the new onboarding transport was exercised against the actual hub
-using the existing fan's credential read into memory from SmartThings preferences.
-No credential file/export was created. The helper returned:
-
-```
-{"failed": 0, "requested": 0, "updated": 1}
-```
-
-The setup device's actual capability status was `연결 확인 1 · 등록 요청 0 · 실패 0`.
-This proves encrypted helper-to-hub transfer and actual fan authentication through
-the new handler. It does NOT prove Xiaomi Cloud login/token retrieval, since the
-credential source for this test was existing preferences. The transfer server
-exited after its acknowledgement. The QR login helper separately expired without
-user approval and removed its QR file. No login session remains running.
-
-### Xiaomi QR login and three physical imports completed
-
-After the user approved the renewed QR, the actual helper reported
-`LOGIN_CONFIRMED`, retrieved all three supported household models from Xiaomi,
-and completed the encrypted LAN transfer to the real hub. Final acknowledgement:
-
-```
-{"failed": 0, "requested": 0, "updated": 3}
-```
-
-The actual SmartThings setup status at `2026-09-16T12:42:47.343Z` was
-`연결 확인 3 · 등록 요청 0 · 실패 0`. Existing device IDs were preserved (no duplicate
-physical device records were requested). The helper exited successfully, the QR
-file was removed, and no onboarding process remained running.
-
-After helper shutdown, SmartThings fan commands were independently verified by
-polling the appliance's encrypted LAN property until it matched: speed 36, then
-restoration to 35. Immediate reads can precede asynchronous command execution;
-only the confirmed settled readings are counted as command verification.
-
-Completion scope: local discovery/candidate authentication, one-time account
-login import, actual hub credential delivery and authentication of three physical
-devices, retained local control after helper shutdown. The earlier physical
-appliance checks and actual-hub simulated-device creation cover their stated
-cases. They do not assert compatibility with untested models or every command.
-A new physical appliance with no prior record was not available for fresh-cloud
-creation testing. Actual DHCP reassignment was not performed; two subsequent
-host tests with a deliberately stale stored fan IP failed because the fan did
-not answer broadcasts on those runs. Keep DHCP reservations for dependable
-addressing; local discovery cannot guarantee a reply from a sleeping/isolated
-appliance. Universal token-free LAN onboarding remains unsupported on the tested
-models; initial Xiaomi login is the user-authorized solution.
+현재 지원 모델은 `zhimi.fan.za5`, `zhimi.airp.cpa4`, `xiaomi.derh.13l`입니다.
+보유 기기는 hello에서 사용 가능한 토큰을 공개하지 않으므로 최초 로그인이나 별도 토큰이
+필요합니다. 실제 DHCP 변경, 모든 기기·펌웨어의 브로드캐스트 응답, 완전한 인터넷 차단은
+자동 검사로 증명되지 않습니다. 안정적인 주소 관리는 DHCP 예약을 권장합니다.

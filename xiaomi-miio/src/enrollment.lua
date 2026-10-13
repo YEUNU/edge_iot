@@ -9,7 +9,7 @@ local discovery = require "discovery"
 local models = {}
 for _, item in ipairs(require "models") do models[item.model] = item end
 local M = {}
-local MAX_DEVICES, TRANSFER_TTL_S, ACK_RESERVE_S = 20, 120, 10
+local TRANSFER_TTL_S, ACK_RESERVE_S = 120, 10
 
 local function exchange(address, port, key, path, value, deadline)
   local sock
@@ -56,12 +56,12 @@ end
 
 local function array_size(values)
   if type(values) ~= "table" then return nil end
-  local count = 0
+  local count, size = 0, #values
   for key in pairs(values) do
-    if type(key) ~= "number" or key % 1 ~= 0 or key < 1 or key > MAX_DEVICES then return nil end
+    if type(key) ~= "number" or key % 1 ~= 0 or key < 1 or key > size then return nil end
     count = count + 1
   end
-  if count ~= #values then return nil end
+  if count ~= size then return nil end
   return count
 end
 
@@ -102,22 +102,7 @@ local function import_record(driver, record, deadline, reconnect)
     reconnect[#reconnect + 1] = existing
     return "updated"
   end
-  local dni = string.format("xiaomi-miio-%d", record.did)
-  local pending_key = "discovered:" .. dni
-  local pending = driver.datastore[pending_key]
-  local recently_requested = type(pending) == "table" and type(pending.created_at) == "number"
-    and os.time() - pending.created_at < 120 and pending.created_at > 0 and pending.created_at <= os.time()
-  record.created_at = recently_requested and pending.created_at or os.time()
-  driver.datastore[pending_key] = record
-  -- Repeated imports update the pending credentials without duplicating an
-  -- asynchronous creation request or postponing its next retry indefinitely.
-  if recently_requested then return "requested" end
-  local ok, created = pcall(driver.try_create_device, driver, {type="LAN",device_network_id=dni,
-    label=cfg.label,profile=cfg.profile,manufacturer="Xiaomi",model=cfg.model,vendor_provided_label=cfg.vendor_label})
-  if ok and created then return "requested" end
-  record.created_at = 0
-  driver.datastore[pending_key] = record -- Retain authenticated hidden-token credentials for rediscovery.
-  return "failed"
+  return discovery.create_device(driver, record)
 end
 
 function M.handle(driver, setup, args, status)

@@ -24,6 +24,33 @@ local function valid_did(value)
   return type(value) == "number" and value > 0 and value < 0xFFFFFFFF and value % 1 == 0
 end
 
+-- Both LAN discovery and the login helper reach this path only after checking
+-- the device identity and encrypted model. Keep pending creation and retry
+-- behavior in one place so either path can finish the other's request.
+function Discovery.create_device(driver, record)
+  local cfg = models[record.model]
+  if not cfg or not driver.datastore then return "failed" end
+  local dni = string.format("xiaomi-miio-%d", record.did)
+  local key = "discovered:" .. dni
+  local pending = driver.datastore[key]
+  local requested_at = type(pending) == "table" and pending.created_at
+  local now = os.time()
+  local recently_requested = type(requested_at) == "number" and requested_at > 0
+    and requested_at <= now and now - requested_at < 120
+    and (not pending.did or pending.did == record.did)
+  record.created_at = recently_requested and requested_at or now
+  driver.datastore[key] = record
+  if recently_requested then return "requested" end
+  local ok, created = pcall(driver.try_create_device, driver, {type = "LAN", device_network_id = dni,
+    label = cfg.label, profile = cfg.profile, manufacturer = "Xiaomi",
+    model = cfg.model, vendor_provided_label = cfg.vendor_label})
+  if ok and created then return "requested" end
+  -- Preserve authenticated hidden-token credentials for the next discovery.
+  record.created_at = 0
+  driver.datastore[key] = record
+  return "failed"
+end
+
 local function scan_item(driver, devices, item, should_continue)
   if type(item) ~= "table" or not valid_did(item.did) or not connection.valid_ip(item.ip) then return end
   local dni = string.format("xiaomi-miio-%d", item.did)
@@ -96,23 +123,7 @@ local function scan_item(driver, devices, item, should_continue)
     end
     log.info("local discovery authenticated existing device " .. tostring(item.did))
   elseif driver.datastore then
-    -- Device creation is asynchronous. The pending token also authenticates
-    -- modern devices whose Hello reply deliberately hides their credentials.
-    local requested_at = pending and tonumber(pending.created_at) or 0
-    local recently_requested = requested_at and requested_at == requested_at and requested_at > 0
-      and requested_at <= os.time() and os.time() - requested_at < 120
-    record.created_at = recently_requested and requested_at or os.time()
-    driver.datastore[key] = record -- Refresh authenticated credentials even while creation is pending.
-    if not recently_requested then
-      local model = models[info.model]
-      local ok, created = pcall(driver.try_create_device, driver, {type = "LAN", device_network_id = dni,
-        label = model.label, profile = model.profile, manufacturer = "Xiaomi",
-        model = model.model, vendor_provided_label = model.vendor_label})
-      if not ok or not created then
-        record.created_at = 0
-        driver.datastore[key] = record
-      end
-    end
+    Discovery.create_device(driver, record)
   end
 end
 

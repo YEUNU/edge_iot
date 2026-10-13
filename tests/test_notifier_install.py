@@ -1,8 +1,9 @@
-import argparse
 import importlib.util
 import json
 import os
 from pathlib import Path
+import shutil
+import subprocess
 import sys
 import tempfile
 from types import SimpleNamespace
@@ -164,24 +165,29 @@ class InstallTests(unittest.TestCase):
                     self.assertFalse((self.service / "config.json").exists())
             self.device[field] = "xiaomi.derh.13l" if field == "deviceModel" else "제습기"
 
-    def test_invalid_data_dir_is_rejected_before_credentials_or_artifacts_change(self):
-        original = self.credentials.read_text()
-        valid_service = self.service
-        for name in ["Owner's Notifications", "Notifications\ninvalid", "Notifications\rinvalid"]:
-            with self.subTest(name=repr(name)):
-                self.service = self.home / name
-                with self.assertRaises(SystemExit), patch("sys.stderr"):
-                    self.install()
-                self.assertFalse(self.service.exists())
-                self.assertEqual(self.credentials.read_text(), original)
-                args = SimpleNamespace(auth_profile="xiaomi-alerts", device=["dehumidifier"],
-                                       location="home", test_device=None)
-                with self.assertRaises(SystemExit), patch("sys.stderr"), patch.object(Path, "home", return_value=self.home):
-                    installer.prepare(self.service, args, argparse.ArgumentParser())
-                self.assertFalse(self.service.exists())
-                self.assertEqual(self.credentials.read_text(), original)
-        self.service = valid_service
+    def test_special_data_directory_is_encoded_without_extra_env_entries(self):
+        self.service = self.home / "Owner's \"알림\" $HOME ${XIAOMI_PATH_TEST}\\\nINJECTED=value\r\t\x1bend\\"
         self.install()
+        lines = (self.service / ".env").read_text().splitlines()
+        self.assertEqual(len(lines), 3)
+        self.assertTrue((self.service / "config.json").exists())
+        self.assertEqual((self.service / ".env").stat().st_mode & 0o777, 0o600)
+
+    def test_special_data_directory_round_trips_through_compose(self):
+        docker = shutil.which("docker")
+        if not docker:
+            self.skipTest("Docker Compose CLI is not installed")
+        version = subprocess.run([docker, "compose", "version"], capture_output=True)
+        if version.returncode:
+            self.skipTest("Docker Compose CLI is not installed")
+        self.service = self.home / "Owner's \"알림\" $HOME ${XIAOMI_PATH_TEST}\\\nINJECTED=value\r\t\x1bend\\"
+        self.install()
+        result = subprocess.run([docker, "compose", "--project-directory", str(self.service),
+                                 "config", "--format", "json"], capture_output=True, check=True)
+        model = json.loads(result.stdout)
+        # `config` re-escapes literal dollars when serializing the resolved model.
+        source = model["services"]["notifier"]["volumes"][0]["source"]
+        self.assertEqual(source, str(self.service.resolve()).replace("$", "$$"))
 
     def test_invalid_cli_credentials_do_not_poison_retries(self):
         baseline = json.loads(self.credentials.read_text())

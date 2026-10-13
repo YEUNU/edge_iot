@@ -1,32 +1,35 @@
-# Xiaomi 알림 조건과 검증
+# Xiaomi 알림 조건
 
 Mac의 Docker 서비스가 실제 기기 이름으로 SmartThings 푸시를 보내며, 알림을 누르면
 해당 기기 화면이 열립니다. 설치·관리 방법은 [Docker 서비스](../notification-service/README.md)에 있습니다.
-사용자 요청에 따라 샤오미 기기 경고만 감시합니다.
+지원 모델은 `xiaomi.derh.13l` 제습기와 `zhimi.airp.cpa4` 공기청정기입니다.
 
-**Xiaomi 알림** 기기는 최근 경고와 테스트 버튼을 제공합니다. 기존 루틴용 `button`
-capability는 호환성을 위해 남지만 버튼 이벤트는 발행하지 않습니다. 따라서 이전에
-만든 루틴은 자동 알림을 중복 전송하지 않습니다. 별도 루틴 설정은 필요 없습니다.
+**Xiaomi 알림** 기기는 최근 경고와 테스트 버튼을 제공합니다. `button` capability는
+호환성을 위해 유지하지만 버튼 이벤트는 발행하지 않습니다. 버튼을 조건으로 한
+루틴은 실행하지 않으며 직접 푸시에 별도 루틴 설정은 필요 없습니다.
 테스트 버튼은 실제 기기의 고장이나 필터 상태를 변경하지 않습니다.
 
 ## 알림 대상
 
-| 기기 | 조건 | 안내 문구 |
+| 기기 | 조건 | 안내 내용 |
 |---|---|---|
 | 제습기 | `deviceFault.fault = waterFull` | 물통이 가득 찼어요. 물통을 비우고 다시 장착해 주세요. |
 | 제습기 | `deviceFault.fault = filterClean` | 필터 청소가 필요해요. 필터를 확인해 주세요. |
-| 제습기 | `sensorFault1`, `sensorFault2`, `commFault1`, `fanMotor`, `overload`, `lackOfRefrigerant` | 기기 오류가 감지됐어요. 앱의 기기 상태를 확인해 주세요. |
+| 제습기 | `sensorFault1`, `sensorFault2`, `commFault1`, `fanMotor`, `overload`, `lackOfRefrigerant` | 센서·내부 통신·팬 모터·과부하·냉매 오류별 점검 안내 |
 | 공기청정기 | `filterAlert.status = replace` | 필터 수명이 10% 이하예요. 교체할 필터를 준비해 주세요. |
-| 공기청정기 | `deviceFault.fault = motorStuck` 또는 `sensorLost` | 기기 오류가 감지됐어요. 앱의 기기 상태를 확인해 주세요. |
+| 공기청정기 | `deviceFault.fault = motorStuck` 또는 `sensorLost` | 모터 고장 또는 센서 연결 오류 안내 |
 
 위 custom capability의 전체 ID에는 `earthpanel38939.` 접두사가 붙습니다.
+모델별 capability·속성·정확한 푸시 문구는
+[notifier.py의 `CONDITIONS`](../notification-service/notifier.py)에서 함께 정의합니다.
+설치 시 모델 확인과 조회 완전성 검사도 같은 정의를 사용합니다.
 정상(`noFault`)과 제상 중(`defrost`)은 알림 대상에서 제외합니다.
 선풍기는 검증된 매핑에 고장·필터 센서가 없어 임의의 오류를 만들어내지 않습니다.
 켜짐/꺼짐, 목표 습도 도달, 순간적인 미세먼지 변화는 기본 알림에 포함하지 않습니다.
 
 ## 상태 처리
 
-허브는 기본 20초마다 기기 상태를 읽고, Docker는 15초마다 클라우드를 조회합니다.
+허브는 기본 20초마다 기기 상태를 읽고, Docker는 클라우드 조회 후 15초를 기다립니다.
 온라인 기기의 유효한 경고만 전송하며 누락·실패·알 수 없는 값으로 경고를 해제하지 않습니다.
 필터 경고는 수명 10% 이하에서 시작하고 15% 초과에서 해제합니다.
 
@@ -52,5 +55,6 @@ python3 -m unittest discover -s tests -p 'test_notifier*.py'
 ```
 
 센서·모터 고장을 일부러 유발하지 않고 코드별 매핑과 모의 입력으로 검증합니다.
-실제 전송·수신 및 배포 결과는 [검증 기록](VERIFICATION.md), API 규격과 인증은
-[직접 푸시 API 조사](NOTIFICATIONS_API.md), 화면 구성은 [UI 구성](UI.md)에 있습니다.
+실제 전송 테스트와 서비스 관리는 [Docker 서비스](../notification-service/README.md),
+API 규격과 인증은 [직접 푸시 API](NOTIFICATIONS_API.md), 화면 구성은
+[UI 구성](UI.md)에 있습니다.

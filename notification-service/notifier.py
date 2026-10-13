@@ -22,27 +22,31 @@ TOKEN_URL = "https://auth-global.api.smartthings.com/oauth/token"
 CLI_CLIENT_ID = "d18cf96e-c626-4433-bf51-ddbb10c5d1ed"
 DEFAULT_HOME = Path.home() / "Library/Application Support/Xiaomi Notifications"
 MAX_JSON_DEPTH = 64
-FAULTS = {
+CONDITIONS = {
     "xiaomi.derh.13l": {
-        "noFault": None, "defrost": None,
-        "waterFull": "물통이 가득 찼어요. 물통을 비우고 다시 장착해 주세요.",
-        "sensorFault1": "센서 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
-        "sensorFault2": "두 번째 센서 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
-        "commFault1": "내부 통신 오류가 감지됐어요. 기기 상태를 확인해 주세요.",
-        "filterClean": "필터 청소가 필요해요. 필터를 확인해 주세요.",
-        "fanMotor": "팬 모터 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
-        "overload": "과부하가 감지됐어요. 기기 상태를 확인해 주세요.",
-        "lackOfRefrigerant": "냉매 부족이 감지됐어요. 기기 점검이 필요해요.",
+        "fault": ("earthpanel38939.deviceFault", "fault", {
+            "noFault": None, "defrost": None,
+            "waterFull": "물통이 가득 찼어요. 물통을 비우고 다시 장착해 주세요.",
+            "sensorFault1": "센서 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
+            "sensorFault2": "두 번째 센서 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
+            "commFault1": "내부 통신 오류가 감지됐어요. 기기 상태를 확인해 주세요.",
+            "filterClean": "필터 청소가 필요해요. 필터를 확인해 주세요.",
+            "fanMotor": "팬 모터 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
+            "overload": "과부하가 감지됐어요. 기기 상태를 확인해 주세요.",
+            "lackOfRefrigerant": "냉매 부족이 감지됐어요. 기기 점검이 필요해요.",
+        }),
     },
     "zhimi.airp.cpa4": {
-        "noFault": None,
-        "motorStuck": "모터 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
-        "sensorLost": "센서 연결 오류가 감지됐어요. 기기 상태를 확인해 주세요.",
+        "fault": ("earthpanel38939.deviceFault", "fault", {
+            "noFault": None,
+            "motorStuck": "모터 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
+            "sensorLost": "센서 연결 오류가 감지됐어요. 기기 상태를 확인해 주세요.",
+        }),
+        "filter": ("earthpanel38939.filterAlert", "status", {
+            "normal": None,
+            "replace": "필터 수명이 10% 이하예요. 교체할 필터를 준비해 주세요.",
+        }),
     },
-}
-FILTERS = {
-    "normal": None,
-    "replace": "필터 수명이 10% 이하예요. 교체할 필터를 준비해 주세요.",
 }
 
 
@@ -296,10 +300,7 @@ class Client:
 
 def conditions(device, status):
     main = object_field(object_field(status, "components"), "main")
-    definitions = [("fault", "earthpanel38939.deviceFault", "fault", FAULTS[device["model"]])]
-    if device["model"] == "zhimi.airp.cpa4":
-        definitions.append(("filter", "earthpanel38939.filterAlert", "status", FILTERS))
-    for key, cap, attr, messages in definitions:
+    for key, (cap, attr, messages) in CONDITIONS[device["model"]].items():
         try:
             reading = object_field(object_field(main, cap), attr)
         except RequestError:
@@ -310,7 +311,7 @@ def conditions(device, status):
         # Missing/unknown reads never clear a warning. Timestamps reject stale
         # reads; only an observed value change can distinguish a new condition.
         if isinstance(value, str) and value in messages and valid_timestamp(stamp):
-            yield key, {"value": value, "timestamp": stamp}, messages[value]
+            yield key, {"value": value, "timestamp": stamp}, messages
 
 
 class Monitor:
@@ -422,18 +423,18 @@ class Monitor:
                     self.cloud_reads[device["id"]] = self.clock()
                     continue
                 status = self.client.api("/devices/" + device["id"] + "/status")
-                readings = [(key, occurrence, message) for key, occurrence, message in conditions(device, status)
+                readings = [(key, occurrence, messages) for key, occurrence, messages in conditions(device, status)
                             if self.current_occurrence(device["id"] + ":" + key, occurrence)]
-                expected = 2 if device["model"] == "zhimi.airp.cpa4" else 1
+                expected = len(CONDITIONS[device["model"]])
                 if len(readings) == expected:
                     checked += 1
                     self.cloud_reads[device["id"]] = self.clock()
                 else:
                     logging.warning("status incomplete %s", device["label"])
-                for key, occurrence, message in readings:
+                for key, occurrence, messages in readings:
                     state_key = device["id"] + ":" + key
                     pending = self.retry.get(state_key)
-                    messages = FAULTS[device["model"]] if key == "fault" else FILTERS
+                    message = messages[occurrence["value"]]
                     saved = self.state.get(state_key)
                     previous_value = saved.get("value") if isinstance(saved, dict) else None
                     warning_open = isinstance(previous_value, str) and messages.get(previous_value)

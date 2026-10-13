@@ -9,7 +9,7 @@ from pathlib import Path
 import shutil
 import subprocess
 
-from notifier import Auth, Client, DEFAULT_HOME, FAULTS, finite_number, save_json, timestamp_value, valid_token
+from notifier import Auth, Client, CONDITIONS, DEFAULT_HOME, finite_number, save_json, timestamp_value, valid_token
 
 
 def token_fingerprint(token):
@@ -21,13 +21,7 @@ def token_fingerprint(token):
         return None
 
 
-def validate_data_dir(home, parser):
-    if "'" in str(home) or "\n" in str(home) or "\r" in str(home):
-        parser.error("Data directory cannot contain single quotes or newlines")
-
-
 def prepare(home, args, parser):
-    validate_data_dir(home, parser)
     credentials = Path.home() / "Library/Application Support/@smartthings/cli/credentials.json"
     if not (home / "auth.json").exists():
         if not args.auth_profile or args.auth_profile == "default":
@@ -92,7 +86,7 @@ def prepare(home, args, parser):
     for device_id in dict.fromkeys(args.device):
         device = client.api("/devices/" + device_id)
         model = device.get("deviceModel")
-        if not isinstance(model, str) or model not in FAULTS or device.get("locationId") != args.location:
+        if not isinstance(model, str) or model not in CONDITIONS or device.get("locationId") != args.location:
             parser.error("Device model/location does not match supported notification configuration")
         label = device.get("label")
         if not isinstance(label, str) or not label:
@@ -113,9 +107,13 @@ def prepare(home, args, parser):
         if (source / name).resolve() != (home / name).resolve():
             shutil.copyfile(source / name, home / name)
         os.chmod(home / name, 0o600)
-    # Single quotes suppress Compose variable interpolation within a path.
+    # Encode dotenv syntax instead of restricting valid directory names.
+    # Doubling dollars suppresses Compose environment interpolation.
+    data_dir = str(home).translate(str.maketrans({
+        "\\": "\\\\", '"': '\\"', "$": "$$", "\n": "\\n", "\r": "\\r", "\t": "\\t",
+    }))
     (home / ".env").write_text(
-        f"NOTIFIER_UID={os.getuid()}\nNOTIFIER_GID={os.getgid()}\nNOTIFIER_DATA_DIR='{home}'\n")
+        f'NOTIFIER_UID={os.getuid()}\nNOTIFIER_GID={os.getgid()}\nNOTIFIER_DATA_DIR="{data_dir}"\n')
     os.chmod(home / ".env", 0o600)
 
 
@@ -129,7 +127,6 @@ def main():
     parser.add_argument("--prepare-only", action="store_true")
     args = parser.parse_args()
     home = args.data_dir.expanduser().resolve()
-    validate_data_dir(home, parser)
     os.umask(0o077)
     docker = shutil.which("docker")
     if not docker:

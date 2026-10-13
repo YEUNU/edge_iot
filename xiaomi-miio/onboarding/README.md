@@ -39,6 +39,11 @@ xiaomi-miio/onboarding/.venv/bin/python xiaomi-miio/onboarding/onboard.py
 - `등록 요청`은 비동기 SmartThings 기기 생성 요청을 뜻합니다. 실제 생성·ONLINE 여부는
   앱 또는 API에서 추가 확인해야 합니다. 기존 기기는 ID를 유지하며 인증값을 갱신합니다.
 
+기기 수를 20개로 제한하지 않습니다. 암호화 묶음의 16KiB 전송 한도를 넘으면
+서버를 열기 전에 오류를 표시하므로 `--region`으로 조회 범위를 좁히세요.
+허브는 120초 수명 중 완료 응답에 10초를 남기며, 시간 내 인증하지 못한 기기는
+실패로 보고합니다.
+
 ## 외부 코드
 
 QR 로그인과 계정 조회는 MIT 라이선스의
@@ -55,5 +60,5 @@ lua tests/test_xiaomi_discovery.lua .
 ```
 
 전송 codec 변조 거부, 만료, 재사용 차단, 지원 기기 필터, 실제 Python HTTP 서버 ↔
-Lua 암호화 전송·등록 로직을 검증합니다. 실제 계정 로그인 및 실물 허브 결과는
-`smartthings/LOCAL_DISCOVERY.md`에 별도로 기록합니다.
+Lua 암호화 전송·등록 로직을 검증합니다. 실제 계정 로그인과 허브 등록은
+[로컬 검색 안내](../../smartthings/LOCAL_DISCOVERY.md)의 범위를 기준으로 따로 확인합니다.

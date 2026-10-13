@@ -15,17 +15,22 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
+MAX_PACKET_BYTES = 16384
+
 
 def encode(key, value):
+    plaintext = pad(json.dumps(value).encode() + b'\0', 16)
+    if 32 + len(plaintext) > MAX_PACKET_BYTES:
+        raise ValueError('encrypted transfer exceeds the 16 KiB packet limit')
     aes_key = hashlib.md5(key).digest()
     iv = hashlib.md5(aes_key + key).digest()
-    payload = AES.new(aes_key, AES.MODE_CBC, iv).encrypt(pad(json.dumps(value).encode() + b'\0', 16))
+    payload = AES.new(aes_key, AES.MODE_CBC, iv).encrypt(plaintext)
     header = struct.pack('>HHIII', 0x2131, 32 + len(payload), 0, 1, int(time.time()))
     return header + hashlib.md5(header + key + payload).digest() + payload
 
 
 def decode(key, raw):
-    if len(raw) <= 32 or len(raw) > 16384 or raw[:2] != b'\x21\x31' or int.from_bytes(raw[2:4], 'big') != len(raw):
+    if len(raw) <= 32 or len(raw) > MAX_PACKET_BYTES or raw[:2] != b'\x21\x31' or int.from_bytes(raw[2:4], 'big') != len(raw):
         raise ValueError('invalid packet')
     if not hmac.compare_digest(raw[16:32], hashlib.md5(raw[:16] + key + raw[32:]).digest()):
         raise ValueError('authentication failed')
@@ -39,6 +44,14 @@ class Transfer:
         if not isinstance(ttl, (int, float)) or isinstance(ttl, bool) or not 0 < ttl <= 120 or not math.isfinite(ttl):
             raise ValueError('transfer TTL must be between 0 and 120 seconds')
         self.key = secrets.token_bytes(16)
+        # Check the wire budget before opening a socket or dispatching the key.
+        # Reserve two AES blocks for the remaining TTL's float representation.
+        try:
+            preview = encode(self.key, {'device_id': device_id, 'devices': devices, 'expires_in': ttl})
+            if len(preview) + 32 > MAX_PACKET_BYTES:
+                raise ValueError('insufficient TTL space')
+        except ValueError:
+            raise RuntimeError('Device bundle exceeds the 16 KiB transfer limit; select a single region') from None
         self.device_id, self.devices = device_id, devices
         self.hub, self.deadline = hub, time.monotonic() + ttl
         self.claimed = False
@@ -65,7 +78,7 @@ class Transfer:
                     if not value.isascii() or not value.isdigit():
                         raise ValueError()
                     length = int(value)
-                    if not 32 < length <= 16384:
+                    if not 32 < length <= MAX_PACKET_BYTES:
                         raise ValueError()
                     raw = self.rfile.read(length)
                     if len(raw) != length:

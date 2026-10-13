@@ -17,6 +17,18 @@ class DeviceError(Exception):
     pass
 
 
+def validate_ir_command(command, *, require_head=False):
+    if (not isinstance(command, dict) or command.get('control') != 'send_ir'
+            or type(command.get('type')) is not int or command['type'] != 0):
+        raise ValueError('only explicit send_ir commands are allowed')
+    if (not isinstance(command.get('head'), str)
+            or (require_head and not command['head'])
+            or not isinstance(command.get('key1'), str) or not command['key1']):
+        raise ValueError('IR command requires head/key1')
+    if len(json.dumps(command)) > 3072:
+        raise ValueError('invalid IR code size')
+
+
 def validate(config):
     ipaddress.IPv4Address(config['ip'])
     if not isinstance(config['device_id'], str) or not config['device_id']:
@@ -43,14 +55,7 @@ def validate(config):
         if key in seen:
             raise ValueError('duplicate IR state')
         seen.add(key)
-        command = entry['command']
-        if (not isinstance(command, dict) or command.get('control') != 'send_ir'
-                or type(command.get('type')) is not int or command['type'] != 0):
-            raise ValueError('only explicit send_ir commands are allowed')
-        if not isinstance(command.get('head'), str) or not isinstance(command.get('key1'), str):
-            raise ValueError('IR command requires head/key1')
-        if len(json.dumps(command)) > 3072 or not command['key1']:
-            raise ValueError('invalid IR code size')
+        validate_ir_command(entry['command'])
     if 'off' not in seen and not button_only:
         raise ValueError('explicit power-off code required (toggle codes unsupported)')
     raw_keys = config.get('keys', [])
@@ -63,12 +68,7 @@ def validate(config):
         if not isinstance(identifier, str) or not identifier or identifier in identifiers:
             raise ValueError('invalid or duplicate remote key')
         identifiers.add(identifier)
-        if (not isinstance(command, dict) or command.get('control') != 'send_ir'
-                or type(command.get('type')) is not int or command['type'] != 0
-                or not isinstance(command.get('head'), str) or not command['head']
-                or not isinstance(command.get('key1'), str) or not command['key1']
-                or len(json.dumps(command)) > 3072):
-            raise ValueError('invalid remote key payload')
+        validate_ir_command(command, require_head=True)
     return config
 
 
@@ -122,16 +122,8 @@ class Controller:
                 saved=json.loads(Path(config['settings_path']).read_text())
                 if isinstance(saved,dict):self.saved_settings=saved
             except (OSError,ValueError,RecursionError):pass
-        self.profile_id = str(config['remote_index'])
-        self.codes = {state_key(e['state']): e for e in config['codes']}
         self.lock = threading.Lock()
-        # After restart we cannot know whether another remote changed the appliance.
-        self.state = {}
-        self.settings = dict(config.get('default_state', {}))
-        self._restore_settings()
-        if self.settings:
-            if state_key(dict(self.settings, power=True)) not in self.codes:
-                raise ValueError('default_state must have a mapped code')
+        self._activate_profile(str(config['remote_index']))
         if factory is None:
             import tinytuya
             factory = tinytuya.Device
@@ -147,12 +139,32 @@ class Controller:
         device.set_socketRetryLimit(1)
         return device
 
-    def _restore_settings(self):
-        saved=self.saved_settings.get(self.profile_id)
+    def _activate_profile(self, profile_id):
+        profile = self.profiles[profile_id]
+        codes = {state_key(e['state']): e for e in profile['codes']}
+        settings = dict(profile.get('default_state', {}))
+        saved = self.saved_settings.get(profile_id)
         if saved:
             try:
-                if state_key(dict(saved,power=True)) in self.codes:self.settings=dict(saved)
-            except (ValueError,TypeError):pass
+                if state_key(dict(saved, power=True)) in codes:
+                    settings = dict(saved)
+            except (ValueError, TypeError):
+                pass
+        if settings and state_key(dict(settings, power=True)) not in codes:
+            raise ValueError('default_state must have a mapped code')
+        # Build the active codebook once, both at startup and on model changes.
+        # A failed activation must leave the previous model and state intact.
+        self.profile_id = profile_id
+        self.codes = codes
+        self.settings = settings
+        self.keys = {key['id']: key for key in profile.get('keys', [])}
+        self.mode_states = {}
+        for entry in codes.values():
+            state = entry['state']
+            if state['power']:
+                self.mode_states.setdefault(state['mode'], []).append(state)
+        # Restarting or switching models cannot establish physical AC state.
+        self.state = {}
 
     def _remember_settings(self):
         self.saved_settings[self.profile_id] = dict(self.settings)
@@ -205,12 +217,7 @@ class Controller:
         if profile_id not in self.profiles:
             raise ValueError('code set is not installed on this bridge')
         if profile_id != self.profile_id:
-            profile = self.profiles[profile_id]
-            self.codes = {state_key(e['state']): e for e in profile['codes']}
-            self.settings = dict(profile.get('default_state', {}))
-            self.state = {}
-            self.profile_id = profile_id
-            self._restore_settings()
+            self._activate_profile(profile_id)
         if profile_id in self._catalog_cache:
             self._catalog_cache.move_to_end(profile_id)
             while len(self._catalog_cache) > self.catalog_cache_size:
@@ -218,22 +225,22 @@ class Controller:
                 del self.profiles[stale]
 
     def _snapshot(self):
-        on = [e['state'] for e in self.codes.values() if e['state']['power']]
+        profile = self.profiles[self.profile_id]
         mode = self.settings.get('mode')
-        mode_states = [s for s in on if s['mode']==mode] or on
+        mode_states = self.mode_states.get(mode) or [s for states in self.mode_states.values() for s in states]
         fan_states = [s for s in mode_states if s['fan']==self.settings.get('fan')] or mode_states
         temps = sorted({s['target_temperature'] for s in fan_states})
         return {'state': dict(self.state), 'confirmed': False, 'state_source': 'last_ir_command',
                 'reachable': True, 'profile_id': self.profile_id,
-                'profile_name': self.profiles[self.profile_id].get('name',self.profile_id),
-                'default_state': self.profiles[self.profile_id].get('default_state',{}),
+                'profile_name': profile.get('name',self.profile_id),
+                'default_state': profile.get('default_state',{}),
                 'settings': dict(self.settings),
                 'settings_save_pending': self.settings_save_pending,
-                'control_style': self.profiles[self.profile_id].get('control_style', 'state'),
+                'control_style': profile.get('control_style', 'state'),
                 'supported_keys': [{'id': k['id'], 'name': k.get('name', k['id'])}
-                                   for k in self.profiles[self.profile_id].get('keys', [])
-                                   if not k.get('state_control') or self.profiles[self.profile_id].get('control_style') == 'buttons'],
-                'supported_modes': sorted({s['mode'] for s in on}),
+                                   for k in self.keys.values()
+                                   if not k.get('state_control') or profile.get('control_style') == 'buttons'],
+                'supported_modes': sorted(self.mode_states),
                 'supported_fans': sorted({s['fan'] for s in mode_states}),
 
                 'temperature': {'min': min(temps), 'max': max(temps), 'step': min((b-a for a,b in zip(temps,temps[1:])),default=1)} if temps else None}
@@ -275,8 +282,8 @@ class Controller:
         if isinstance(changes, dict) and set(changes) == {'key'}:
             with self.lock:
                 self._select(profile_id)
-                key = next((k for k in self.profiles[self.profile_id].get('keys', [])
-                            if k['id'] == changes['key']), None)
+                key_id = changes['key']
+                key = self.keys.get(key_id) if isinstance(key_id, str) else None
                 if key is None:
                     raise ValueError('remote key is not available for this code set')
                 self._transmit_ir(key['command'])
@@ -298,8 +305,8 @@ class Controller:
                 target = dict(self.settings, **changes)
                 target['power'] = True
             key = state_key(target)
-            if key not in self.codes and set(changes) == {'mode'}:
-                candidates = [e['state'] for e in self.codes.values() if e['state'].get('mode') == changes['mode']]
+            if key not in self.codes and 'mode' in changes and set(changes) <= {'power', 'mode'}:
+                candidates = self.mode_states.get(changes['mode'], [])
                 if candidates:
                     target = dict(min(candidates, key=lambda s: (s['fan']!=target.get('fan'),abs(s['target_temperature']-target.get('target_temperature',25)))))
                     key = state_key(target)

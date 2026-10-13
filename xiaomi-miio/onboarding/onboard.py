@@ -55,8 +55,6 @@ def normalize(records):
         except (ValueError, TypeError, KeyError):
             continue
         result[did] = {'did':did, 'ip':str(ip), 'token':token, 'model':d['model']}
-    if len(result) > 20:
-        raise RuntimeError('More than 20 supported devices; select a single region')
     return list(result.values())
 
 

@@ -1,156 +1,106 @@
-# edge_iot — SmartThings Edge driver
+# edge_iot — SmartThings Edge 로컬 제어
 
-SmartThings Edge drivers for Xiaomi MiIO/MiOT devices and Tuya IR air conditioners, with local control paths.
+Xiaomi MiIO/MiOT 기기와 Tuya IR 에어컨을 SmartThings에서 제어합니다.
+Xiaomi 제어는 허브에서 직접 실행하고, Tuya IR과 기기별 푸시는 Mac의 Docker 서비스를 사용합니다.
 
-## Xiaomi MiIO LAN
+## 구성
 
-The primary driver controls three Xiaomi models directly over UDP/54321. It
-does not use Xiaomi Cloud for control. A one-time QR login helper can retrieve
-tokens during onboarding and transfer them to the hub. Per-device tokens are
-stored in hub fields (or manual preferences) and derive the MiIO AES-128-CBC key and IV.
-
-| Device | MiOT model | Main capabilities |
+| 구성 요소 | 실행 위치 | 역할 |
 |---|---|---|
-| Mi Smart Standing Fan 2 | `zhimi.fan.za5` | Power, speed, oscillation, wind mode, off timer |
-| Mi Air Purifier 4 Compact | `zhimi.airp.cpa4` | Power, mode, PM2.5, favorite level, filter life |
-| Xiaomi Smart Dehumidifier 13L | `xiaomi.derh.13l` | Power, mode, current/target humidity, fault status |
-
-### Local discovery
-
-The hub now scans miIO locally at startup, every five minutes, and on nearby
-scan. Refresh on the Xiaomi setup device also starts a scan. Existing tokens
-are reused; authenticated discovered addresses are stored on the hub. Devices
-that expose a usable local token can be enrolled automatically after encrypted
-model verification. Devices that hide it still require an independently obtained
-token; no Xiaomi Cloud lookup is performed. See
-[verification and remaining limits](smartthings/LOCAL_DISCOVERY.md).
-
-### First-time login (no manual token entry)
-
-Use the [one-time Xiaomi QR login helper](xiaomi-miio/onboarding/README.md) to
-retrieve supported devices and transfer credentials to the hub. The helper exits
-after enrollment. Subsequent control remains local and does not require the Mac
-or Xiaomi Cloud. Manual setup remains available below.
-
-### Installation
-
-For an existing published build, enroll using the invite link:
-
-<https://bestow-regional.api.smartthings.com/invite/KPMekJRvL0lQ>
-
-Then select **Add device → Scan nearby**. Each scan creates one **Xiaomi 기기
-설정** record. Open its settings and select the model, then enter:
-
-- A reserved/static LAN IPv4 address.
-- Its 32-character hexadecimal Xiaomi token.
-
-Once valid settings are saved, the same record changes to the selected device
-profile and refreshes immediately. SmartThings commands update the UI
-optimistically, verify related LAN properties after 0.5 seconds, and retry once
-at about 2 seconds before rolling back a mismatch. External button/Mi Home
-changes are polled every 20 seconds for core properties and every 5 minutes for
-secondary properties. Scan again when adding another Xiaomi device; unused
-model placeholders are never created.
-
-The default profile shows only frequent controls. Enable **고급 기능 표시** in
-device settings to add maintenance, indicator, buzzer, lock, sensor, and
-diagnostic controls without recreating the device. IP and token settings use
-the same preference names in both profiles and remain attached to the device.
-
-Fault events are emitted only when the confirmed fault changes. Both air
-purifier profiles expose fault status and a filter replacement condition:
-10% or less activates it, and a confirmed reading above 15% clears it.
-The optional [Docker notification service](notification-service/README.md) runs on
-the Mac server and sends per-device SmartThings push messages directly, with the
-physical device's name and link. It polls confirmed fault/filter attributes,
-refreshes OAuth credentials, persists duplicate suppression, and retries failures.
-The driver keeps **Xiaomi 알림** as a history and test-request endpoint; it no longer
-emits button events that trigger the old notification routine.
-See [notification conditions and verification](smartthings/ALERTS.md).
-
-Device-specific [UI configurations](smartthings/device-configs/) keep measured
-humidity read-only, restrict enums to the actual hardware, show the fan's remaining
-timer as one continuous control, and move filter reset to the advanced view.
-The purifier's automation-only filter warning remains available to the notifier
-without adding a duplicate status card.
-
-The mobile layout puts fan speed first and uses a compact oscillation dropdown.
-The dehumidifier's basic view shows current humidity without the large history
-chart, so target humidity and mode fit on the first screen. Standard sensor
-history and automation capabilities remain available. See the
-[UI configuration guide](smartthings/UI.md) and
-[ADB verification report](smartthings/UI_AUDIT.md) for deployment and device-tested results.
-
-### Xiaomi code flow
+| `xiaomi-miio/src/` | SmartThings 허브 | 암호화된 UDP/54321로 Xiaomi 검색·인증·제어 |
+| `xiaomi-miio/onboarding/` | 최초 등록 시 Mac | Xiaomi QR 로그인과 일회용 암호화 자격증명 전달 |
+| `tuya-local/src/` | SmartThings 허브 | 기종 선택·시험·저장 UI와 LAN 브리지 명령 |
+| `tuya-local/bridge/` | Mac/서버 Docker | 내장 IR 코드표를 사용해 지정한 Tuya 허브로 송신 |
+| `notification-service/` | Mac/서버 Docker | 확인된 Xiaomi 경고를 조회해 SmartThings 직접 푸시 |
+| `smartthings/` | 개발·배포 자료 | capability, presentation, 번역, 화면 구성 |
+| `tests/`, `scripts/` | 개발 환경 | 회귀 검사, 공개 데이터 검사, 로컬 벤치마크 |
 
 ```text
-SmartThings capability command
-  → src/command_handlers.lua
-  → src/devices/<model>.lua (MiOT siid/piid mapping)
-  → src/miio/client.lua
-  → encrypted UDP/54321 packet
+SmartThings → Xiaomi Edge → MiIO UDP → Xiaomi 기기
+SmartThings → Tuya Edge → 인증된 LAN HTTP → 브리지 → Tuya 허브 → IR
+Xiaomi 확정 상태 → SmartThings → 알림 서비스 → 기기별 푸시
 ```
 
-Each refresh performs one MiIO handshake and reads properties in small chunks.
-Individual MiOT result codes and packet checksums are validated before state is
-applied. Commands emit an optimistic UI event, execute asynchronously, and then
-refresh the real device state.
-Once an appliance DID is known, control sessions keep that identity even if an
-address or token changes. Replies must match the requested MiOT attributes;
-readbacks from a replaced connection cannot update the current device UI.
+평소 제어 경로는 Xiaomi·Tuya 클라우드 API를 호출하지 않습니다. 최초 Xiaomi 로그인과
+Tuya 코드 수집은 별도 도구이며, SmartThings 앱·계정·푸시는 인터넷을 사용합니다.
 
-## Repository layout
+## Xiaomi 설치와 동작
 
-```text
-xiaomi-miio/
-  config.yml
-  profiles/
-  src/
-    init.lua
-    discovery.lua
-    command_handlers.lua
-    models.lua
-    devices/
-    miio/
-smartthings/
-  capabilities/             # custom capability schemas and presentations
-tests/
-  run.lua
-  test_notifier.py
-notification-service/       # Docker Compose direct push service and installer
-```
+| 기기 | 모델 | 주요 기능 |
+|---|---|---|
+| Mi Smart Standing Fan 2 | `zhimi.fan.za5` | 전원, 풍량, 바람 모드, 좌우 회전, 8시간 꺼짐 예약 |
+| Mi Air Purifier 4 Compact | `zhimi.airp.cpa4` | 전원, 모드, PM2.5, 수동 풍량, 필터 수명 |
+| Xiaomi Smart Dehumidifier 13L | `xiaomi.derh.13l` | 전원, 모드, 습도, 12시간 꺼짐 예약, 건조·고장 상태 |
 
-## Development
+[드라이버 초대 링크](https://bestow-regional.api.smartthings.com/invite/KPMekJRvL0lQ)에서
+등록한 뒤 **기기 추가 → 주변 검색**으로 `Xiaomi 기기 설정`을 만듭니다.
+[QR 로그인 도우미](xiaomi-miio/onboarding/README.md)를 실행하면 토큰을 수동으로
+복사하지 않고 허브에 전달할 수 있습니다. 도우미는 등록 후 종료합니다.
+수동 등록은 설정 기기에서 모델, LAN IPv4 주소, 32자리 16진수 토큰을 입력합니다.
+설정을 저장하면 같은 기기 항목이 해당 모델의 화면으로 바뀝니다.
 
-Prerequisites:
+허브는 시작 시, 5분마다, 주변 검색 및 설정 기기의 새로고침 때 LAN을 검색합니다.
+발견 응답만으로 기기를 신뢰하지 않고 암호화된 모델·DID 응답을 확인합니다.
+토큰을 공개하지 않는 기기는 기존 인증값이나 최초 로그인 도우미가 필요합니다.
+로그인 등록과 LAN 검색은 같은 비동기 등록·중복 방지 경로를 사용합니다.
+주소를 안정적으로 유지하려면 DHCP 예약을 권장합니다.
 
-- SmartThings Edge-capable hub.
-- Authenticated [SmartThings CLI](https://github.com/SmartThingsCommunity/smartthings-cli).
-- Lua 5.3+ with `luasocket` and `dkjson` for host-side tests.
+명령은 기기별로 순서대로 실행합니다. UI를 먼저 갱신한 뒤 0.5초 후 실제 값을
+확인하고, 약 2초 시점에 한 번 더 확인해 불일치하면 되돌립니다. 기본 속성은
+20초, 보조 속성은 5분마다 조회합니다. 이전 연결이나 명령 전 폴링의 오래된 응답이
+최신 UI를 덮어쓰지 않도록 검사합니다.
 
-Run the regression tests:
+기기 설정의 **고급 기능 표시**로 표시등·조작음·버튼 잠금·관리 기능을 추가합니다.
+제습기 목표 습도는 스마트·수면 모드에서 40–70%, 공기청정기 수동 풍량은 0–14입니다.
+필터 초기화는 실제 대기 상태를 확인한 뒤 실행합니다. 압축기 보호·제상·자동 건조는
+펌웨어가 담당합니다. [화면 구성](smartthings/UI.md)과
+[기기별 동작 근거](smartthings/MANUAL_AUDIT.md)를 참고하세요.
 
-```bash
+## Tuya IR 에어컨
+
+[Tuya 설치와 사용법](tuya-local/README.md)에 따라 브리지를 실행하고 자동 연결 도우미로
+허브와 연결합니다. 삼성·LG·캐리어·위니아의 71개 코드셋·7,723개 원문 키와 기존
+Carrier 코드셋을 합쳐 72개를 제공합니다. 기종별 실제 호환성은 에어컨에서 확인해야 합니다.
+
+기종을 선택하는 동작은 IR을 보내지 않습니다. 후보를 선택한 뒤 시험 전원·온도·모드·풍량을
+조작하고 반응을 확인해 저장합니다. 버튼형 기종은 원문 버튼 선택과 송신을 분리합니다.
+IR은 단방향이므로 앱 상태는 마지막 송신 기준입니다. 재시작 후 전원 상태는 미확인으로
+표시하며, 기종별 마지막 온도·모드·풍량은 복원합니다.
+
+## 기기별 알림
+
+[알림 서비스](notification-service/README.md)는 선택한 Xiaomi 제습기·공기청정기의
+확정된 고장·필터 속성을 15초마다 조회합니다. 실제 기기 이름과 해당 기기 링크로
+푸시하며 별도 SmartThings 루틴은 필요 없습니다. `Xiaomi 알림`은 기록·테스트 요청용입니다.
+
+같은 비정상 구간에서 이미 보낸 경고 종류는 반복 조회·재시작 후에도 재전송하지 않습니다.
+나중 시각의 정상 상태를 확인한 뒤 재발하면 다시 전송합니다. 누락·알 수 없는 값·오프라인을
+정상 복구로 보지 않습니다. [알림 조건](smartthings/ALERTS.md)과
+[API·인증 계약](smartthings/NOTIFICATIONS_API.md)을 참고하세요.
+
+## 개발과 검증
+
+SmartThings CLI, Lua 5.3 이상의 `luasocket`·`dkjson`, Python 환경이 필요합니다.
+전체 Python 검사는 [로그인 도우미 의존성](xiaomi-miio/onboarding/README.md)을 설치한
+환경에서 실행합니다. 저장소 루트에서:
+
+```sh
+xiaomi-miio/onboarding/.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
 lua tests/run.lua .
 lua tests/test_xiaomi_discovery.lua .
 lua tests/test_xiaomi_enrollment.lua .
 lua tests/test_xiaomi_ui.lua .
-python3 -m unittest discover -s tests -p 'test_notifier*.py'
+lua tests/test_tuya_client.lua
+lua tests/test_tuya_ux.lua
+python3 tuya-local/commissioning/verify_korean_release.py tuya-local/bridge/catalog --require-existing
+python3 scripts/check_public_data.py
 ```
 
-After installing the [Xiaomi onboarding dependencies](xiaomi-miio/onboarding/README.md),
-run all Python regression tests with the same environment:
+테스트는 모의 전송·SDK·루프백 서버를 사용합니다. 실제 기기 제어·휴대폰 표시·푸시 수신과
+구분하며 [검증 절차](smartthings/VERIFICATION.md), [Tuya 검증 범위](tuya-local/TEST_RESULTS.md)에
+배포 후 확인 항목을 정리합니다.
 
-```sh
-xiaomi-miio/onboarding/.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
-```
-
-Regression tests use scripted transports and loopback servers. They cover device
-identity conflicts, pending enrollment and expiry, malformed and partial replies,
-command queue recovery, storage failures, OAuth rotation, and per-device health.
-They do not replace appliance, hub SDK, or mobile app verification.
-
-Reproduce the host CPU benchmarks without device or network traffic:
+네트워크 없이 CPU·캐시·이벤트 비용을 비교하려면:
 
 ```sh
 lua scripts/benchmark_miio.lua . 1000
@@ -158,89 +108,28 @@ python3 scripts/benchmark_notifier_tls.py --iterations 100 --repeats 5
 python3 scripts/benchmark_tuya.py
 ```
 
-The MiIO benchmark accepts another checkout as its first argument for comparison.
-The Tuya benchmark accepts `--source-root` and uses the public catalog and mocked
-hub/SDK clients. Browsing all 72 profiles retained 16.43 MB before the cache limit
-and 0.43 MB afterward; ten unchanged daily polls emitted 120 events before and
-none after the initial snapshot, with all ten health reads retained.
-On the development host, parsing 1,000 fixed 144-byte encrypted replies took
-2.196 s before the AES change and 0.313 s afterward. TLS trust configuration
-initialization took 2.805 ms per connection with the default context and 0.0026 ms
-with the notifier's reused verified context. These measure local processing,
-not network, TLS handshake, hub, or appliance response times.
+이 측정은 LAN 지연·기기 응답·휴대폰 수신 시간을 뜻하지 않습니다.
 
-Repeated Xiaomi control values use the SDK's latest state to avoid duplicate
-publications. Sensor/history samples and fault, alert, and maintenance policies
-retain their existing cadence. Local UI checks also verify visible Tuya connection
-feedback and Korean labels for every catalog temperature range; see the dated
-[UI audit](smartthings/UI_AUDIT.md) and [Tuya results](tuya-local/TEST_RESULTS.md).
+## 배포
 
-Build packages without uploading:
-
-```bash
-smartthings edge:drivers:package --build-only /tmp/xiaomi-miio.zip xiaomi-miio
-```
-
-Publish and install with the normal SmartThings Edge channel workflow:
-
-```bash
-smartthings edge:drivers:package xiaomi-miio
-smartthings edge:channels:assign <channel-id> <driver-id>
-smartthings edge:drivers:install <driver-id>
-```
-
-For Xiaomi development, the protocol client can also be exercised directly:
-
-```bash
-cd xiaomi-miio/src
-lua -e '
-package.path = "./?.lua;./?/?.lua;" .. package.path
-local Client = require "miio.client"
-local client, err = Client.new{
-  ip = "192.168.1.4",
-  token = "<32-hex-token>",
-}
-assert(client, err)
-local info, request_err = client:miio_info()
-print(info and info.model or request_err)
-'
-```
-
-## Security notes
-
-- Keep Xiaomi tokens out of source control and logs.
-- Xiaomi tokens use password-style SmartThings preferences.
-- Reserve Xiaomi device IPs in DHCP so control does not move to another host.
-- Follow [publication privacy checks](PRIVACY.md) before committing configuration or deployment changes.
-
-## References
-
-- [SmartThings Edge driver documentation](https://developer.smartthings.com/docs/devices/hub-connected/edge-drivers)
-- [python-miio](https://github.com/rytilahti/python-miio)
-- [MiOT specification API](https://miot-spec.org/miot-spec-v2/instances?status=all)
-
-## Tuya IR 에어컨
-
-[Tuya 로컬 제어](tuya-local/README.md): 인증된 자동 연결, 스마트싱스 기종 선택·온도·모드·풍량 시험 UI, LAN 브리지. 실행 서비스는 지정한 IR 허브로만 발신 연결을 허용합니다.
-
-삼성·LG·캐리어·위니아의 Tuya 71개 코드셋·7,723개 키 전체의 로컬 송신 원문을 확보·검증했습니다. 기존 Carrier를 합쳐 72개 코드셋을 포함하고 다른 브랜드는 제외합니다. 브리지·드라이버 배포와 실제 휴대폰 화면 검증을 완료했습니다. [수집 절차와 배포 조건](tuya-local/commissioning/README.md)을 참고하세요.
-
-Tuya 검증:
+먼저 두 패키지를 로컬에서 빌드합니다.
 
 ```sh
-python3 -m unittest discover -s tests -p 'test_tuya*.py'
-lua tests/test_tuya_client.lua
-lua tests/test_tuya_ux.lua
-python3 scripts/check_public_data.py
+smartthings edge:drivers:package --build-only /tmp/xiaomi-miio.zip xiaomi-miio
+smartthings edge:drivers:package --build-only /tmp/tuya-local.zip tuya-local
 ```
 
-### Manual-based operating behavior
+화면 정의를 바꿨다면 [Xiaomi UI 배포](smartthings/UI.md) 또는
+[Tuya UI 배포](tuya-local/README.md#코드와-ui-재생성)를 먼저 실행합니다.
+로그인된 CLI에서 기존 채널·허브로 배포합니다.
 
-See the [three-model manual audit](smartthings/MANUAL_AUDIT.md) for source manuals,
-firmware observations, operating limits and deployment checks. Dehumidifier
-humidity is adjustable only in smart/sleep modes (40–70%). Mode changes refresh
-the device-reported target. Its standby timer supports 12 hours; advanced controls
-include post-shutdown drying and remaining drying time. The fan timer follows the
-manual’s 8-hour limit. Purifier manual level 0 is a valid setting, and filter reset
-requires verified standby. Firmware retains control of compressor protection and
-automatic drying/defrost sequences.
+```sh
+smartthings edge:drivers:package xiaomi-miio --channel CHANNEL_ID --hub HUB_ID
+smartthings edge:drivers:package tuya-local --channel CHANNEL_ID --hub HUB_ID
+```
+
+Tuya 브리지는 `tuya-local/bridge`에서 `docker compose up -d --build`로 갱신합니다.
+알림 서비스 갱신은 해당 [관리 안내](notification-service/README.md)를 따릅니다.
+허브 설치 버전, 컨테이너 코드, 기기 연결 상태를 확인해야 배포 완료입니다.
+인증·설정·상태 파일과 개인 식별자는 저장소에 넣지 않습니다.
+커밋 전 [공개 데이터 검사](PRIVACY.md)를 실행합니다.

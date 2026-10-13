@@ -31,6 +31,26 @@ class OnboardingTests(unittest.TestCase):
         for change in [{'token':'0'*32},{'localip':'127.0.0.1'},{'model':'unsupported'},{'did':'no'}]:
             self.assertEqual(normalize([{**record,**change}]),[])
 
+    def test_more_than_twenty_devices_fit_one_transfer(self):
+        devices = normalize([{'did': str(did), 'localip': '192.168.1.2',
+                              'token': 'ab'*16, 'model': 'zhimi.fan.za5'}
+                             for did in range(1, 22)])
+        self.assertEqual(len(devices), 21)
+        transfer = Transfer('127.0.0.1', '127.0.0.1', 'setup', devices)
+        self.addCleanup(transfer.close)
+        transfer.start()
+        self.assertEqual(self.post(transfer, '/bundle', {'device_id': 'setup'})['devices'], devices)
+        self.assertEqual(self.post(transfer, '/ack', {'device_id': 'setup',
+                         'result': {'updated': 0, 'requested': 21, 'failed': 0}}), {'ok': True})
+
+    def test_oversized_bundle_fails_before_opening_server(self):
+        with patch('transfer.ThreadingHTTPServer') as server:
+            with self.assertRaisesRegex(RuntimeError, '16 KiB transfer limit'):
+                Transfer('127.0.0.1', '127.0.0.1', 'setup', [{'token': 'x'*16384}])
+            server.assert_not_called()
+        with self.assertRaisesRegex(ValueError, '16 KiB packet limit'):
+            encode(b'A'*16, {'payload': 'x'*65536})
+
     def test_transfer_expiry_and_single_use(self):
         t=Transfer('127.0.0.1','127.0.0.1','setup',[{'did':123}])
         port=t.start()
@@ -83,7 +103,7 @@ print("LUA_IMPORT_OK")
         proc = subprocess.run(['lua', 'tests/test_xiaomi_enrollment.lua', '.'], capture_output=True,
                               text=True, cwd=ROOT, timeout=10)
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn('24 enrollment edge-case tests passed', proc.stdout)
+        self.assertRegex(proc.stdout, r'\d+ enrollment edge-case tests passed')
 
     def make_transfer(self, *, started=True, **kwargs):
         transfer = Transfer('127.0.0.1', '127.0.0.1', 'setup', [{'did': 123}], **kwargs)
@@ -252,11 +272,8 @@ print("LUA_IMPORT_OK")
                 {**record, 'localip': True}, record]
         self.assertEqual(normalize(rows), [{'did': 123, 'ip': '192.168.1.2', 'token': 'ab'*16, 'model': 'zhimi.fan.za5'}])
 
-    def test_normalize_device_limit_and_boundary_ids(self):
+    def test_normalize_boundary_ids(self):
         record = {'did': '123', 'localip': '192.168.1.2', 'token': 'ab'*16, 'model': 'zhimi.fan.za5'}
-        self.assertEqual(len(normalize([{**record, 'did': str(i)} for i in range(1, 21)])), 20)
-        with self.assertRaisesRegex(RuntimeError, 'More than 20'):
-            normalize([{**record, 'did': str(i)} for i in range(1, 22)])
         for did in [0, -1, 0xffffffff, 0x100000000]:
             self.assertEqual(normalize([{**record, 'did': did}]), [])
         self.assertEqual(normalize([{**record, 'did': 0xfffffffe}])[0]['did'], 0xfffffffe)

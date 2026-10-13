@@ -37,7 +37,7 @@ package.preload["cosock.socket"] = function()return {
     if line==2 then
      local plaintext=request_path=="/bundle" and marker or real_json.encode({ok=state.ack_mode~="false"})
      response=packet.build(key,1,1,plaintext)
-     return "Content-Length: "..#response
+     return "Content-Length: "..(state.response_length or #response)
     end
     if line==3 then return "" end
     if request_path=="/bundle" then clock=clock+(state.bundle_delay or 0) end
@@ -70,12 +70,12 @@ package.preload["miio.client"] = function()return {
   }
  end,
 }end
-local discovery={on_connected=function(_,device)
+local discovery=require "discovery"
+discovery.on_connected=function(_,device)
  state.events[#state.events+1]="attach:"..device.device_network_id
  assert(state.ack_attempted,"device refresh must happen after ACK attempt")
  if state.attach_failure==device.device_network_id then error("simulated attachment failure")end
-end}
-package.preload.discovery=function()return discovery end
+end
 local enrollment=require "enrollment"
 local function record(did,ip,model)
  return {did=did or 123,ip=ip or "192.168.1.2",token=ticket,model=model or "zhimi.fan.za5"}
@@ -155,14 +155,30 @@ test("malformed records count as failures without suppressing valid records",fun
  local result=run{bundle={device_id="setup",devices=bad,expires_in=120}}
  counters(result,0,1,#bad-1)
 end)
-test("scalar and oversized or sparse bundle shapes are rejected",function()
- local large={};for i=1,21 do large[i]=record(i)end
+test("scalar and sparse bundle shapes are rejected",function()
  local bundles={false,42,"bundle",{device_id="other",devices={record()}},{device_id="setup",devices=false},
-  {device_id="setup",devices=large},{device_id="setup",devices={[2]=record()}},{device_id="setup",devices={unexpected=record()}}}
+  {device_id="setup",devices={[2]=record()}},{device_id="setup",devices={unexpected=record()}},
+  {device_id="setup",devices={[1]=record(),[3]=record(),[4]=record(),[100]=record()}}}
  for _,bundle in ipairs(bundles)do
   local result=run{bundle=bundle}
   assert(not result.ack and #result.created==0 and result.statuses[#result.statuses]:match("연결 실패"))
  end
+end)
+test("encrypted transfer byte limit still rejects oversized replies before authentication",function()
+ local result=run{response_length=16385}
+ assert(not result.ack and #result.created==0 and result.auth_calls==0)
+ assert(result.statuses[#result.statuses]:match("연결 실패"))
+end)
+test("more than twenty authenticated devices can enroll within the transfer deadline",function()
+ local devices,appliances={},{}
+ for i=1,21 do
+  local ip="192.168.1."..(i+1)
+  devices[i]=record(i,ip)
+  appliances[ip]={did=i,model="zhimi.fan.za5"}
+ end
+ local result=run{bundle={device_id="setup",devices=devices,expires_in=120},appliances=appliances}
+ counters(result,0,21,0)
+ assert(#result.created==21 and result.auth_calls==21)
 end)
 test("duplicate DID is imported once and accounted as a failure",function()
  counters(run{bundle={device_id="setup",devices={record(),record()},expires_in=120}},0,1,1)

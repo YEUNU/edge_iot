@@ -64,6 +64,38 @@ class ScenarioTests(unittest.TestCase):
             with self.assertRaises(ValueError):c.command(bad)
         self.assertEqual(len(c.device.sent),sent)
 
+    def test_mode_selection_with_power_on_uses_the_same_supported_combination(self):
+        c = Controller(self.rich_config(), factory=FakeDevice)
+        c.command({'target_temperature': 26})
+        c.command({'fan': 'high'})
+        c.command({'power': False})
+        result = c.command({'power': True, 'mode': 'dry'})
+        self.assertEqual(result['state'], dict(power=True, mode='dry', fan='auto', target_temperature=25))
+        self.assertEqual(json.loads(c.device.sent[-1]['201'])['key1'], '0dryauto25')
+        sent = len(c.device.sent)
+        before = copy.deepcopy((c.state, c.settings))
+        # Explicit settings still require their exact installed frame. Mode
+        # selection must never silently replace a requested fan or temperature.
+        for changes in ({'power': True, 'mode': 'heat', 'target_temperature': 25},
+                        {'power': True, 'mode': 'heat', 'fan': 'auto'}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                c.command(changes)
+        self.assertEqual(len(c.device.sent), sent)
+        self.assertEqual((c.state, c.settings), before)
+
+    def test_invalid_profile_activation_preserves_previous_model_and_state(self):
+        cfg = self.rich_config()
+        cfg['profiles'] = {'456': {'default_state': dict(cfg['default_state'], target_temperature=19)}}
+        c = Controller(cfg, factory=FakeDevice)
+        c.command({'power': True})
+        before = copy.deepcopy((c.state, c.settings, c.profile_id))
+        sent = len(c.device.sent)
+        with self.assertRaisesRegex(ValueError, 'default_state must have a mapped code'):
+            c.status('456')
+        self.assertEqual((c.state, c.settings, c.profile_id), before)
+        self.assertEqual(len(c.device.sent), sent)
+        self.assertEqual(c.command({'power': False}, '123')['state'], {'power': False})
+
     def test_power_off_preserves_next_power_on_settings(self):
         c=Controller(self.rich_config(),factory=FakeDevice)
         c.command({'mode':'heat'})
