@@ -138,6 +138,16 @@ class IntegrationSettingsTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             configure.planned_updates(self.root)
 
+    def test_support_url_is_serialized_without_regex_escape_processing(self):
+        self.config["support_url"] = r"https://example.org/support\guide"
+        self.write("integration.json", json.dumps(self.config))
+        self.apply()
+        for driver in configure.DRIVERS:
+            lines = (self.root / driver / "config.yml").read_text().splitlines()
+            value = next(line.partition(": ")[2] for line in lines
+                         if line.startswith("vendorSupportInformation:"))
+            self.assertEqual(json.loads(value), self.config["support_url"])
+
 
 if __name__ == "__main__":
     unittest.main()

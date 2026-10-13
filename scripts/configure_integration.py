@@ -170,7 +170,7 @@ def planned_updates(root=ROOT, namespace=None):
         for field, value in (("packageKey", config["package_keys"][driver]),
                              ("vendorSupportInformation", config["support_url"])):
             config_text, count = re.subn(
-                rf"^{field}:.*$", field + ": " + json.dumps(value), config_text,
+                rf"^{field}:.*$", lambda _match: field + ": " + json.dumps(value), config_text,
                 flags=re.MULTILINE)
             if count != 1:
                 raise ValueError(f"{driver}/config.yml must define exactly one {field}")
