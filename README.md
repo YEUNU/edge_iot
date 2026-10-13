@@ -78,6 +78,22 @@ IR은 단방향이므로 앱 상태는 마지막 송신 기준입니다. 재시�
 정상 복구로 보지 않습니다. [알림 조건](smartthings/ALERTS.md)과
 [API·인증 계약](smartthings/NOTIFICATIONS_API.md)을 참고하세요.
 
+## 배포 설정
+
+공개 배포 식별자(namespace, 두 드라이버의 package key, 지원 URL)는
+[`integration.json`](integration.json)에서 관리합니다. 변경 후 아래 명령으로
+Lua·Python 설정과 SmartThings 프로필·화면 참조를 함께 갱신합니다.
+
+```sh
+python3 scripts/configure_integration.py
+python3 scripts/configure_integration.py --check
+```
+
+다른 계정으로 배포할 때는 `python3 scripts/configure_integration.py --namespace YOUR_NAMESPACE`를
+실행합니다. namespace가 바뀐 프로필의 이전 `vid`는 제거되므로 Xiaomi·Tuya UI를 해당
+계정에 등록한 뒤 드라이버를 패키징해야 합니다. 기존 설치를 갱신할 때는 namespace와
+package key를 유지합니다. IP·허브/기기 ID·토큰은 실행 시 입력하거나 비공개 설정에서 읽습니다.
+
 ## 개발과 검증
 
 SmartThings CLI, Lua 5.3 이상의 `luasocket`·`dkjson`, Python 환경이 필요합니다.
@@ -112,7 +128,7 @@ python3 scripts/benchmark_tuya.py
 
 ## 배포
 
-먼저 두 패키지를 로컬에서 빌드합니다.
+먼저 `python3 scripts/configure_integration.py --check`로 배포 설정을 확인한 뒤 두 패키지를 로컬에서 빌드합니다.
 
 ```sh
 smartthings edge:drivers:package --build-only /tmp/xiaomi-miio.zip xiaomi-miio

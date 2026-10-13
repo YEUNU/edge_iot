@@ -2,3 +2,4 @@
 !Dockerfile
 !notifier.py
 !healthcheck.py
+!integration_settings.py

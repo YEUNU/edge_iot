@@ -199,14 +199,82 @@ def cloud_devices(connector, regions):
     return normalize(records)
 
 
+def enrollment_capability(device):
+    """Read the enrollment contract advertised by a hub-connected Edge device."""
+    if not isinstance(device, dict) or device.get('type') != 'LAN':
+        return None
+    lan = device.get('lan')
+    if not isinstance(lan, dict) or any(
+            not isinstance(lan.get(key), str) or not lan[key]
+            for key in ('hubId', 'driverId')):
+        return None
+    components = device.get('components')
+    if not isinstance(components, list):
+        return None
+    capabilities = set()
+    for component in components:
+        if not isinstance(component, dict) or component.get('id') != 'main':
+            continue
+        entries = component.get('capabilities')
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            identifier = entry.get('id') if isinstance(entry, dict) else None
+            if isinstance(identifier, str):
+                namespace, separator, name = identifier.partition('.')
+                if namespace and separator and name == 'xiaomiLocalLink':
+                    capabilities.add(identifier)
+    return next(iter(capabilities)) if len(capabilities) == 1 else None
+
+
+def select_setup_device(device_id=None):
+    if not device_id:
+        devices = st_json('devices')
+        if isinstance(devices, dict):
+            devices = devices.get('items')
+        if not isinstance(devices, list):
+            raise RuntimeError('SmartThings device list did not contain device metadata')
+        candidates = {
+            device['deviceId'] for device in devices
+            if enrollment_capability(device)
+            and isinstance(device.get('deviceId'), str) and device['deviceId']
+        }
+        if len(candidates) != 1:
+            raise RuntimeError('Add one Xiaomi setup device in SmartThings, or specify --setup-device')
+        device_id = next(iter(candidates))
+    # Re-read the selected device: model/name fields are not reliable in the
+    # REST list, and a manual ID must meet the same contract as auto-discovery.
+    setup = st_json('devices', device_id)
+    if not enrollment_capability(setup) or setup.get('deviceId') != device_id:
+        raise RuntimeError('Selected device must be a hub-connected Xiaomi enrollment device')
+    return setup
+
+
+def setup_hub_address(setup):
+    hub_id = setup['lan']['hubId']
+    hub = st_json('devices', hub_id)
+    try:
+        if hub.get('type') != 'HUB' or hub.get('deviceId') != hub_id:
+            raise ValueError()
+        address = ipaddress.IPv4Address(hub['hub']['hubData']['localIP'])
+        if not address.is_private or address.is_loopback or address.is_unspecified or address.is_multicast:
+            raise ValueError()
+    except (AttributeError, KeyError, TypeError, ValueError):
+        raise RuntimeError('Selected setup device has no usable LAN hub address') from None
+    return str(address)
+
+
 def dispatch(transfer, setup, address, port):
-    command = {'component':'main','capability':'earthpanel38939.xiaomiLocalLink',
+    capability = enrollment_capability(setup)
+    if not capability:
+        raise RuntimeError('Selected device no longer advertises Xiaomi enrollment')
+    command = {'component':'main','capability':capability,
                'command':'enroll','arguments':[address,port,transfer.key.hex()]}
     fd, path = tempfile.mkstemp(prefix='xiaomi-enroll-',suffix='.json')
     try:
         with os.fdopen(fd, 'w') as f:
             json.dump(command, f)
-        proc = subprocess.run(['smartthings','devices:commands',setup,'-i',path],capture_output=True,text=True,timeout=45)
+        proc = subprocess.run(['smartthings','devices:commands',setup['deviceId'],'-i',path],capture_output=True,text=True,timeout=45)
         if proc.returncode:
             raise RuntimeError('SmartThings enrollment command failed')
     finally:
@@ -218,14 +286,8 @@ def main():
     parser.add_argument('--region', choices=['all','cn','de','us','ru','tw','sg','in','i2'], default='all')
     parser.add_argument('--setup-device')
     args = parser.parse_args()
-    devices = st_json('devices')
-    setups = [d for d in devices if d.get('deviceModel') == 'xiaomi.setup'
-              and d.get('lan',{}).get('driverId') == '730694c3-9d37-4f74-a1d3-8abed8021551'
-              and (not args.setup_device or d['deviceId'] == args.setup_device)]
-    if len(setups) != 1:
-        raise RuntimeError('Add one Xiaomi setup device in SmartThings, or specify --setup-device')
-    setup = setups[0]
-    hub = st_json('devices', setup['lan']['hubId'])['hub']['hubData']['localIP']
+    setup = select_setup_device(args.setup_device)
+    hub = setup_hub_address(setup)
     probe = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     try:
         probe.connect((hub, 54321))
@@ -246,7 +308,7 @@ def main():
     transfer = Transfer(address, hub, setup['deviceId'], records)
     try:
         port = transfer.start()
-        dispatch(transfer, setup['deviceId'], address, port)
+        dispatch(transfer, setup, address, port)
         print('HUB_IMPORT_PENDING', flush=True)
         if not transfer.done.wait(max(0, transfer.deadline-time.monotonic())):
             raise RuntimeError('Hub did not confirm import before expiry')

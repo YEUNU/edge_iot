@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-NS = 'earthpanel38939.'
+NS = json.loads((ROOT / 'integration.json').read_text())['namespace'] + '.'
 
 
 def load(name):

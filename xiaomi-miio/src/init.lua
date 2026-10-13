@@ -32,7 +32,7 @@ for _, m in ipairs(models) do
   handler_to_def[m.handler] = m
 end
 
-local NS = "earthpanel38939"
+local NS = require("integration_settings").namespace
 local function safe_cap(id)
   local ok, c = pcall(function() return capabilities[id] end)
   if ok and c then return c end
@@ -167,7 +167,7 @@ local function device_init(driver, device)
   discovery.restore(driver, device)
   if device.model == "xiaomi.setup" then
     device:try_update_metadata({profile="xiaomi-setup.v1"})
-    local cap = safe_cap("earthpanel38939.xiaomiLocalLink")
+    local cap = safe_cap(NS .. ".xiaomiLocalLink")
     if cap then device:emit_event(cap.status(device:get_field("enrollment_status") or "최초 샤오미 로그인이 필요합니다")) end
   end
   device.log.info("init " .. device.device_network_id)
@@ -294,7 +294,7 @@ local capability_handlers = {
   },
 }
 
-local cap_latestAlert = safe_cap("earthpanel38939.latestAlert")
+local cap_latestAlert = safe_cap(NS .. ".latestAlert")
 if cap_latestAlert then
   capability_handlers[cap_latestAlert.ID] = { sendTest = alerts.send_test }
 end
@@ -366,7 +366,7 @@ discovery.on_connected = function(driver, device)
   device_init(driver, device)
 end
 
-local cap_xiaomiLink = safe_cap("earthpanel38939.xiaomiLocalLink")
+local cap_xiaomiLink = safe_cap(NS .. ".xiaomiLocalLink")
 if cap_xiaomiLink then
   capability_handlers[cap_xiaomiLink.ID] = {
     enroll = function(driver, device, command)

@@ -1,10 +1,11 @@
 """Generate per-profile UI configuration without changing capability contracts."""
 import json
 from pathlib import Path
+from integration_settings import NAMESPACE
 import re
 
 ROOT = Path(__file__).resolve().parents[2]
-NS = 'earthpanel38939.'
+NS = NAMESPACE + '.'
 
 def entry(cap):
     return {'component': 'main', 'capability': cap, 'version': 1, 'values': [], 'patch': []}

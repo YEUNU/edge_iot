@@ -5,6 +5,7 @@ package.path = table.concat({
   package.path,
 }, ";")
 
+local NS = require("integration_settings").namespace
 local passed = 0
 local function test(name, fn)
   local ok, err = pcall(fn)
@@ -487,7 +488,7 @@ test("air purifier favorite optimistic UI updates level power and mode", functio
   local device, emitted = optimistic_fixture("airp", expected, { expected })
   command_handlers.set_favorite_level(nil, device, { args = { level = 7 } })
   assert(#emitted == 3)
-  assert(emitted[1].capability == "earthpanel38939.airPurifierFavoriteLevel")
+  assert(emitted[1].capability == NS .. ".airPurifierFavoriteLevel")
   assert(emitted[2].capability == "switch" and emitted[2].method == "on")
   assert(emitted[3].capability == "mode" and emitted[3].args[1] == "즐겨찾기")
 end)
@@ -580,8 +581,8 @@ test("refresh applies successful MiOT properties", function()
   assert(state.values.power == true)
 end)
 
-local FAULT_CAP = "earthpanel38939.deviceFault"
-local FILTER_CAP = "earthpanel38939.filterAlert"
+local FAULT_CAP = NS .. ".deviceFault"
+local FILTER_CAP = NS .. ".filterAlert"
 local function alert_device(cache, supported)
   cache = cache or {}
   local emitted = {}
@@ -798,7 +799,7 @@ test("different appliances record distinct history without routine triggers", fu
   assert(emitted[2].args[1]:match("공청기") and emitted[2].args[1]:match("필터"))
   assert(emitted[3].args[1]:match("모터"))
   for i = 1, 3 do
-    assert(emitted[i].capability == "earthpanel38939.latestAlert")
+    assert(emitted[i].capability == NS .. ".latestAlert")
     assert(emitted[i].args[2].state_change == true)
   end
 end)
@@ -916,7 +917,7 @@ test("purifier keeps its saved favorite setting while powered off", function()
   local emitted = {}
   local device = { emit_event = function(_, event) emitted[event.capability] = event end }
   airp.apply_state(device, {power = false, ["favorite-level"] = 14})
-  assert(emitted["earthpanel38939.airPurifierFavoriteLevel"].args[1] == 14)
+  assert(emitted[NS .. ".airPurifierFavoriteLevel"].args[1] == 14)
 end)
 
 test("compact rotation mirrors confirmed hardware state", function()
@@ -924,9 +925,9 @@ test("compact rotation mirrors confirmed hardware state", function()
   local device = { emit_event = function(_, event) emitted[event.capability] = event end }
   fan.apply_state(device, {swing = true})
   assert(emitted.fanOscillationMode.args[1] == "horizontal")
-  assert(emitted["earthpanel38939.fanOscillationControl"].args[1] == "horizontal")
+  assert(emitted[NS .. ".fanOscillationControl"].args[1] == "horizontal")
   fan.apply_state(device, {swing = false})
-  assert(emitted["earthpanel38939.fanOscillationControl"].args[1] == "fixed")
+  assert(emitted[NS .. ".fanOscillationControl"].args[1] == "fixed")
 end)
 
 test("compact humidity mirrors the sensor without replacing standard history", function()
@@ -934,12 +935,12 @@ test("compact humidity mirrors the sensor without replacing standard history", f
   local device = { emit_event = function(_, event) emitted[event.capability] = event end }
   dehumidifier.apply_state(device, {humidity = 57})
   assert(emitted.relativeHumidityMeasurement.args[1] == 57)
-  assert(emitted["earthpanel38939.currentHumidity"].args[1] == 57)
+  assert(emitted[NS .. ".currentHumidity"].args[1] == 57)
   emitted = {}
-  device.supports_capability = function(_, cap) return cap.ID ~= "earthpanel38939.currentHumidity" end
+  device.supports_capability = function(_, cap) return cap.ID ~= NS .. ".currentHumidity" end
   dehumidifier.apply_state(device, {humidity = 58})
   assert(emitted.relativeHumidityMeasurement.args[1] == 58)
-  assert(not emitted["earthpanel38939.currentHumidity"], "old profiles must not receive unsupported events")
+  assert(not emitted[NS .. ".currentHumidity"], "old profiles must not receive unsupported events")
 end)
 
 test("humidity refuses drying mode or an unreadable mode without a write", function()
@@ -1080,7 +1081,7 @@ test("dehumidifier timer command uses its twelve hour capability", function()
   handler.timer_capability = dehumidifier.timer_capability
   handler.set_power_off_timer = function() return true, nil, { ["timer-enabled"] = true } end
   command_handlers.set_power_off_timer(nil, device, {args = {minutes = 720}})
-  assert(emitted[1].capability == "earthpanel38939.dehumidifierTimer")
+  assert(emitted[1].capability == NS .. ".dehumidifierTimer")
   assert(emitted[1].args[1].value == 720)
 end)
 
@@ -1496,7 +1497,7 @@ test("a queued switch command does not suppress filter reset completion on the s
   local fields = {handler_module = handler, client = client}
   local device = {label = "dehumidifier", get_field = function(_, key) return fields[key] end,
     online = function() end, offline = function() end, emit_event = function(_, event)
-      if event.capability == "earthpanel38939.filterMaintenance" then maintenance[#maintenance + 1] = event.args[1] end
+      if event.capability == NS .. ".filterMaintenance" then maintenance[#maintenance + 1] = event.args[1] end
     end}
   cosock.spawn = function(fn) worker = coroutine.create(fn); assert(coroutine.resume(worker)) end
   command_handlers.reset_filter(nil, device)
@@ -1525,7 +1526,7 @@ test("unchanged Xiaomi control values do not repeat SDK publications", function(
     for _ = 1, 100 do handler.apply_state(device, values) end
     assert(#emitted == first, "only the initial control snapshot should be published")
     handler.apply_state(device, {lock=false})
-    assert(#emitted == first + 1 and cache["earthpanel38939.childLock.lock"] == "unlocked")
+    assert(#emitted == first + 1 and cache[NS .. ".childLock.lock"] == "unlocked")
   end
 end)
 
@@ -1545,7 +1546,7 @@ test("Xiaomi sensor and history publication cadence remains unchanged", function
 end)
 
 test("Xiaomi control dedup respects exposed profiles and SDK restored values", function()
-  local cap = "earthpanel38939.childLock"
+  local cap = NS .. ".childLock"
   for _, handler in ipairs({fan, airp, dehumidifier}) do
     local supported = {}
     local device, emitted, cache = alert_device(nil, supported)

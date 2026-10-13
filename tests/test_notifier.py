@@ -1,4 +1,5 @@
 import importlib.util
+import sys
 import http.client
 import io
 import json
@@ -7,6 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "notification-service"))
 spec = importlib.util.spec_from_file_location("notifier", Path(__file__).resolve().parents[1] / "notification-service/notifier.py")
 n = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(n)
@@ -16,7 +18,7 @@ CONFIG = {"locationId": "home", "devices": [DEVICE]}
 
 
 def status(value="waterFull", stamp="2026-09-11T11:00:00Z"):
-    return {"components": {"main": {"earthpanel38939.deviceFault": {
+    return {"components": {"main": {n.capability("deviceFault"): {
         "fault": {"value": value, "timestamp": stamp}}}}}
 
 
@@ -428,7 +430,7 @@ class MonitorTests(unittest.TestCase):
         device = dict(DEVICE, id="purifier", model="zhimi.airp.cpa4")
         self.monitor.config = {"locationId": "home", "devices": [device]}
         self.client.status = status("motorStuck")
-        self.client.status["components"]["main"]["earthpanel38939.filterAlert"] = {
+        self.client.status["components"]["main"][n.capability("filterAlert")] = {
             "status": {"value": "replace", "timestamp": "2026-09-11T11:00:00Z"}}
         self.monitor.poll()
         self.assertEqual(len(self.client.sent), 2)
@@ -438,11 +440,11 @@ class MonitorTests(unittest.TestCase):
         self.monitor.config = {"locationId": "home", "devices": [device]}
         for minute in range(3):
             self.client.status = status("noFault", f"2026-09-11T11:0{minute}:00Z")
-            self.client.status["components"]["main"]["earthpanel38939.filterAlert"] = {
+            self.client.status["components"]["main"][n.capability("filterAlert")] = {
                 "status": {"value": "replace", "timestamp": f"2026-09-11T11:0{minute}:00Z"}}
             self.monitor.poll()
         self.assertEqual(len(self.client.sent), 1)
-        reading = self.client.status["components"]["main"]["earthpanel38939.filterAlert"]["status"]
+        reading = self.client.status["components"]["main"][n.capability("filterAlert")]["status"]
         reading.update(value="normal")
         self.monitor.poll()
         self.assertEqual(self.monitor.state["purifier:filter"]["notified"], ["replace"])
@@ -461,7 +463,7 @@ class MonitorTests(unittest.TestCase):
             with self.subTest(filter=malformed), tempfile.TemporaryDirectory() as tmp:
                 client = FakeClient()
                 client.status = status("motorStuck")
-                client.status["components"]["main"]["earthpanel38939.filterAlert"] = malformed
+                client.status["components"]["main"][n.capability("filterAlert")] = malformed
                 monitor = n.Monitor({"locationId": "home", "devices": [device]},
                                     Path(tmp) / "state.json", client, lambda: self.now)
                 self.assertEqual(monitor.poll(), 0)
@@ -474,14 +476,14 @@ class MonitorTests(unittest.TestCase):
     def test_app_test_button_ignores_history_then_sends_once(self):
         self.client.status = status("noFault")
         self.monitor.config = dict(CONFIG, testDeviceId="endpoint")
-        request = {"components": {"main": {"earthpanel38939.latestAlert": {"message": {
+        request = {"components": {"main": {n.capability("latestAlert"): {"message": {
             "value": "직접 알림 테스트 요청입니다. 실제 기기 고장이 아닙니다.",
             "timestamp": "2026-09-11T11:00:00Z"}}}}}
         original = self.client.api
         self.client.api = lambda path: request if "/endpoint/" in path else original(path)
         self.monitor.poll()
         self.assertEqual(self.client.sent, [])
-        request["components"]["main"]["earthpanel38939.latestAlert"]["message"]["timestamp"] = "2026-09-11T11:01:00Z"
+        request["components"]["main"][n.capability("latestAlert")]["message"]["timestamp"] = "2026-09-11T11:01:00Z"
         self.monitor.poll()
         self.monitor.poll()
         self.assertEqual(len(self.client.sent), 1)
@@ -494,8 +496,8 @@ class MonitorTests(unittest.TestCase):
         original = self.client.api
         invalids = [None, [], {"components": None}, {"components": []},
                     {"components": {"main": None}}, {"components": {"main": []}},
-                    {"components": {"main": {"earthpanel38939.deviceFault": None}}},
-                    {"components": {"main": {"earthpanel38939.deviceFault": {"fault": []}}}}]
+                    {"components": {"main": {n.capability("deviceFault"): None}}},
+                    {"components": {"main": {n.capability("deviceFault"): {"fault": []}}}}]
         for invalid in invalids:
             with self.subTest(invalid=invalid):
                 self.client.api = lambda path: invalid if "/dehumidifier/status" in path else original(path)
@@ -561,7 +563,7 @@ class MonitorTests(unittest.TestCase):
     def test_test_endpoint_error_does_not_block_physical_device(self):
         self.monitor.config = dict(CONFIG, testDeviceId="endpoint")
         original = self.client.api
-        for invalid in [None, {"components": None}, {"components": {"main": {"earthpanel38939.latestAlert": []}}}]:
+        for invalid in [None, {"components": None}, {"components": {"main": {n.capability("latestAlert"): []}}}]:
             with self.subTest(invalid=invalid):
                 self.client.api = lambda path: invalid if "/endpoint/" in path else original(path)
                 self.assertEqual(self.monitor.poll(), 1)
@@ -577,7 +579,7 @@ class MonitorTests(unittest.TestCase):
         config = dict(CONFIG, testDeviceId="endpoint")
         monitor = n.Monitor(config, self.path, self.client, lambda: self.now)
         original = self.client.api
-        request = {"components": {"main": {"earthpanel38939.latestAlert": {"message": {
+        request = {"components": {"main": {n.capability("latestAlert"): {"message": {
             "value": "직접 알림 테스트 요청입니다. 실제 기기 고장이 아닙니다.", "timestamp": "\ud800"}}}}}
         self.client.api = lambda path: request if "/endpoint/" in path else original(path)
         self.assertEqual(monitor.poll(), 1)
@@ -591,7 +593,7 @@ class MonitorTests(unittest.TestCase):
         self.client.status = status("noFault")
         original = self.client.api
         reading = {"value": "historical", "timestamp": "2026-09-11T11:00:00Z"}
-        request = {"components": {"main": {"earthpanel38939.latestAlert": {"message": reading}}}}
+        request = {"components": {"main": {n.capability("latestAlert"): {"message": reading}}}}
         self.client.api = lambda path: request if "/endpoint/" in path else original(path)
         monitor.poll()
         reading.update(value="직접 알림 테스트 요청입니다. 실제 기기 고장이 아닙니다.", timestamp="2026-09-11T11:01:00Z")
@@ -611,7 +613,7 @@ class MonitorTests(unittest.TestCase):
         self.client.status = status("noFault")
         original = self.client.api
         reading = {"value": "historical", "timestamp": "2026-09-11T11:00:00Z"}
-        request = {"components": {"main": {"earthpanel38939.latestAlert": {"message": reading}}}}
+        request = {"components": {"main": {n.capability("latestAlert"): {"message": reading}}}}
         self.client.api = lambda path: request if "/endpoint/" in path else original(path)
         monitor.poll()
         reading.update(value="직접 알림 테스트 요청입니다. 실제 기기 고장이 아닙니다.", timestamp="2026-09-11T11:01:00Z")
@@ -657,7 +659,7 @@ class MonitorTests(unittest.TestCase):
     def test_test_endpoint_state_write_failure_does_not_block_other_device(self):
         self.monitor.config = dict(CONFIG, testDeviceId="endpoint")
         original = self.client.api
-        request = {"components": {"main": {"earthpanel38939.latestAlert": {"message": {
+        request = {"components": {"main": {n.capability("latestAlert"): {"message": {
             "value": "historical", "timestamp": "2026-09-11T11:00:00Z"}}}}}
         self.client.api = lambda path: request if "/endpoint/" in path else original(path)
         with patch.object(n, "save_json", side_effect=OSError("disk full")):
@@ -668,11 +670,11 @@ class MonitorTests(unittest.TestCase):
     def test_test_endpoint_push_backoff_success_and_cancel(self):
         self.monitor.config = dict(CONFIG, testDeviceId="endpoint")
         original = self.client.api
-        request = {"components": {"main": {"earthpanel38939.latestAlert": {"message": {
+        request = {"components": {"main": {n.capability("latestAlert"): {"message": {
             "value": "historical", "timestamp": "2026-09-11T11:00:00Z"}}}}}
         self.client.api = lambda path: request if "/endpoint/" in path else original(path)
         self.monitor.poll()
-        reading = request["components"]["main"]["earthpanel38939.latestAlert"]["message"]
+        reading = request["components"]["main"][n.capability("latestAlert")]["message"]
         reading.update(value="직접 알림 테스트 요청입니다. 실제 기기 고장이 아닙니다.", timestamp="2026-09-11T11:01:00Z")
         self.client.fail = True
         self.monitor.poll()

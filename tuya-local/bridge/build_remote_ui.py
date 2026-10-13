@@ -1,8 +1,9 @@
 """Native button-remote view; controls never pretend to know absolute AC state."""
 import json
 from pathlib import Path
+from integration_settings import NAMESPACE
 ROOT=Path(__file__).resolve().parents[1]
-NS='earthpanel38939.'
+NS=NAMESPACE+'.'
 
 def write(path, value):
     path.write_text(json.dumps(value,ensure_ascii=False,indent=2)+'\n')

@@ -17,6 +17,8 @@ import tempfile
 import time
 import ipaddress
 import uuid
+from integration_settings import capability
+
 from pairing import PairingStore
 
 
@@ -36,7 +38,7 @@ def dispatch_enrollment(args):
         tmp=None
         try:
             store.publish(record)
-            command={'component':'main','capability':'earthpanel38939.acLocalLink','command':'enroll','arguments':[args.address,args.port,ticket]}
+            command={'component':'main','capability':capability("acLocalLink"),'command':'enroll','arguments':[args.address,args.port,ticket]}
             fd,tmp=tempfile.mkstemp(prefix='ir-enroll-',suffix='.json')
             with os.fdopen(fd,'w') as out:json.dump(command,out)
             result=subprocess.run(['smartthings','devices:commands',args.device,'-i',tmp],capture_output=True,text=True)

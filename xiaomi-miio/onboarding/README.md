@@ -24,6 +24,12 @@ xiaomi-miio/onboarding/.venv/bin/python xiaomi-miio/onboarding/onboard.py
 조회 범위를 좁힐 수 있습니다. 설정 항목이 여러 개면 `--setup-device <기기 ID>`를 지정합니다.
 사용자에게 토큰·IP를 복사해 입력하도록 요구하지 않습니다.
 
+설정 항목은 SmartThings API가 반환한 `main` 컴포넌트의 `xiaomiLocalLink` capability와
+LAN 허브 연결 정보로 찾습니다. 선택한 기기 상세 정보를 다시 확인하며, `--setup-device`로
+직접 지정해도 같은 검증을 거칩니다. 기기 이름·모델·특정 드라이버 ID로 판단하지 않습니다.
+명령에는 선택한 기기가 제공하는 capability 전체 ID를 사용하므로 다른 계정의 namespace로
+재패키징한 드라이버도 사용할 수 있습니다. 허브 주소 역시 선택한 기기의 연결 정보에서 조회합니다.
+
 ## 전송과 저장
 
 - 샤오미 계정 비밀번호는 받지 않습니다. 계정 세션과 기기 토큰은 도우미 메모리에만
@@ -60,5 +66,6 @@ lua tests/test_xiaomi_discovery.lua .
 ```
 
 전송 codec 변조 거부, 만료, 재사용 차단, 지원 기기 필터, 실제 Python HTTP 서버 ↔
-Lua 암호화 전송·등록 로직을 검증합니다. 실제 계정 로그인과 허브 등록은
+Lua 암호화 전송·등록 로직, API 메타데이터 기반 설정 항목 선택과 namespace별 명령 생성을
+검증합니다. 실제 계정 로그인과 허브 등록은
 [로컬 검색 안내](../../smartthings/LOCAL_DISCOVERY.md)의 범위를 기준으로 따로 확인합니다.

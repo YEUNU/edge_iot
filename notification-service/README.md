@@ -59,7 +59,8 @@ refresh token을 복사하지 않습니다. 서비스는 공식 CLI와 같은 OA
 이관 후 새로 로그인한 CLI 세션은 삭제하지 않습니다.
 `.dockerignore`는 실행 코드와 Dockerfile만 빌드 컨텍스트에 허용합니다.
 
-코드를 갱신할 때는 서비스를 멈춘 뒤 위 설치 명령을 다시 실행합니다. 설치된
+namespace는 저장소의 [배포 설정](../README.md#배포-설정)에서 생성하며, 설치 시
+`integration_settings.py`가 실행 코드와 함께 복사됩니다. 코드를 갱신할 때는 서비스를 멈춘 뒤 위 설치 명령을 다시 실행합니다. 설치된
 배포 디렉터리의 코드 자체를 수정한 경우에는 `docker compose up -d --build`로
 다시 빌드할 수 있습니다.
 

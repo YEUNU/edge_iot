@@ -1,6 +1,7 @@
 """Generate bounded native controls while preserving standard automation capabilities."""
 import gzip,json,re
 from pathlib import Path
+from integration_settings import NAMESPACE
 root=Path(__file__).resolve().parents[1]
 profiles=json.loads((root/'bridge/catalog/index.json').read_text())['profiles']
 ranges={};by_id={}
@@ -27,7 +28,7 @@ for slug,(lo,hi) in ranges.items():
  translation={'tag':'ko','label':'설정 온도','attributes':{},'commands':{}}
  (root/'translations'/(slug+'.ko.json')).write_text(json.dumps(translation,ensure_ascii=False,indent=2)+'\n')
  name='tuya-local-ac.'+slug+'.v1'
- text=base.replace('name: tuya-local-ac.v1','name: '+name).replace('      - id: thermostatCoolingSetpoint','      - id: earthpanel38939.'+slug+'\n        version: 1\n      - id: thermostatCoolingSetpoint')
+ text=base.replace('name: tuya-local-ac.v1','name: '+name).replace('      - id: thermostatCoolingSetpoint','      - id: '+NAMESPACE+'.'+slug+'\n        version: 1\n      - id: thermostatCoolingSetpoint')
  profile_path=root/'profiles'/('tuya-local-'+slug+'.yml')
  if profile_path.exists():
   existing=profile_path.read_text()
@@ -35,7 +36,7 @@ for slug,(lo,hi) in ranges.items():
  profile_path.write_text(text)
  cfg=json.loads(json.dumps(basecfg))
  for row in cfg['detailView']:
-  if row['capability']=='thermostatCoolingSetpoint':row['capability']='earthpanel38939.'+slug;row['patch']=[]
+  if row['capability']=='thermostatCoolingSetpoint':row['capability']=NAMESPACE+'.'+slug;row['patch']=[]
  (root/'device-configs'/('tuya-local-'+slug+'.json')).write_text(json.dumps(cfg,ensure_ascii=False,indent=2)+'\n')
 lines=['return {','  by_id={']
 for id,slug in by_id.items():lines.append('    ["'+id+'"]="'+slug+'",')

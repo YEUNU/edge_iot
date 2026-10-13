@@ -6,6 +6,7 @@ import importlib.util
 import json
 from pathlib import Path
 import statistics
+import sys
 import time
 
 
@@ -17,6 +18,7 @@ def main():
     if args.iterations<=0 or args.repeats<=0:
         parser.error('iterations and repeats must be positive')
     root=Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(root/'notification-service'))
     spec=importlib.util.spec_from_file_location('notifier_benchmark',root/'notification-service/notifier.py')
     notifier=importlib.util.module_from_spec(spec)
     spec.loader.exec_module(notifier)

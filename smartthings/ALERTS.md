@@ -19,7 +19,7 @@ Mac의 Docker 서비스가 실제 기기 이름으로 SmartThings 푸시를 보�
 | 공기청정기 | `filterAlert.status = replace` | 필터 수명이 10% 이하예요. 교체할 필터를 준비해 주세요. |
 | 공기청정기 | `deviceFault.fault = motorStuck` 또는 `sensorLost` | 모터 고장 또는 센서 연결 오류 안내 |
 
-위 custom capability의 전체 ID에는 `earthpanel38939.` 접두사가 붙습니다.
+위 custom capability의 전체 ID에는 [`integration.json`](../integration.json)의 namespace와 `.` 접두사가 붙습니다.
 모델별 capability·속성·정확한 푸시 문구는
 [notifier.py의 `CONDITIONS`](../notification-service/notifier.py)에서 함께 정의합니다.
 설치 시 모델 확인과 조회 완전성 검사도 같은 정의를 사용합니다.

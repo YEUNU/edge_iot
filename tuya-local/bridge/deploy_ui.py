@@ -2,11 +2,11 @@
 """Publish native UI definitions to the authenticated SmartThings account."""
 import json
 from pathlib import Path
+from integration_settings import NAMESPACE
 import subprocess
 import sys
 import time
 ROOT=Path(__file__).resolve().parents[1]
-NAMESPACE='earthpanel38939'
 
 def normalized_presentation(value):
     if isinstance(value,list):

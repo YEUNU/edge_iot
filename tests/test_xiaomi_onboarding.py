@@ -9,15 +9,118 @@ from types import SimpleNamespace
 import unittest
 import urllib.error
 import urllib.request
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'xiaomi-miio/onboarding'))
 from transfer import Transfer, encode, decode
-from onboard import cloud_devices, normalize
+from onboard import (cloud_devices, dispatch, enrollment_capability, normalize,
+                     select_setup_device, setup_hub_address)
 
 
 class OnboardingTests(unittest.TestCase):
+    @staticmethod
+    def setup_device(namespace='example', **overrides):
+        # REST device listings expose profile capabilities, not deviceModel.
+        device = {
+            'deviceId': 'setup-fixture', 'name': 'xiaomi-setup.v1', 'type': 'LAN',
+            'profile': {'id': 'profile-fixture'},
+            'lan': {'hubId': 'hub-fixture', 'driverId': 'repackaged-driver-fixture'},
+            'components': [{'id': 'main', 'capabilities': [
+                {'id': 'refresh', 'version': 1},
+                {'id': namespace + '.xiaomiLocalLink', 'version': 1},
+            ]}],
+        }
+        device.update(overrides)
+        return device
+
+    def test_setup_selection_uses_capabilities_with_any_driver_or_namespace(self):
+        for namespace in ['example', 'anotherPublisher']:
+            setup = self.setup_device(namespace)
+            for listing in [[setup], {'items': [setup], '_links': {}}]:
+                with self.subTest(namespace=namespace, listing_type=type(listing).__name__):
+                    with patch('onboard.st_json', side_effect=[listing, setup]) as api:
+                        self.assertEqual(select_setup_device(), setup)
+                    self.assertEqual(api.call_args_list, [call('devices'), call('devices', 'setup-fixture')])
+                    self.assertEqual(enrollment_capability(setup), namespace + '.xiaomiLocalLink')
+
+    def test_explicit_setup_selection_validates_the_device(self):
+        setup = self.setup_device()
+        with patch('onboard.st_json', return_value=setup) as api:
+            self.assertEqual(select_setup_device('setup-fixture'), setup)
+        api.assert_called_once_with('devices', 'setup-fixture')
+        for invalid in [self.setup_device(type='VIRTUAL'),
+                        self.setup_device(components=[]),
+                        self.setup_device(lan={'driverId': 'driver-fixture'}),
+                        self.setup_device(deviceId='other-fixture'),
+                        {'deviceId': 'setup-fixture', 'deviceModel': 'xiaomi.setup'}]:
+            with self.subTest(device=invalid), patch('onboard.st_json', return_value=invalid):
+                with self.assertRaisesRegex(RuntimeError, 'hub-connected Xiaomi enrollment'):
+                    select_setup_device('setup-fixture')
+
+    def test_setup_metadata_must_advertise_one_main_enrollment_capability(self):
+        invalid = [None, [], 'device', {}, self.setup_device(type='HUB'),
+                   self.setup_device(lan=None), self.setup_device(lan={'hubId': 'hub-fixture', 'driverId': ''}),
+                   self.setup_device(components=None),
+                   self.setup_device(components=[{'id': 'other', 'capabilities': [
+                       {'id': 'example.xiaomiLocalLink'}]}]),
+                   self.setup_device(components=[{'id': 'main', 'capabilities': [
+                       {'id': 'xiaomiLocalLink'}, {'id': '.xiaomiLocalLink'},
+                       {'id': 'example.xiaomiLocalLink.other'}, {'id': None}, None]}]),
+                   self.setup_device(components=[{'id': 'main', 'capabilities': [
+                       {'id': 'example.xiaomiLocalLink'}, {'id': 'other.xiaomiLocalLink'}]}])]
+        for device in invalid:
+            with self.subTest(device=device):
+                self.assertIsNone(enrollment_capability(device))
+
+    def test_setup_selection_rejects_ambiguous_or_stale_metadata(self):
+        setup = self.setup_device()
+        for listing in [[], [setup, self.setup_device(deviceId='second-fixture')],
+                        [None, {'deviceModel': 'xiaomi.setup'}]]:
+            with self.subTest(listing=listing), patch('onboard.st_json', return_value=listing) as api:
+                with self.assertRaisesRegex(RuntimeError, 'specify --setup-device'):
+                    select_setup_device()
+                api.assert_called_once_with('devices')
+        with patch('onboard.st_json', side_effect=[[setup], self.setup_device(components=[])]):
+            with self.assertRaisesRegex(RuntimeError, 'hub-connected Xiaomi enrollment'):
+                select_setup_device()
+        for listing in [None, {}, {'items': None}, 'devices']:
+            with self.subTest(listing=listing), patch('onboard.st_json', return_value=listing):
+                with self.assertRaisesRegex(RuntimeError, 'device metadata'):
+                    select_setup_device()
+
+    def test_hub_address_is_read_from_the_selected_devices_hub(self):
+        hub = {'deviceId': 'hub-fixture', 'type': 'HUB',
+               'hub': {'hubData': {'localIP': '192.0.2.10'}}}
+        with patch('onboard.st_json', return_value=hub) as api:
+            self.assertEqual(setup_hub_address(self.setup_device()), '192.0.2.10')
+        api.assert_called_once_with('devices', 'hub-fixture')
+        for invalid in [None, {}, {**hub, 'type': 'LAN'}, {**hub, 'deviceId': 'other-fixture'},
+                        {**hub, 'hub': {'hubData': {'localIP': '127.0.0.1'}}},
+                        {**hub, 'hub': {'hubData': {'localIP': '8.8.8.8'}}}]:
+            with self.subTest(hub=invalid), patch('onboard.st_json', return_value=invalid):
+                with self.assertRaisesRegex(RuntimeError, 'usable LAN hub address'):
+                    setup_hub_address(self.setup_device())
+
+    def test_dispatch_uses_selected_capability_and_removes_command_file(self):
+        captured = {}
+        def run(arguments, **kwargs):
+            captured['path'] = Path(arguments[-1])
+            captured['command'] = json.loads(captured['path'].read_text())
+            self.assertEqual(arguments[:3], ['smartthings', 'devices:commands', 'setup-fixture'])
+            return SimpleNamespace(returncode=0)
+        with patch('onboard.subprocess.run', side_effect=run):
+            dispatch(SimpleNamespace(key=b'A'*16), self.setup_device('anotherPublisher'), '192.0.2.20', 12345)
+        self.assertEqual(captured['command'], {
+            'component': 'main', 'capability': 'anotherPublisher.xiaomiLocalLink',
+            'command': 'enroll', 'arguments': ['192.0.2.20', 12345, (b'A'*16).hex()],
+        })
+        self.assertFalse(captured['path'].exists())
+        with patch('onboard.subprocess.run') as run:
+            with self.assertRaisesRegex(RuntimeError, 'no longer advertises'):
+                dispatch(SimpleNamespace(key=b'A'*16), self.setup_device(components=[]), '192.0.2.20', 12345)
+        run.assert_not_called()
+
     def test_codec_and_tampering(self):
         key = b'A'*16
         raw = encode(key, {'devices':[{'token':'not a household secret'}]})

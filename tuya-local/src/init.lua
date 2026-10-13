@@ -1,12 +1,13 @@
+local NS = require("integration_settings").namespace
 local Driver = require 'st.driver'
 local caps = require 'st.capabilities'
 local Client = require 'client'
 local catalog = require 'catalog'
 local temperatures = require 'temperature_profiles'
-local library = caps['earthpanel38939.acModelLibrary']
-local connection = caps['earthpanel38939.acLocalLink']
-local remote_keys = caps['earthpanel38939.acRemoteKeys']
-local mode_control = caps['earthpanel38939.acModeControl']
+local library = caps[NS .. '.acModelLibrary']
+local connection = caps[NS .. '.acLocalLink']
+local remote_keys = caps[NS .. '.acRemoteKeys']
+local mode_control = caps[NS .. '.acModeControl']
 local cached_emit
 local function connection_note(device,text)
   if device:supports_capability(connection) then
@@ -204,7 +205,7 @@ local function apply(device, result, testing, request)
     emit('switch.switch',power,function() return caps.switch.switch(power) end)
   end
   local settings=result.settings or s
-  local tempcap=caps['earthpanel38939.'..(temperatures.by_id[tostring(request.profile)] or 'acTemp18To30')]
+  local tempcap=caps[NS .. '.'..(temperatures.by_id[tostring(request.profile)] or 'acTemp18To30')]
   if settings.target_temperature then
     local value={value=settings.target_temperature,unit='C'}
     if not testing and device:supports_capability(tempcap) then emit(tempcap.ID..'.temperature',value,function() return tempcap.temperature(value,{state_change=true,visibility={displayed=false}}) end) end
@@ -451,7 +452,7 @@ local definition={
   },
 }
 for _,name in ipairs(temperatures.types) do
-  definition.capability_handlers['earthpanel38939.'..name]={setTemperature=function(d,v,c)
+  definition.capability_handlers[NS .. '.'..name]={setTemperature=function(d,v,c)
     transact(d,v,{target_temperature=c.args.temperature})
   end}
 end

@@ -293,7 +293,7 @@ local function fire_and_confirm(_, device, action_name, fn, finished)
   end, "device_command_queue")
 end
 
-local NS = "earthpanel38939"
+local NS = require("integration_settings").namespace
 local function cap(id)
   local ok, c = pcall(function() return capabilities[id] end)
   if ok then return c end

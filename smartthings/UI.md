@@ -28,6 +28,8 @@ Android 앱은 일부 표준 capability의 `displayType`을 무시하고 전용 
 
 ## 수정과 배포
 
+다른 계정에 배포할 때는 먼저 [배포 설정](../README.md#배포-설정)을 변경합니다.
+
 `device-configs/generate.py`가 프로필 capability를 읽어 설정 화면을 포함한 8개 JSON 구성을 만듭니다.
 
 ```sh
@@ -50,14 +52,16 @@ label만으로는 앱의 영문 capability 제목 대체를 방지할 수 없습
 정의·presentation을 등록한 다음 번역을 적용하고 device configuration을 생성합니다.
 
 ```sh
+namespace=$(python3 -c 'import json; print(json.load(open("integration.json"))["namespace"])')
 for file in smartthings/translations/*.json; do
   name=$(basename "$file" .json)
   name=${name%.*}
-  smartthings capabilities:translations:upsert "earthpanel38939.$name" -i "$file"
+  if [ "$name" = favoriteLevel ]; then name=airPurifierFavoriteLevel; fi
+  smartthings capabilities:translations:upsert "$namespace.$name" -i "$file"
 done
 ```
 
-`favoriteLevel*.json`의 실제 capability ID는 `earthpanel38939.airPurifierFavoriteLevel`입니다.
+`favoriteLevel*.json`의 capability 이름은 `airPurifierFavoriteLevel`입니다.
 새 설치에서는 `currentHumidity`와 `fanOscillationControl`의 정의·presentation도 먼저 등록합니다.
 SmartThings의 프로필 갱신 안내가 나오면 확인을 누른 뒤 기기를 다시 엽니다.
 한국어 API 확인에는 `--language ko`를 사용합니다.

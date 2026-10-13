@@ -4,7 +4,7 @@
 local capabilities = require "st.capabilities"
 local log = require "log"
 local M = { MODEL = "xiaomi.alerts", PROFILE = "xiaomi-alerts.v1" }
-local cap_message = capabilities["earthpanel38939.latestAlert"]
+local cap_message = capabilities[require("integration_settings").capability("latestAlert")]
 local CREATE_RETRY_S = 60
 
 function M.is_endpoint(device)

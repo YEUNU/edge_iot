@@ -17,6 +17,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from integration_settings import capability
+
 API = "https://api.smartthings.com/v1"
 TOKEN_URL = "https://auth-global.api.smartthings.com/oauth/token"
 CLI_CLIENT_ID = "d18cf96e-c626-4433-bf51-ddbb10c5d1ed"
@@ -24,7 +26,7 @@ DEFAULT_HOME = Path.home() / "Library/Application Support/Xiaomi Notifications"
 MAX_JSON_DEPTH = 64
 CONDITIONS = {
     "xiaomi.derh.13l": {
-        "fault": ("earthpanel38939.deviceFault", "fault", {
+        "fault": (capability("deviceFault"), "fault", {
             "noFault": None, "defrost": None,
             "waterFull": "물통이 가득 찼어요. 물통을 비우고 다시 장착해 주세요.",
             "sensorFault1": "센서 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
@@ -37,12 +39,12 @@ CONDITIONS = {
         }),
     },
     "zhimi.airp.cpa4": {
-        "fault": ("earthpanel38939.deviceFault", "fault", {
+        "fault": (capability("deviceFault"), "fault", {
             "noFault": None,
             "motorStuck": "모터 고장이 감지됐어요. 기기 상태를 확인해 주세요.",
             "sensorLost": "센서 연결 오류가 감지됐어요. 기기 상태를 확인해 주세요.",
         }),
-        "filter": ("earthpanel38939.filterAlert", "status", {
+        "filter": (capability("filterAlert"), "status", {
             "normal": None,
             "replace": "필터 수명이 10% 이하예요. 교체할 필터를 준비해 주세요.",
         }),
@@ -376,7 +378,7 @@ class Monitor:
         try:
             status = self.client.api("/devices/" + device_id + "/status")
             reading = object_field(object_field(object_field(object_field(status, "components"), "main"),
-                                                "earthpanel38939.latestAlert"), "message")
+                                                capability("latestAlert")), "message")
             stamp = reading.get("timestamp")
             if not valid_timestamp(stamp) or not isinstance(reading.get("value"), str):
                 return

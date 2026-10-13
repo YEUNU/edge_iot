@@ -1,4 +1,5 @@
 package.path='tuya-local/src/?.lua;'..package.path
+local NS = require("integration_settings").namespace
 local driver
 local calls={}
 local request_override
@@ -34,7 +35,7 @@ assert(profile=='tuya-local-ac.acTemp18To30.v1')
 d.preferences.changeModel=true
 driver.lifecycle_handlers.infoChanged(nil,d,nil,{old_st_store={preferences={changeModel=false}}})
 assert(profile=='tuya-local-ac.setup.v1')
-driver.capability_handlers['earthpanel38939.acModelLibrary'].applyCode(nil,d)
+driver.capability_handlers[NS .. '.acModelLibrary'].applyCode(nil,d)
 assert(profile=='tuya-local-ac.acTemp18To30.v1','saving must return to everyday controls')
 driver.lifecycle_handlers.init(nil,d)
 assert(profile=='tuya-local-ac.acTemp18To30.v1','restart must not reopen the setup screen')
@@ -46,7 +47,7 @@ assert(profile=='tuya-local-ac.setup.v1','setup must be reopenable')
 print('UX lifecycle checks passed')
 
 d.preferences={};fields.bridge_credentials=nil
-local link=driver.capability_handlers['earthpanel38939.acLocalLink']
+local link=driver.capability_handlers[NS .. '.acLocalLink']
 link.enroll(nil,d,{args={address='192.0.2.10',port=8766,ticket=string.rep('a',64)}})
 assert(fields.bridge_credentials.bridgeToken=='valid','enrollment must save credentials')
 link.done(nil,d)
@@ -56,7 +57,7 @@ link.showKeys(nil,d)
 assert(profile=='tuya-local-ac.acTemp18To30.v1','no extra keys must not open an empty remote view')
 print('Automatic enrollment and restart checks passed')
 
-local library=driver.capability_handlers['earthpanel38939.acModelLibrary']
+local library=driver.capability_handlers[NS .. '.acModelLibrary']
 local starting=#calls
 link.configure(nil,d)
 library.setBrand(nil,d,{args={brand='Samsung'}})
@@ -94,7 +95,7 @@ print('Candidate isolation, cancel, outage recovery, unsupported input and queue
 request_override=nil
 local library_ready=false
 function d:supports_capability(cap)
- if cap.ID=='earthpanel38939.acModelLibrary' then return library_ready end
+ if cap.ID==NS .. '.acModelLibrary' then return library_ready end
  return true
 end
 link.configure(nil,d)
@@ -104,7 +105,7 @@ driver.capability_handlers.refresh.refresh(nil,d)
 local candidate_event=false
 for i=event_count+1,#events do
  local e=events[i]
- if e.cap=='earthpanel38939.acModelLibrary' and e.attr=='candidate' then candidate_event=true end
+ if e.cap==NS .. '.acModelLibrary' and e.attr=='candidate' then candidate_event=true end
 end
 assert(candidate_event,'setup values must recover after asynchronous profile attachment')
 print('Asynchronous profile attachment regression passed')
@@ -117,7 +118,7 @@ h.thermostatCoolingSetpoint.setCoolingSetpoint(nil,d,{args={setpoint=24}})
 assert(calls[#calls].profile==trial and calls[#calls].changes.target_temperature==24)
 h.airConditionerMode.setAirConditionerMode(nil,d,{args={mode='heat'}})
 assert(calls[#calls].profile==trial and calls[#calls].changes.mode=='heat')
-h['earthpanel38939.acModeControl'].setMode(nil,d,{args={mode='cool'}})
+h[NS .. '.acModeControl'].setMode(nil,d,{args={mode='cool'}})
 assert(calls[#calls].profile==trial and calls[#calls].changes.mode=='cool','dropdown must control the trial model')
 h.airConditionerFanMode.setFanMode(nil,d,{args={fanMode='high'}})
 assert(calls[#calls].profile==trial and calls[#calls].changes.fan=='high')
@@ -127,7 +128,7 @@ assert(fields.active_profile==original,'full trial must not save candidate')
 link.done(nil,d)
 h.thermostatCoolingSetpoint.setCoolingSetpoint(nil,d,{args={setpoint=26}})
 assert(calls[#calls].profile==tonumber(original),'normal controls must return to saved model')
-h['earthpanel38939.acModeControl'].setMode(nil,d,{args={mode='dry'}})
+h[NS .. '.acModeControl'].setMode(nil,d,{args={mode='dry'}})
 assert(calls[#calls].profile==tonumber(original) and calls[#calls].changes.mode=='dry','daily dropdown must control the saved model')
 print('Full temperature/mode/fan trial routing and cancellation passed')
 
@@ -141,7 +142,7 @@ link.configure(nil,d)
 library.setBrand(nil,d,{args={brand='Winia'}})
 library.setCandidate(nil,d,{args={candidate='999999'}})
 assert(profile=='tuya-local-ac.setup-buttons.v1','button candidate needs button setup view')
-local raw=driver.capability_handlers['earthpanel38939.acRemoteKeys']
+local raw=driver.capability_handlers[NS .. '.acRemoteKeys']
 local count=#calls
 raw.selectKey(nil,d,{args={key='power'}})
 assert(#calls==count,'selecting a remote button must not transmit')
@@ -252,7 +253,7 @@ assert(#calls==before+1,'pending storage must not trigger another command')
 local storage_warning=false
 for i=event_start+1,#events do
  local e=events[i]
- if e.cap=='earthpanel38939.acLocalLink' and e.attr=='status' and e.value=='명령 전송 완료 · 설정 저장 대기' then storage_warning=true end
+ if e.cap==NS .. '.acLocalLink' and e.attr=='status' and e.value=='명령 전송 완료 · 설정 저장 대기' then storage_warning=true end
 end
 assert(storage_warning,'successful IR with pending storage needs a separate status')
 request_override=function()return good_response()end
@@ -385,7 +386,7 @@ request_override=function(p)
 end
 local changed_at
 function d:emit_event(e)
- if not changed and e.cap=='earthpanel38939.acRemoteKeys' and e.attr=='supportedKeys' then
+ if not changed and e.cap==NS .. '.acRemoteKeys' and e.attr=='supportedKeys' then
   changed=true
   link.configure(nil,d)
   library.setCandidate(nil,d,{args={candidate='1000047'}})
@@ -408,7 +409,7 @@ reset_view()
 local function connection_text()
  for i=#events,1,-1 do
   local e=events[i]
-  if e.cap=='earthpanel38939.acLocalLink' and e.attr=='status' then return e.value end
+  if e.cap==NS .. '.acLocalLink' and e.attr=='status' then return e.value end
  end
 end
 request_override=function(p)return response_for(p,18)end
@@ -444,7 +445,7 @@ request_override=function(p)
  return response_for(p,16)
 end
 function d:emit_event(e)
- if not changed and e.cap=='earthpanel38939.acModelLibrary' and e.attr=='status'
+ if not changed and e.cap==NS .. '.acModelLibrary' and e.attr=='status'
    and e.value=='요청 실패 · 연결 또는 지원 조합을 확인하세요' then
   changed=true
   link.configure(nil,d)
@@ -459,7 +460,7 @@ d.emit_event=real_emit
 assert(changed and #calls==before+2 and d.is_online==true and fields.active_profile=='1000047')
 for i=changed_at+1,#events do
  local e=events[i]
- assert(not (e.cap=='earthpanel38939.acLocalLink' and e.attr=='status' and e.value=='브리지 연결 확인 필요'),
+ assert(not (e.cap==NS .. '.acLocalLink' and e.attr=='status' and e.value=='브리지 연결 확인 필요'),
   'failure publication must recheck the model after a note event reenters setup')
 end
 assert(not fields.busy and fields.pending_refresh==nil)
@@ -471,7 +472,7 @@ print('Failure-note reentry cannot publish an old connection error in the new mo
 reset_view()
 local supports_before=d.supports_capability
 function d:supports_capability(cap)
- return cap.ID~='earthpanel38939.acModelLibrary' and cap.ID~='earthpanel38939.acRemoteKeys'
+ return cap.ID~=NS .. '.acModelLibrary' and cap.ID~=NS .. '.acRemoteKeys'
 end
 local stable=response_for({remoteIndex=tonumber(original)},24)
 stable.state={power=true,mode='cool',fan='auto',target_temperature=24}
@@ -521,7 +522,7 @@ d.emit_event=real_emit
 
 stable.settings_save_pending=true;failed_event=true;failed_count=0
 function d:emit_event(e)
- if e.cap=='earthpanel38939.acLocalLink' and e.value=='명령 전송 완료 · 설정 저장 대기' and failed_event then
+ if e.cap==NS .. '.acLocalLink' and e.value=='명령 전송 완료 · 설정 저장 대기' and failed_event then
   failed_count=failed_count+1;failed_event=false;error('temporary status failure')
  end
  return real_emit(self,e)
@@ -537,7 +538,7 @@ print('Failed state/status events retry safely and stable pending-save status do
 -- still publish completion feedback even when their resulting values match.
 reset_view();local attached=false
 function d:supports_capability(cap)
- if cap.ID=='earthpanel38939.acModelLibrary' then return attached end
+ if cap.ID==NS .. '.acModelLibrary' then return attached end
  return true
 end
 link.configure(nil,d);attached=true;event_start=#events
@@ -578,7 +579,7 @@ event_start=#events;h.refresh.refresh(nil,d)
 local status_count=0
 for i=event_start+1,#events do
  local e=events[i]
- if e.cap=='earthpanel38939.acLocalLink' then
+ if e.cap==NS .. '.acLocalLink' then
   status_count=status_count+1
   assert(e.value=='명령 전송 완료 · 설정 저장 대기','pending save must take precedence over the button label')
  end
@@ -604,11 +605,11 @@ for _,inner in ipairs({'unavailable','second','failed'}) do
  h.refresh.refresh(nil,d);raw.selectKey(nil,d,{args={key='second'}})
  local injected=false
  function d:emit_event(e)
-  if inner=='failed' and e.cap=='earthpanel38939.acRemoteKeys' and e.attr=='key' and e.value=='unavailable' then
+  if inner=='failed' and e.cap==NS .. '.acRemoteKeys' and e.attr=='key' and e.value=='unavailable' then
    error('inner publication failed')
   end
   real_emit(self,e)
-  if e.cap=='earthpanel38939.acRemoteKeys' and e.attr=='key' and e.value=='first' and not injected then
+  if e.cap==NS .. '.acRemoteKeys' and e.attr=='key' and e.value=='first' and not injected then
    injected=true
    local ok=pcall(raw.selectKey,nil,d,{args={key=inner=='failed' and 'unavailable' or inner}})
    assert(ok==(inner~='failed'))
@@ -637,7 +638,7 @@ end
 local selected_during_list=false
 function d:emit_event(e)
  real_emit(self,e)
- if e.cap=='earthpanel38939.acRemoteKeys' and e.attr=='supportedKeys' and not selected_during_list then
+ if e.cap==NS .. '.acRemoteKeys' and e.attr=='supportedKeys' and not selected_during_list then
   selected_during_list=true
   raw.selectKey(nil,d,{args={key='second'}})
  end
@@ -646,7 +647,7 @@ h.refresh.refresh(nil,d);d.emit_event=real_emit
 assert(selected_during_list and fields.remote_key=='second')
 local visible_key
 for _,e in ipairs(events) do
- if e.cap=='earthpanel38939.acRemoteKeys' and e.attr=='key' then visible_key=e.value end
+ if e.cap==NS .. '.acRemoteKeys' and e.attr=='key' then visible_key=e.value end
 end
 assert(visible_key=='second','a list publication must preserve the newer visible user selection')
 event_start=#events;h.refresh.refresh(nil,d)

@@ -68,6 +68,7 @@ def catalog_metrics(source_root, iterations):
 
 LUA_POLLS = r"""
 package.path=arg[1]..'/tuya-local/src/?.lua;'..package.path
+local NS = require("integration_settings").namespace
 local driver
 package.preload['st.driver']=function() return function(_,d)
  driver=d;return {run=function()end}
@@ -99,7 +100,7 @@ function d:get_field(key)return fields[key]end
 function d:set_field(key,value)fields[key]=value end
 function d:try_update_metadata()end
 function d:supports_capability(c)
- return fields.setup_open or (c.ID~='earthpanel38939.acModelLibrary' and c.ID~='earthpanel38939.acRemoteKeys')
+ return fields.setup_open or (c.ID~=NS .. '.acModelLibrary' and c.ID~=NS .. '.acRemoteKeys')
 end
 function d:emit_event()events=events+1 end
 function d:online()presence=presence+1 end

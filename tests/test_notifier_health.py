@@ -1,9 +1,11 @@
 import importlib.util
+import sys
 from pathlib import Path
 import tempfile
 import unittest
 
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "notification-service"))
 spec = importlib.util.spec_from_file_location("notifier_health", Path(__file__).resolve().parents[1] / "notification-service/healthcheck.py")
 h = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(h)
@@ -29,7 +31,7 @@ class HealthTests(unittest.TestCase):
                     raise n.RequestError(503)
                 if path.endswith("/health"):
                     return {"state": "ONLINE"}
-                return {"components": {"main": {"earthpanel38939.deviceFault": {
+                return {"components": {"main": {n.capability("deviceFault"): {
                     "fault": {"value": "noFault", "timestamp": "2026-09-11T11:00:00Z"}}}}}
         with tempfile.TemporaryDirectory() as tmp:
             monitor = n.Monitor({"devices": devices, "locationId": "home"}, Path(tmp) / "state.json", Client(), lambda: now[0])

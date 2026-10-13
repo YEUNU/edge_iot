@@ -7,7 +7,7 @@
     dustSensor.fineDustLevel <- siid=3 piid=4
     filterState              <- siid=4 piid=1 (filter-life %; reset command → siid=4 aiid=1)
     fanSpeed (0..14)         <- siid=9 piid=11 favorite-level
-  Custom caps (namespace earthpanel38939):
+  Custom capabilities:
     childLock        <- siid=8 piid=1 (lock bool)
     alarmBuzzer      <- siid=6 piid=1 (alarm bool)
     indicatorLightMode {off,dim,bright} <- siid=13 piid=2 (Close→off, Bright→dim, Brightest→bright)
@@ -20,7 +20,7 @@ local alerts = require "alerts"
 local validation = require "devices.validation"
 
 local M = {}
-local NS = "earthpanel38939"
+local NS = require("integration_settings").namespace
 local cap_childLock     = capabilities[NS .. ".childLock"]
 local cap_alarmBuzzer   = capabilities[NS .. ".alarmBuzzer"]
 local cap_indicatorMode = capabilities[NS .. ".indicatorLightMode"]

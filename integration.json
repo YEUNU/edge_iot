@@ -1,0 +1,8 @@
+{
+  "namespace": "earthpanel38939",
+  "package_keys": {
+    "xiaomi-miio": "com.yunu.xiaomi-miio",
+    "tuya-local": "com.yunu.tuya-ac-local"
+  },
+  "support_url": "https://github.com/YEUNU/edge_iot"
+}

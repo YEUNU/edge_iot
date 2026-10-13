@@ -6,7 +6,7 @@
     mode {Smart,Sleep,Drying}       <- siid=2 piid=3
     relativeHumidityMeasurement     <- siid=3 piid=1
     temperatureMeasurement          <- siid=3 piid=2
-  Custom caps (namespace earthpanel38939):
+  Custom capabilities:
     targetHumidity (40..70 %)       <- siid=2 piid=5 (manual operating range)
     childLock                       <- siid=6 piid=1
     alarmBuzzer                     <- siid=4 piid=1
@@ -24,7 +24,7 @@ local alerts = require "alerts"
 local validation = require "devices.validation"
 
 local M = {}
-local NS = "earthpanel38939"
+local NS = require("integration_settings").namespace
 local cap_targetHumidity = capabilities[NS .. ".targetHumidity"]
 local cap_currentHumidity = capabilities[NS .. ".currentHumidity"]
 local cap_childLock      = capabilities[NS .. ".childLock"]

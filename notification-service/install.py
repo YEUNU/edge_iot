@@ -103,7 +103,7 @@ def prepare(home, args, parser):
     save_json(home / "config.json", {"locationId": args.location, "devices": devices,
                                     "pollSeconds": 15, "testDeviceId": args.test_device})
     source = Path(__file__).parent
-    for name in ("notifier.py", "healthcheck.py", "Dockerfile", "compose.yaml", ".dockerignore"):
+    for name in ("notifier.py", "healthcheck.py", "integration_settings.py", "Dockerfile", "compose.yaml", ".dockerignore"):
         if (source / name).resolve() != (home / name).resolve():
             shutil.copyfile(source / name, home / name)
         os.chmod(home / name, 0o600)

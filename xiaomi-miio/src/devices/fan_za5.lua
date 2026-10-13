@@ -9,7 +9,7 @@
     indicatorLightMode          <- siid=4 piid=3 (brightness mapped to off/dim/bright)
     relativeHumidityMeasurement  <- siid=7 piid=1
     temperatureMeasurement       <- siid=7 piid=7
-  Custom caps (namespace: earthpanel38939):
+  Custom capabilities:
     childLock {locked,unlocked}  <- siid=3 piid=1 (lock bool)
     alarmBuzzer {on,off}         <- siid=5 piid=1
     fanOscillationAngle (30..120°) <- siid=2 piid=5
@@ -21,7 +21,7 @@ local events = require "devices.events"
 local validation = require "devices.validation"
 
 local M = {}
-local NS = "earthpanel38939"
+local NS = require("integration_settings").namespace
 local cap_childLock       = capabilities[NS .. ".childLock"]
 local cap_alarmBuzzer     = capabilities[NS .. ".alarmBuzzer"]
 local cap_oscillationAngle = capabilities[NS .. ".fanOscillationDegrees"]
