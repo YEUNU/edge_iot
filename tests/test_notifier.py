@@ -54,7 +54,7 @@ class MonitorTests(unittest.TestCase):
     def test_dedup_survives_restart(self):
         for _ in range(100):
             self.monitor.poll()
-        n.Monitor(CONFIG, self.path, self.client).poll()
+        n.Monitor(CONFIG, self.path, self.client, lambda: self.now).poll()
         self.assertEqual(len(self.client.sent), 1)
 
     def test_corrupt_state_is_preserved_and_rejected_before_any_push(self):
@@ -195,6 +195,154 @@ class MonitorTests(unittest.TestCase):
             self.client.status = status(value, f"2026-09-11T11:0{minute}:00Z")
             self.monitor.poll()
         self.assertEqual(len(self.client.sent), 4)
+
+    def test_sustained_filter_rearms_only_water_and_persists_without_replaying_filter(self):
+        for existing_state in (False, True):
+            with self.subTest(existing_state=existing_state), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "state.json"
+                client = FakeClient()
+                if existing_state:
+                    n.save_json(path, {"dehumidifier:fault": {
+                        "value": "filterClean", "timestamp": "2026-09-11T11:02:00Z",
+                        "notified": ["filterClean", "sensorFault1", "waterFull"]}})
+                monitor = n.Monitor(CONFIG, path, client, lambda: self.now)
+                if not existing_state:
+                    for minute, value in enumerate(("waterFull", "sensorFault1", "filterClean")):
+                        client.status = status(value, f"2026-09-11T11:0{minute}:00Z")
+                        monitor.poll()
+                client.status = status("filterClean", "2026-09-11T11:02:00Z")
+                monitor.poll()
+                sent_before = len(client.sent)
+                for _ in range(19):
+                    self.now += 15
+                    monitor.poll()
+                self.assertIn("waterFull", monitor.state["dehumidifier:fault"]["notified"])
+                self.now += 15
+                monitor.poll()
+                self.assertEqual(monitor.state["dehumidifier:fault"]["notified"], ["filterClean", "sensorFault1"])
+                self.assertEqual(json.loads(path.read_text()), monitor.state)
+                self.assertEqual(len(client.sent), sent_before)
+                restarted = n.Monitor(CONFIG, path, client, lambda: self.now)
+                restarted.poll()
+                client.status = status("waterFull", "2026-09-11T11:03:00Z")
+                restarted.poll()
+                client.status = status("filterClean", "2026-09-11T11:04:00Z")
+                restarted.poll()
+                self.assertEqual(len(client.sent), sent_before + 1)
+                self.assertIn("물통", client.sent[-1][2])
+
+    def test_minute_long_filter_alternation_does_not_repeat_water_notifications(self):
+        self.monitor.poll()
+        for cycle in range(8):
+            self.client.status = status("filterClean", f"2026-09-11T11:{cycle * 2 + 1:02d}:00Z")
+            for _ in range(5):
+                self.now += 15
+                self.monitor.poll()
+            self.client.status = status("waterFull", f"2026-09-11T11:{cycle * 2 + 2:02d}:00Z")
+            self.now += 15
+            self.monitor.poll()
+        self.assertEqual(len(self.client.sent), 2)
+        self.assertEqual(self.monitor.state["dehumidifier:fault"]["notified"], ["filterClean", "waterFull"])
+        self.assertEqual(self.monitor.water_clear_reads, {})
+
+    def test_restart_requires_a_full_new_filter_observation_window(self):
+        self.monitor.poll()
+        self.client.status = status("filterClean", "2026-09-11T11:01:00Z")
+        self.monitor.poll()
+        for _ in range(12):
+            self.now += 15
+            self.monitor.poll()
+        restarted = n.Monitor(CONFIG, self.path, self.client, lambda: self.now)
+        self.assertEqual(restarted.water_clear_reads, {})
+        restarted.poll()
+        for _ in range(19):
+            self.now += 15
+            restarted.poll()
+        self.assertIn("waterFull", restarted.state["dehumidifier:fault"]["notified"])
+        self.now += 15
+        restarted.poll()
+        self.assertEqual(restarted.state["dehumidifier:fault"]["notified"], ["filterClean"])
+        self.assertEqual(len(self.client.sent), 2)
+
+    def test_unconfirmed_or_other_fault_reads_restart_the_filter_observation_window(self):
+        interruptions = {
+            "unknown": status("unknown", "2026-09-11T11:02:00Z"),
+            "missing": {},
+            "invalid_timestamp": status("filterClean", "invalid"),
+            "stale": status("filterClean", "2026-09-11T11:00:00Z"),
+            "other_fault": status("sensorFault1", "2026-09-11T11:02:00Z"),
+            "offline": None,
+            "request_error": None,
+        }
+        for name, interrupted_status in interruptions.items():
+            with self.subTest(interruption=name), tempfile.TemporaryDirectory() as tmp:
+                client = FakeClient()
+                monitor = n.Monitor(CONFIG, Path(tmp) / "state.json", client, lambda: self.now)
+                monitor.poll()
+                client.status = status("filterClean", "2026-09-11T11:01:00Z")
+                monitor.poll()
+                for _ in range(12):
+                    self.now += 15
+                    monitor.poll()
+                self.now += 15
+                if name == "request_error":
+                    with patch.object(client, "api", side_effect=n.RequestError(503)):
+                        monitor.poll()
+                else:
+                    client.online = name != "offline"
+                    client.status = interrupted_status
+                    monitor.poll()
+                self.assertEqual(monitor.water_clear_reads, {})
+                client.online = True
+                client.status = status("filterClean", "2026-09-11T11:03:00Z")
+                self.now += 15
+                monitor.poll()
+                for _ in range(19):
+                    self.now += 15
+                    monitor.poll()
+                self.assertIn("waterFull", monitor.state["dehumidifier:fault"]["notified"])
+                self.now += 15
+                monitor.poll()
+                self.assertNotIn("waterFull", monitor.state["dehumidifier:fault"]["notified"])
+
+    def test_long_read_gap_and_clock_rollback_restart_the_filter_observation_window(self):
+        for adjustment in (n.WATER_FULL_MAX_READ_GAP + 1, -30):
+            with self.subTest(clock_adjustment=adjustment), tempfile.TemporaryDirectory() as tmp:
+                client = FakeClient()
+                monitor = n.Monitor(CONFIG, Path(tmp) / "state.json", client, lambda: self.now)
+                monitor.poll()
+                client.status = status("filterClean", "2026-09-11T11:01:00Z")
+                monitor.poll()
+                for _ in range(12):
+                    self.now += 15
+                    monitor.poll()
+                self.now += adjustment
+                monitor.poll()
+                for _ in range(19):
+                    self.now += 15
+                    monitor.poll()
+                self.assertIn("waterFull", monitor.state["dehumidifier:fault"]["notified"])
+                self.now += 15
+                monitor.poll()
+                self.assertEqual(monitor.state["dehumidifier:fault"]["notified"], ["filterClean"])
+
+    def test_filter_push_retry_does_not_block_water_rearm(self):
+        self.monitor.poll()
+        self.client.fail = True
+        self.client.status = status("filterClean", "2026-09-11T11:01:00Z")
+        self.monitor.poll()
+        for _ in range(20):
+            self.now += 15
+            self.monitor.poll()
+        self.assertEqual(self.monitor.state["dehumidifier:fault"]["notified"], [])
+        self.assertIn("dehumidifier:fault", self.monitor.retry)
+        self.assertEqual(len(self.client.sent), 1)
+        self.client.fail = False
+        self.client.status = status("waterFull", "2026-09-11T11:02:00Z")
+        self.monitor.poll()
+        self.assertEqual(self.monitor.retry, {})
+        self.assertEqual(len(self.client.sent), 2)
+        self.assertEqual(self.monitor.state["dehumidifier:fault"]["notified"], ["waterFull"])
 
     def test_equal_timestamp_recovery_cannot_clear_successful_episode(self):
         for normal in ("noFault", "defrost"):
@@ -653,7 +801,7 @@ class MonitorTests(unittest.TestCase):
         self.monitor.poll()
         self.assertFalse(self.monitor.state_dirty)
         self.assertEqual(json.loads(self.path.read_text()), self.monitor.state)
-        n.Monitor(self.monitor.config, self.path, self.client).poll()
+        n.Monitor(self.monitor.config, self.path, self.client, lambda: self.now).poll()
         self.assertEqual(len(self.client.sent), 2)
 
     def test_test_endpoint_state_write_failure_does_not_block_other_device(self):

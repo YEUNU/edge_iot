@@ -24,6 +24,11 @@ TOKEN_URL = "https://auth-global.api.smartthings.com/oauth/token"
 CLI_CLIENT_ID = "d18cf96e-c626-4433-bf51-ddbb10c5d1ed"
 DEFAULT_HOME = Path.home() / "Library/Application Support/Xiaomi Notifications"
 MAX_JSON_DEPTH = 64
+# This model alternates waterFull and filterClean while both warnings remain.
+# A sustained filter-only interval permits the next waterFull notification.
+WATER_FULL_REARM_SECONDS = 300
+WATER_FULL_MAX_READ_GAP = 120
+REMINDER_SECONDS = 24 * 60 * 60
 CONDITIONS = {
     "xiaomi.derh.13l": {
         "fault": (capability("deviceFault"), "fault", {
@@ -183,6 +188,16 @@ def episode_notified(record, messages):
     return {value}
 
 
+def reminder_deadlines(record, notified, now):
+    deadlines = record.get("remindAfter", {}) if isinstance(record, dict) else {}
+    if not isinstance(deadlines, dict):
+        deadlines = {}
+    # Old state has no delivery times. Start its reminder interval on upgrade
+    # rather than replaying every already-notified warning at service startup.
+    return {value: deadlines[value] if finite_number(deadlines.get(value)) and deadlines[value] >= 0
+            else now + REMINDER_SECONDS for value in notified}
+
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None  # Never forward credentials to another destination.
@@ -327,6 +342,7 @@ class Monitor:
         except (ValueError, RecursionError):
             raise RequestError("invalid-state") from None
         self.retry = {}
+        self.water_clear_reads = {}
         self.started_at = self.clock()
         self.cloud_reads = {device["id"]: None for device in config["devices"]}
         if config.get("testDeviceId"):
@@ -337,8 +353,9 @@ class Monitor:
         self.state_dirty = True
         self.flush_state()
 
-    def save_condition(self, key, occurrence, notified):
-        saved = dict(occurrence, notified=sorted(notified))
+    def save_condition(self, key, occurrence, notified, remind_after):
+        saved = dict(occurrence, notified=sorted(notified),
+                     remindAfter={value: remind_after[value] for value in sorted(notified)})
         if self.state.get(key) != saved:
             self.state[key] = saved
             self.save_state()
@@ -370,6 +387,22 @@ class Monitor:
         pending = self.retry.get(key)
         pending_stamp = occurrence_stamp(pending[0]) if pending else None
         return all(previous is None or stamp >= previous for previous in (saved, pending_stamp))
+
+    def rearm_water_full(self, device, key, occurrence, notified, previous_read):
+        if (device["model"] != "xiaomi.derh.13l" or key != "fault"
+                or occurrence["value"] != "filterClean" or "waterFull" not in notified):
+            return
+        now = self.clock()
+        since = now
+        if previous_read is not None:
+            start, last = previous_read
+            if 0 <= now - last <= WATER_FULL_MAX_READ_GAP:
+                since = start
+        if now - since >= WATER_FULL_REARM_SECONDS:
+            notified.discard("waterFull")
+            logging.info("waterFull rearmed %s after sustained filterClean", device["label"])
+        else:
+            self.water_clear_reads[device["id"]] = (since, now)
 
     def poll_test(self):
         device_id = self.config.get("testDeviceId")
@@ -416,6 +449,9 @@ class Monitor:
         self.poll_test()
         checked = 0
         for device in self.config["devices"]:
+            # Only a complete, current, online filterClean read may continue
+            # this window. Missing/failed/offline reads and restart break it.
+            previous_water_clear = self.water_clear_reads.pop(device["id"], None)
             try:
                 health = object_value(self.client.api("/devices/" + device["id"] + "/health"))
                 if health.get("state") not in ("ONLINE", "OFFLINE"):
@@ -456,25 +492,33 @@ class Monitor:
                         pending = (occurrence, pending[1], pending[2])
                         self.retry[state_key] = pending
                     notified = episode_notified(self.state.get(state_key), messages)
-                    if message and occurrence["value"] not in notified:
+                    self.rearm_water_full(device, key, occurrence, notified, previous_water_clear)
+                    now = self.clock()
+                    remind_after = reminder_deadlines(saved, notified, now)
+                    value = occurrence["value"]
+                    reminder_due = value in notified and now >= remind_after[value]
+                    if message and (value not in notified or reminder_due):
                         if pending and self.clock() < pending[1]:
-                            self.save_condition(state_key, occurrence, notified)
+                            self.save_condition(state_key, occurrence, notified, remind_after)
                             continue
                         try:
-                            self.client.notify(self.config["locationId"], device, message)
+                            body = "다시 알려드려요. " + message if reminder_due else message
+                            self.client.notify(self.config["locationId"], device, body)
                         except (RequestError, OSError) as exc:
                             # Persist the newest observation even on failure so
                             # restart cannot accept an older recovery reading.
                             # The failed warning is still absent from notified.
-                            self.save_condition(state_key, occurrence, notified)
+                            self.save_condition(state_key, occurrence, notified, remind_after)
                             self.defer_push(state_key, occurrence, pending, device["label"], key, exc)
                             continue
-                        logging.info("push accepted %s %s=%s", device["label"], key, occurrence["value"])
-                        notified.add(occurrence["value"])
+                        logging.info("%s accepted %s %s=%s", "reminder" if reminder_due else "push",
+                                     device["label"], key, value)
+                        notified.add(value)
+                        remind_after[value] = self.clock() + REMINDER_SECONDS
                     elif not message:
                         notified.clear()
                     self.retry.pop(state_key, None)
-                    self.save_condition(state_key, occurrence, notified)
+                    self.save_condition(state_key, occurrence, notified, remind_after)
             except (RequestError, OSError) as exc:
                 logging.warning("status unavailable %s (%s)", device["label"], exc)
         self.flush_state()
