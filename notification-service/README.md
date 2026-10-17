@@ -34,6 +34,27 @@ health에 반영합니다. `unhealthy`는
 아닙니다. 서비스 자체는 네트워크/API 오류에 계속 재시도합니다. 로그는 파일당
 5MB, 최대 3개로 순환합니다. 외부에 여는 포트는 없습니다.
 
+## 배포 후 확인
+
+```sh
+cd "$HOME/Library/Application Support/Xiaomi Notifications"
+docker compose ps
+docker compose logs --since 30m --tail 100
+docker compose exec -T notifier python /app/healthcheck.py /data/health.json
+```
+
+healthcheck 종료 코드 0은 현재 상태 검사를 통과했다는 뜻입니다. `health.json`의
+`lastPollAt`과 `deviceCloudReads`가 서로 다른 조회 주기에서도 갱신되는지 확인합니다.
+`checkedDevices`는 감시 가전 수이고, `deviceCloudReads`에는 설정된 테스트 기기도
+포함됩니다. `pendingRetries`는 0, `stateSaved`는 `true`여야 합니다.
+오프라인 응답도 정상 API 조회로 계산하므로 `healthy`만으로 가전의 온라인 상태나
+휴대폰 수신을 확정하지 않습니다.
+
+정상 조회마다 로그를 남기지는 않습니다. 최근 로그가 비어 있으면 health 갱신을 함께
+확인합니다. `status unavailable`, `status incomplete`, `push retry`, 저장 실패가
+계속되는지 살피고, `push accepted`·`reminder accepted`는 서버 수락으로 해석합니다.
+로그와 health 원문에는 기기 이름·ID가 포함될 수 있으므로 공개 문서에 붙이지 않습니다.
+
 ## 처음 설치하거나 기기 구성을 바꿀 때
 
 Mac에 Python 3.9 이상, SmartThings CLI, Docker Compose가 필요합니다. 별도 Python
