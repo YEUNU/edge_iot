@@ -77,6 +77,33 @@ test("miIO action accepts code zero", function()
   assert(client:action(4, 1, { 0 }, "reset-filter") == true)
 end)
 
+test("miIO action sends an object and validates object replies", function()
+  local client = assert(Client.new{ ip = "192.168.1.2", token = string.rep("a", 32) })
+  client.send_raw = function(_, body)
+    local request = require("dkjson").decode(body)
+    assert(request.method == "action" and request.params[1] == nil)
+    assert(request.params.siid == 7 and request.params.aiid == 3)
+    assert(request.params.did == "reset-filter" and #request.params["in"] == 0)
+    return string.format('{"id":%d,"result":{"did":"reset-filter","siid":7,"aiid":3,"code":0,"out":[]}}', request.id)
+  end
+  assert(client:action(7, 3, {}, "reset-filter"))
+  for _, result in ipairs({
+    '{"did":"reset-filter","siid":7,"aiid":3,"code":-1}',
+    '{"did":"other","siid":7,"aiid":3,"code":0}',
+    '{"did":"reset-filter","siid":7,"aiid":2,"code":0}',
+    '{"did":"reset-filter","siid":8,"aiid":3,"code":0}',
+    '{"did":"reset-filter","siid":7,"aiid":3}',
+    '{}'
+  }) do
+    client.send_raw = function(_, body)
+      local request = require("dkjson").decode(body)
+      return string.format('{"id":%d,"result":%s}', request.id, result)
+    end
+    local ok, err = client:action(7, 3, {}, "reset-filter")
+    assert(not ok and err)
+  end
+end)
+
 test("miIO action rejects device error", function()
   local client = assert(Client.new{ ip = "192.168.1.2", token = string.rep("a", 32) })
   client.send_raw = function() return "response" end

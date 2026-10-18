@@ -218,7 +218,7 @@ function Client:send_raw(json_body, session)
 end
 
 local function make_body(id, method, params)
-  -- params must already be a serialized JSON array string
+  -- params must already be serialized JSON (arrays for properties, object for action).
   return string.format('{"id":%d,"method":"%s","params":%s}', id, method, params)
 end
 
@@ -384,7 +384,7 @@ function Client:action(siid, aiid, args, did)
     in_arr = "[" .. table.concat(parts, ",") .. "]"
   end
   local params = string.format(
-    '[{"did":%s,"siid":%d,"aiid":%d,"in":%s}]',
+    '{"did":%s,"siid":%d,"aiid":%d,"in":%s}',
     encode_value(did), siid, aiid, in_arr)
   local id = self:next_request_id()
   local body = make_body(id, "action", params)
@@ -392,6 +392,8 @@ function Client:action(siid, aiid, args, did)
   if not resp then return nil, err end
   local result, parse_err = self:_parse_reply(resp, id)
   if not result then return nil, parse_err end
+  -- MiOT action replies contain one object; property RPCs return arrays.
+  if type(result) == "table" and result.did ~= nil then result = { result } end
   local _, list_err = result_list(result, {[did] = {siid = siid, aiid = aiid}})
   if list_err then return nil, list_err end
   for _, item in ipairs(result) do
