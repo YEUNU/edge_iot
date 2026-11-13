@@ -73,6 +73,8 @@ python3 -m venv .venv
 ```
 
 `check`는 IR 학습 종료 메시지로 LAN 채널을 깨운 뒤 응답을 확인하며 IR을 방사하지 않습니다.
+Docker 헬스체크는 브리지의 로컬 HTTP 응답을 확인합니다. IR 허브 연결은
+`docker compose exec bridge python service.py check`로 확인합니다.
 브리지 하나는 물리 허브 하나와 에어컨 하나를 대상으로 합니다. 여러 에어컨은 별도 인스턴스/포트를 사용하세요.
 
 명령 송신 뒤 설정 파일 저장이 실패해도 송신 성공은 유지하며 화면에 `설정 저장 대기`를
