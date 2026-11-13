@@ -608,6 +608,26 @@ test("refresh applies successful MiOT properties", function()
   assert(state.values.power == true)
 end)
 
+test("Xiaomi polling caps backoff and recovers on a successful read", function()
+  local results = {{did = "power", code = -9999}}
+  local device, state = refresh_fixture(results)
+  local read = device:get_field("client").get_properties
+  local calls = 0
+  device:get_field("client").get_properties = function()
+    calls = calls + 1
+    return read()
+  end
+  local expected = {[1]=1, [3]=2, [7]=3, [13]=4, [19]=5, [25]=6, [26]=7}
+  local count = 0
+  for tick = 1, 26 do
+    if tick == 25 then results[1] = {did = "power", code = 0, value = true} end
+    command_handlers.poll_core(nil, device)
+    count = expected[tick] or count
+    assert(calls == count, "unexpected read count at tick " .. tick)
+  end
+  assert(state.online)
+end)
+
 local FAULT_CAP = NS .. ".deviceFault"
 local FILTER_CAP = NS .. ".filterAlert"
 local function alert_device(cache, supported)

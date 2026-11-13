@@ -237,6 +237,8 @@ local function complete_request(device,request,ok,result,err)
     -- Connection status and UI publication cannot change a successful send
     -- into a transport failure. Neither path ever repeats the command.
     if same_credentials(request.preferences,credentials(device)) then
+      device:set_field('poll_interval',nil)
+      device:set_field('poll_skip',nil)
       publish(device,function() device:online() end)
     end
     publish(device,function()
@@ -255,6 +257,11 @@ local function complete_request(device,request,ok,result,err)
     return true
   else
     if same_credentials(request.preferences,credentials(device)) and (not ok or err~='unsupported') then
+      if not request.changes then
+        local interval=math.min((device:get_field('poll_interval') or 30)*2,120)
+        device:set_field('poll_interval',interval)
+        device:set_field('poll_skip',interval//30-1)
+      end
       publish(device,function() device:offline() end)
     end
     publish(device,function()
@@ -335,7 +342,14 @@ local function init(driver, device)
   update_view(device)
   show_candidate(device,device:get_field('candidate_profile') or selected(device))
   if not device:get_field('poll') then
-    device:set_field('poll', device.thread:call_on_schedule(30, function() refresh(driver,device) end, 'tuya-poll'))
+    device:set_field('poll', device.thread:call_on_schedule(30, function()
+      local skip=device:get_field('poll_skip') or 0
+      if skip>0 then
+        device:set_field('poll_skip',skip-1)
+      else
+        refresh(driver,device)
+      end
+    end, 'tuya-poll'))
   end
   note(device,device:get_field('setup_note') or '기종을 선택하세요')
   refresh(driver, device)

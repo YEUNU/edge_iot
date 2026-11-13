@@ -20,7 +20,8 @@ package.preload.client=function()return {
 }end
 require 'init'
 local fields={};local profile;local events={}
-local d={preferences={},thread={call_on_schedule=function()return 1 end},log={warn=function()end}}
+local poll
+local d={preferences={},thread={call_on_schedule=function(_,_,callback) poll=callback;return 1 end},log={warn=function()end}}
 function d:get_field(k)return fields[k]end
 function d:set_field(k,v)fields[k]=v end
 function d:try_update_metadata(m)profile=m.profile end
@@ -654,3 +655,15 @@ event_start=#events;h.refresh.refresh(nil,d)
 assert(#events==event_start and fields.remote_key=='second','the next poll must keep the successful latest selection')
 request_override=nil
 print('Publishing remote-key choices preserves selections made while the list event is in flight')
+
+local baseline = #calls
+local expected = {[1]=1, [3]=2, [7]=3, [11]=4, [15]=5, [16]=6}
+local count = 0
+request_override=function() return nil,'unreachable' end
+for tick=1,16 do
+  if tick==15 then request_override=nil end
+  poll()
+  count=expected[tick] or count
+  assert(#calls==baseline+count,'unexpected Tuya poll count at tick '..tick)
+end
+assert(d.is_online==true,'scheduled retry must recover online')

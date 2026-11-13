@@ -149,7 +149,7 @@ local function start_polling(driver, device)
     device:set_field("core_poll_scheduled", true)
     device.thread:call_on_schedule(
       CORE_POLL_INTERVAL_S,
-      function() cmds.refresh_core(driver, device) end,
+      function() cmds.poll_core(driver, device) end,
       device.id .. "_core_poll"
     )
   end

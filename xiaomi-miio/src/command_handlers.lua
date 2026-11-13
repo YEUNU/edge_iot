@@ -9,6 +9,7 @@ local capabilities = require "st.capabilities"
 
 local M = {}
 local command_queues = setmetatable({}, { __mode = "k" })
+local poll_backoff = setmetatable({}, { __mode = "k" })
 local command_versions = setmetatable({}, { __mode = "k" })
 
 -- Optimistic UI: emit the expected new state immediately so the SmartThings
@@ -140,10 +141,15 @@ local function refresh_properties(device, props, action_name, during_command, co
     return command_versions[device] == version and still_attached(device, handler, client)
   end)
   if not values then
+    if not during_command and action_name ~= "aux refresh" then
+      local ticks = math.min(((poll_backoff[device] or {}).ticks or 1) * 2, 6)
+      poll_backoff[device] = {ticks = ticks, skip = ticks - 1}
+    end
     published:offline()
     warn_fail(device, action_name or "refresh", err)
     return false
   end
+  poll_backoff[device] = nil
   published:online()
   handler.apply_state(published, values)
   return true
@@ -154,6 +160,15 @@ function M.refresh(_, device)
   return handler and refresh_properties(device, handler.refresh_props, "refresh")
 end
 
+function M.poll_core(driver, device)
+  local backoff = poll_backoff[device]
+  if backoff and backoff.skip > 0 then
+    backoff.skip = backoff.skip - 1
+    return
+  end
+  M.refresh_core(driver, device)
+end
+
 function M.refresh_core(_, device)
   local handler = device:get_field("handler_module")
   return handler and refresh_properties(device,
@@ -161,6 +176,7 @@ function M.refresh_core(_, device)
 end
 
 function M.refresh_aux(_, device)
+  if poll_backoff[device] then return end
   local handler = device:get_field("handler_module")
   if not handler or not handler.aux_props or #handler.aux_props == 0 then return true end
   return refresh_properties(device, handler.aux_props, "aux refresh")
