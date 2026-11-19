@@ -82,6 +82,42 @@ Docker 헬스체크는 브리지의 로컬 HTTP 응답을 확인합니다. IR �
 복구되기 전에 브리지가 재시작되면 저장되지 않은 최신 설정은 유지되지 않습니다.
 이벤트 발행 오류도 후속 명령 큐를 막거나 이미 보낸 명령을 재송신하지 않습니다.
 
+### Mac에서 Docker 브리지만 IR 허브에 연결하지 못할 때
+
+브리지가 `healthy`인데 SmartThings에 오프라인으로 표시되면 Mac과 컨테이너 양쪽에서 같은 IR
+허브 IP의 TCP 6668 연결을 비교합니다. Mac에서만 연결된다면 먼저 Docker의
+[macOS 로컬 네트워크 권한](https://docs.docker.com/desktop/troubleshoot-and-support/troubleshoot/topics/#containers-cant-reach-devices-on-my-local-network)을
+확인합니다. 권한을 켠 뒤에도 컨테이너에서 시간 초과가 계속되면 Mac의 루프백 TCP 중계를
+사용할 수 있습니다.
+
+1. `data/config.json`을 Git에 포함되지 않는 위치에 백업하고 실제 IR 허브 IP를 확인합니다.
+2. Mac에서 `127.0.0.1:6668`을 실제 IR 허브의 TCP 6668로 전달하는 중계를 실행합니다.
+   예를 들어 `socat`이 설치된 Mac이라면 다음 명령에서 예시 IP를 실제 허브 IP로 바꿉니다.
+
+   ```sh
+   socat TCP4-LISTEN:6668,bind=127.0.0.1,reuseaddr,fork TCP4:192.168.1.20:6668
+   ```
+
+3. `tuya-local/bridge`에서 컨테이너 기준 `host.docker.internal`의 IPv4 주소를 확인합니다.
+
+   ```sh
+   docker compose exec -T bridge python -c 'import socket; print(socket.gethostbyname("host.docker.internal"))'
+   ```
+
+4. 확인한 IPv4 주소를 `data/config.json`의 `ip`에 넣고 브리지를 재시작합니다.
+   SmartThings에 등록된 브리지 주소와 인증값은 그대로 둡니다.
+
+   ```sh
+   docker compose restart bridge
+   docker compose exec -T bridge python service.py check
+   ```
+
+   `check`가 성공하면 SmartThings에서 상태를 새로 고칩니다.
+
+중계는 계속 실행되어야 합니다. Mac 재부팅 후에는 2단계의 중계를 먼저 다시 실행하고
+`check`로 확인합니다. Docker에서 IR 허브에 직접 연결되는 환경으로 돌아가면 백업한
+설정의 실제 허브 IP를 복원하고 브리지를 재시작한 뒤 중계를 종료합니다.
+
 ## 코드와 UI 재생성
 
 현재 카탈로그는 Tuya에서 사용자 허가로 송신한 Publish 원문을 보존합니다. `head`, `key1`뿐 아니라 `key2` 등 추가 프레임도 그대로 전송합니다.
