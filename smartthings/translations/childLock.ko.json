@@ -19,7 +19,7 @@
   },
   "commands": {
     "setLock": {
-      "label": "어린이 잠금 설정",
+      "label": "버튼 잠금 설정",
       "arguments": {}
     },
     "unlock": {

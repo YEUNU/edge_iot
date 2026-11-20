@@ -3,8 +3,8 @@
   "label": "조작음",
   "attributes": {
     "buzzer": {
-      "label": "부저 상태",
-      "displayTemplate": "{{device.label}} 부저 {{value}}",
+      "label": "조작음",
+      "displayTemplate": "{{device.label}} 조작음 {{value}}",
       "i18n": {
         "value": {
           "off": {
@@ -19,15 +19,15 @@
   },
   "commands": {
     "setBuzzer": {
-      "label": "부저 설정",
+      "label": "조작음 설정",
       "arguments": {}
     },
     "buzzerOff": {
-      "label": "부저 끄기",
+      "label": "조작음 끄기",
       "arguments": {}
     },
     "buzzerOn": {
-      "label": "부저 켜기",
+      "label": "조작음 켜기",
       "arguments": {}
     }
   }
