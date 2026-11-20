@@ -14,7 +14,8 @@ local function status_text(profile_id,text)
   local id=tostring(profile_id or '')
   local item=catalog[id]
   if not item then return text end
-  return (brand_labels[item.brand] or item.brand)..' '..id..' · '..text
+  local brand=brand_labels[item.brand] or item.brand
+  return brand..' '..(item.label or item.name)..' · '..text
 end
 local function connection_note(device,text)
   if device:supports_capability(connection) then

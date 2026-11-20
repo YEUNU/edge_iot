@@ -415,13 +415,13 @@ local function connection_text()
 end
 request_override=function(p)return response_for(p,18)end
 h.refresh.refresh(nil,d)
-assert(connection_text()=='캐리어 104800501 · 전원 미확인 (마지막 설정)','unknown state must be distinguished from remembered settings')
+assert(connection_text()=='캐리어 18~30°C 냉난방 · 전원 미확인 (마지막 설정)','unknown state must be distinguished from remembered settings')
 request_override=function(p)
  local result=response_for(p,18);result.state={power=true,mode='cool',fan='auto',target_temperature=18}
  return result
 end
 h.switch.on(nil,d)
-assert(connection_text()=='캐리어 104800501 · 정상 연결 (마지막 전송)','a transmitted absolute state should keep the normal command-based label')
+assert(connection_text()=='캐리어 18~30°C 냉난방 · 정상 연결 (마지막 전송)','a transmitted absolute state should keep the normal command-based label')
 fields.keys_open=true;fields.remote_key='extra'
 request_override=function(p,c)
  local result=response_for(p,18);result.supported_keys={{id='extra'}}
@@ -430,7 +430,7 @@ end
 raw.sendKey(nil,d)
 assert(connection_text():find('버튼 제어 (상태 미확인)',1,true),'remote-button view must keep its button transmission label')
 raw.back(nil,d)
-assert(connection_text()=='캐리어 104800501 · 전원 미확인 (마지막 설정)','returning after a button must not imply an established power state')
+assert(connection_text()=='캐리어 18~30°C 냉난방 · 전원 미확인 (마지막 설정)','returning after a button must not imply an established power state')
 request_override=function(p)
  local result=response_for(p,18);result.control_style='buttons';result.supported_keys={{id='power'}}
  return result
