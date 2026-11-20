@@ -4,6 +4,8 @@ import argparse
 import hmac
 import json
 import os
+import signal
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from controller import Controller, DeviceError
@@ -18,12 +20,15 @@ class Handler(BaseHTTPRequestHandler):
 
     def reply(self, status, data):
         body = json.dumps(data, allow_nan=False).encode()
-        self.send_response(status)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Content-Length', str(len(body)))
-        self.send_header('Connection', 'close')
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(status)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(body)))
+            self.send_header('Connection', 'close')
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def setup(self):
         super().setup()
@@ -142,6 +147,10 @@ def main():
         server = HTTPServer((args.bind, args.port), Handler)
         server.controller = controller
         server.pairing = PairingStore(args.state_dir)
+        def stop(*_):
+            threading.Thread(target=server.shutdown, daemon=True).start()
+        signal.signal(signal.SIGTERM, stop)
+        signal.signal(signal.SIGINT, stop)
         print('Tuya LAN bridge listening on %s:%d' % server.server_address, flush=True)
         try:
             server.serve_forever()

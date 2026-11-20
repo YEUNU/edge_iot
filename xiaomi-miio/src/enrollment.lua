@@ -121,7 +121,6 @@ function M.handle(driver, setup, args, status)
     local bundle = exchange(address, port, key, "/bundle", {device_id=setup.id}, started + TRANSFER_TTL_S)
     assert(type(bundle) == "table" and bundle.device_id == setup.id and array_size(bundle.devices))
     local ttl = bundle.expires_in
-    if ttl == nil then ttl = TRANSFER_TTL_S end -- Compatibility with an older helper.
     assert(type(ttl) == "number" and ttl > 0 and ttl <= TRANSFER_TTL_S)
     -- Start from before the exchange so transit time cannot extend the helper's expiry.
     local deadline = started + ttl

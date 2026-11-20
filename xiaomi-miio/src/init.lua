@@ -273,10 +273,6 @@ local capability_handlers = {
     [capabilities.switch.commands.on.NAME]  = cmds.switch_on,
     [capabilities.switch.commands.off.NAME] = cmds.switch_off,
   },
-  -- Kept for devices that still have the earlier fan profile during an update.
-  [capabilities.fanSpeed.ID] = {
-    [capabilities.fanSpeed.commands.setFanSpeed.NAME] = cmds.set_fan_speed,
-  },
   [capabilities.fanSpeedPercent.ID] = {
     [capabilities.fanSpeedPercent.commands.setPercent.NAME] = cmds.set_fan_speed_percent,
   },
@@ -285,9 +281,6 @@ local capability_handlers = {
   },
   [capabilities.fanOscillationMode.ID] = {
     [capabilities.fanOscillationMode.commands.setFanOscillationMode.NAME] = cmds.set_oscillation_mode,
-  },
-  [capabilities.switchLevel.ID] = {
-    [capabilities.switchLevel.commands.setLevel.NAME] = cmds.set_switch_level,
   },
   [capabilities.filterState.ID] = {
     [capabilities.filterState.commands.resetFilter.NAME] = cmds.reset_filter,

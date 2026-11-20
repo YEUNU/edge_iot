@@ -246,8 +246,9 @@ test("bundle transit cannot extend the helper lifetime",function()
  local result=run{bundle={device_id="setup",devices={record()},expires_in=20},bundle_delay=15}
  counters(result,0,0,1);assert(result.auth_calls==0)
 end)
-test("older helper lifetime omission remains compatible",function()
- counters(run{bundle={device_id="setup",devices={record()}}},0,1,0)
+test("missing bundle lifetime is rejected",function()
+ local result=run{bundle={device_id="setup",devices={record()}}}
+ assert(result.ack==nil and result.statuses[#result.statuses]:match("연결 실패"))
 end)
 test("partial TCP send is completed before consuming response",function()
  counters(run{partial_send=true},0,1,0)

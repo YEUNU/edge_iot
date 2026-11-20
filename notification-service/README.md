@@ -1,10 +1,10 @@
 # Xiaomi 기기별 직접 알림 — Docker Compose
 
-Docker 컨테이너에서 실행하며 SmartThings 루틴 없이 기기 이름과 기기 화면 링크로 푸시합니다. 감시 대상은 Xiaomi 제습기(`xiaomi.derh.13l`)와 공기청정기(`zhimi.airp.cpa4`)입니다.
+Docker 컨테이너로 실행하며 SmartThings 루틴 없이 기기 이름과 기기 화면 링크로 푸시합니다. 감시 대상은 Xiaomi 제습기(`xiaomi.derh.13l`)와 공기청정기(`zhimi.airp.cpa4`)입니다.
 
 ## 설치 및 구성 변경
 
-Mac에 Python 3.9+, SmartThings CLI, Docker Compose가 필요합니다. 전용 프로필로 로그인한 뒤 설치 스크립트를 실행합니다.
+호스트에 Python 3, SmartThings CLI, Docker Compose가 필요합니다. 전용 프로필로 로그인한 뒤 설치 스크립트를 실행합니다.
 
 ```sh
 smartthings locations -p xiaomi-alerts
@@ -14,8 +14,8 @@ python3 notification-service/install.py \
   --test-device XIAOMI_ALERTS_ID
 ```
 
-- `install.py`는 전용 CLI 프로필의 OAuth 토큰을 데이터 디렉터리(`~/Library/Application Support/Xiaomi Notifications`)의 `auth.json`과 `config.json`에 저장하고, `notification-service/`에서 `docker compose up -d --build`로 컨테이너를 실행합니다.
-- 실행 코드는 저장소의 `notification-service/` 단일 경로에서 빌드하며 데이터 디렉터리에는 런타임 상태(`auth.json`, `config.json`, `state.json`, `health.json`)만 보관합니다.
+- `install.py`는 전용 CLI 프로필의 OAuth 토큰을 데이터 디렉터리(`~/Library/Application Support/Xiaomi Notifications`)의 `auth.json`·`config.json`에 저장하고, `notification-service/`에서 `docker compose up -d --build`로 컨테이너를 실행합니다.
+- 컨테이너는 저장소의 `notification-service/`에서 빌드하며 데이터 디렉터리에는 런타임 상태(`auth.json`, `config.json`, `state.json`, `health.json`)만 보관합니다.
 - 구성을 변경할 때는 `docker compose --project-directory notification-service stop` 후 위 명령을 다시 실행합니다.
 
 ## 운영 및 상태 확인

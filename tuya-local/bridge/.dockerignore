@@ -1,6 +1,8 @@
-data/
-.venv/
-config*.json
-__pycache__/
-state/
-.env
+*
+!Dockerfile
+!requirements.txt
+!controller.py
+!service.py
+!pairing.py
+!catalog
+!catalog/**

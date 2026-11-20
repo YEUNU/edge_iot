@@ -111,7 +111,6 @@ class Controller:
             self.profiles[str(index)] = validate(merged)
         self._catalog_cache = OrderedDict()
         self.catalog = {}
-        catalog_dir = Path(config.get('catalog_dir', Path(__file__).parent / 'catalog'))
         if (catalog_dir / 'index.json').exists():
             for item in json.loads((catalog_dir / 'index.json').read_text())['profiles']:
                 self.catalog[str(item['remote_index'])] = dict(item, path=catalog_dir / (str(item['remote_index'])+'.json.gz'))
@@ -182,6 +181,8 @@ class Controller:
             fd, temporary = tempfile.mkstemp(dir=path.parent, prefix='.settings-')
             with os.fdopen(fd, 'w') as stream:
                 json.dump(self.saved_settings, stream)
+                stream.flush()
+                os.fsync(stream.fileno())
             os.replace(temporary, path)
         except OSError:
             # IR delivery succeeded. Storage failure must not report a failed

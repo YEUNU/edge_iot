@@ -1,81 +1,40 @@
 # Xiaomi SmartThings 화면 구성
 
-기존 기기 ID와 capability 계약을 유지하고, 모델별 device configuration을 적용합니다.
+모델별 device configuration으로 기본 화면과 고급 화면을 분리해 제공합니다.
 
-- 제습기: 기본 화면의 현재 습도는 간결한 읽기 전용 숫자, 목표 습도는 40–70% 조절 슬라이더이며 운전 모드보다 먼저 배치.
-  표준 습도 capability는 대시보드·기록·자동화에 유지하고, 큰 그래프는 고급 화면에서 표시.
-- 공기청정기: 미세먼지와 필터 잔량을 표시하고 중복 필터 경고 행은 숨김.
-  필터 교체 초기화는 고급 화면의 별도 관리 버튼으로 제공. 꺼진 상태에서도 저장된 수동 풍량(0–14)을 표시.
-  운전 모드가 수동일 때만 풍량 슬라이더를 활성화하며 자동·수면에서는 비활성화.
-  기존 자동화 호환을 위해 내부 모드 값 `즐겨찾기`는 유지하고 화면에서는 `수동`으로 표시.
-- 선풍기: 바람 세기 → 바람 모드 → 좌우 회전 → 꺼짐 예약 순서.
-  회전은 고정·좌우 회전만 제공하는 드롭다운이며 표준 자동화 명령과 같은 제어·확인 경로를 사용.
-- 꺼짐 예약: 선풍기 0–480분, 제습기 0–720분 슬라이더. 0분은 해제이며 실제 남은 분을 그대로 표시.
-- Xiaomi 알림: 최근 메시지와 테스트 버튼만 표시. 이전 루틴용 버튼 상태는 숨김.
-- 대시보드: 실제 가전은 표준 switch 상태로 켜짐·꺼짐 문구와 활성/비활성 카드 색상을 표시.
-  센서값은 상세 화면에서 확인하며, 알림 기기는 정적 안내 표시.
+- **제습기**: 기본 화면에 현재 습도(간결한 읽기 전용 숫자), 목표 습도(40–70% 슬라이더), 운전 모드, 꺼짐 예약(0–720분), 고장 상태를 배치합니다. 표준 습도 capability는 대시보드·기록·자동화에 유지하며 고급 화면에 표시합니다. 옷 건조 모드에서는 목표 습도 조절을 비활성화하고 기기 보고값을 유지합니다.
+- **공기청정기**: 미세먼지, 필터 잔량, 운전 모드, 수동 풍량(0–14)을 표시합니다. 수동 풍량 슬라이더는 운전 모드가 수동(내부 값 `즐겨찾기`)일 때만 활성화됩니다. 필터 교체 초기화는 고급 화면의 전원이 꺼진 대기 상태에서 표시됩니다.
+- **선풍기**: 바람 세기(0–100%) → 바람 모드 → 좌우 회전(고정·좌우 회전 드롭다운) → 꺼짐 예약(0–480분) 순서로 배치합니다.
+- **Xiaomi 알림**: 최근 메시지와 테스트 보내기 버튼만 표시합니다.
+- **대시보드**: 실제 가전은 표준 `switch` 상태로 켜짐·꺼짐 문구와 카드 색상을 표시합니다. 설정 기기는 IP·토큰 입력 전에도 온라인을 유지합니다.
+- **고급 화면**: 표시등, 조작음(토글), 버튼 잠금(토글), 회전 각도(°), 종료 후 내부 건조, 건조 남은 시간, 예열 상태, 필터 초기화 기능을 표시합니다.
 
-기본 화면은 자주 쓰는 기능, 고급 화면은 표시등·조작음·버튼 잠금·관리 기능을 추가합니다.
-조작음과 버튼 잠금은 한 번 누르는 토글이며, 회전 각도는 ° 단위를 제목에 표시합니다.
-고급 화면에서도 선풍기 꺼짐 예약이 회전 각도보다 먼저 나옵니다.
-SmartThings 앱의 상태/조작 그룹 구분은 플랫폼이 결정합니다.
-Android 앱은 일부 표준 capability의 `displayType`을 무시하고 전용 그래프·버튼을
-사용하므로, 현재 습도와 회전 선택은 화면용 custom capability로 표시합니다.
-실제 센서 값과 회전 상태를 함께 발행하며 기존 표준 capability 계약은 유지합니다.
+## 생성과 배포
 
-설정용 기기는 IP·토큰 입력 전에도 온라인으로 유지합니다. 실제 가전의 연결 실패는
-기존과 같이 오프라인으로 표시합니다.
+다른 계정에 배포할 때는 먼저 [배포 설정과 검증](../README.md#배포-설정과-검증)에 따라 `integration.json`을 수정합니다.
 
-## 수정과 배포
-
-다른 계정에 배포할 때는 먼저 [배포 설정](../README.md#배포-설정)을 변경합니다.
-
-`device-configs/generate.py`가 프로필 capability를 읽어 설정 화면을 포함한 8개 JSON 구성을 만듭니다.
+`device-configs/generate.py`가 프로필 capability를 읽어 8개 JSON 구성을 생성합니다.
 
 ```sh
 python3 smartthings/device-configs/generate.py
 smartthings presentation:device-config:create -i smartthings/device-configs/PROFILE.json -j
 ```
 
-반환된 `presentationId`를 해당 `xiaomi-miio/profiles/PROFILE.yml`의 `metadata.vid`에
-반영하고 `metadata.mnmn`은 `SmartThingsCommunity`로 설정합니다. 공통 custom capability
-presentation을 바꾸면 해당 presentation도 먼저 업데이트한 뒤 드라이버를 패키징합니다.
-
-배포 후 `smartthings devices DEVICE_ID -j`의 presentationId를 확인하고
-`smartthings presentation PRESENTATION_ID SmartThingsCommunity -j`로 실제 생성된
-화면을 확인합니다. 앱에 이전 화면이 남아 있으면 앱을 종료하고 다시 엽니다.
+반환된 `presentationId`를 해당 `xiaomi-miio/profiles/PROFILE.yml`의 `metadata.vid`에 반영하고 `metadata.mnmn`은 `SmartThingsCommunity`로 설정합니다. custom capability presentation을 바꾼 경우 해당 presentation도 먼저 업데이트한 뒤 드라이버를 패키징합니다.
 
 ## 한국어 번역
 
-`translations/*.json`을 capability 이름과 함께 관리합니다. Presentation의 한글
-label만으로는 앱의 영문 capability 제목 대체를 방지할 수 없습니다.
-정의·presentation을 등록한 다음 번역을 적용하고 device configuration을 생성합니다.
+`translations/*.json`을 capability 정의·presentation 등록 후 적용합니다.
 
 ```sh
 namespace=$(python3 -c 'import json; print(json.load(open("integration.json"))["namespace"])')
 for file in smartthings/translations/*.json; do
   name=$(basename "$file" .json)
   name=${name%.*}
-  if [ "$name" = favoriteLevel ]; then name=airPurifierFavoriteLevel; fi
   smartthings capabilities:translations:upsert "$namespace.$name" -i "$file"
 done
 ```
 
-`favoriteLevel*.json`의 capability 이름은 `airPurifierFavoriteLevel`입니다.
-새 설치에서는 `currentHumidity`와 `fanOscillationControl`의 정의·presentation도 먼저 등록합니다.
-SmartThings의 프로필 갱신 안내가 나오면 확인을 누른 뒤 기기를 다시 엽니다.
-한국어 API 확인에는 `--language ko`를 사용합니다.
+알림·설정 카드의 상단 제목 영문 대체 표시를 방지하기 위해 `latestAlert.en.json`과 `xiaomiLocalLink.en.json`에도 한국어 기본 제목을 유지합니다.
 
-알림·설정 카드의 상단 제목은 Android에서 기본 언어 번역을 사용하는 동작을
-실기로 확인했습니다. 이 한국어 전용 화면의 `latestAlert.en.json`과
-`xiaomiLocalLink.en.json`에도 한국어 기본 제목을 넣어 영문 대체 표시를 방지합니다.
-
-번역 형식 참고: [SmartThings Capability Translations](https://developer.smartthings.com/docs/devices/capabilities/capability-translations/).
-
-## 기기별 동작 범위
-
-제습기 목표 습도는 옷 건조 모드에서 조절할 수 없으며 실제 보고값을 유지합니다.
-고급 화면에 종료 후 내부 건조, 건조 남은 시간, 예열 상태를 추가했습니다.
-공기청정기 수동 풍량은 0–14이며 0도 켜진 상태의 저장 설정입니다.
-필터 교체 초기화는 전원이 꺼진 대기 상태에서만 사용할 수 있습니다.
-기기별 근거와 실측 한계는 [기기별 동작 근거](MANUAL_AUDIT.md)에 있습니다.
+기기별 세부 동작 규칙은 [기기별 동작 규칙](MANUAL_AUDIT.md)을 참고하세요.

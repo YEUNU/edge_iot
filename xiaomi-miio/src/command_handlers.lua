@@ -345,15 +345,6 @@ function M.switch_off(driver, device)
     function(h, c) return h.set_switch(c, false) end)
 end
 
-function M.set_fan_speed(driver, device, command)
-  local speed = tonumber(command.args.speed) or 0
-  optimistic(device, capabilities.fanSpeed.fanSpeed(speed))
-  optimistic(device, speed > 0 and capabilities.switch.switch.on()
-    or capabilities.switch.switch.off())
-  fire_and_confirm(driver, device, "set_fan_speed",
-    function(h, c) return call_setter(h, c, "set_fan_speed", command.args.speed) end)
-end
-
 function M.set_favorite_level(driver, device, command)
   local level = tonumber(command.args.level)
   if not level or level < 0 or level > 14 or level ~= math.floor(level) then return end
@@ -407,12 +398,6 @@ function M.set_power_off_timer(driver, device, command)
   end
   fire_and_confirm(driver, device, "set_power_off_timer",
     function(h, c) return call_setter(h, c, "set_power_off_timer", command.args.minutes) end)
-end
-
-function M.set_switch_level(driver, device, command)
-  optimistic(device, capabilities.switchLevel.level(command.args.level))
-  fire_and_confirm(driver, device, "set_switch_level",
-    function(h, c) return call_setter(h, c, "set_switch_level", command.args.level) end)
 end
 
 function M.set_target_humidity(driver, device, command)

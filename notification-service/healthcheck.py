@@ -28,9 +28,7 @@ def healthy(status, now):
             or type(status.get("pendingRetries", 0)) is not int
             or status.get("pendingRetries", 0) != 0 or status.get("stateSaved", True) is not True):
         return False
-    if "deviceCloudReads" not in status:
-        return recent(status.get("lastCloudReadAt"), now)
-    reads = status["deviceCloudReads"]
+    reads = status.get("deviceCloudReads")
     started = status.get("startedAt")
     if not isinstance(reads, dict) or not reads or not number(started) or now < started:
         return False

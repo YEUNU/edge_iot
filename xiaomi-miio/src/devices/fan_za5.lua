@@ -181,12 +181,9 @@ function M.apply_state(device, p)
   end
 
   local indicator = p["indicator"]
-  if indicator ~= nil then
+  if indicator ~= nil and cap_indicatorMode then
     events.emit_changed(device, cap_indicatorMode, "indicator", indicator_mode(indicator),
       cap_indicatorMode.indicator(indicator_mode(indicator)))
-    -- Backward compatibility while a hub is still applying the new profile.
-    events.emit_changed(device, capabilities.switchLevel, "level", indicator,
-      capabilities.switchLevel.level(indicator))
   end
 
   local hum = p["humidity"]
@@ -209,10 +206,6 @@ function M.set_switch(client, on)
     client:set_property(SIID_FAN, PIID_POWER, value, "power"))
 end
 
-function M.set_fan_speed(client, speed)
-  return M.set_fan_speed_percent(client, speed)
-end
-
 function M.set_fan_speed_percent(client, pct)
   local value, err = validation.integer(pct, 0, 100)
   if not value then return nil, err end
@@ -227,14 +220,6 @@ function M.set_fan_speed_percent(client, pct)
   if not ok then return nil, e, expected end
   return confirmed(expected,
     client:set_property(SIID_CUSTOM, PIID_SPEED_PERCENT, pct, "speed-percent"))
-end
-
-function M.set_switch_level(client, level)
-  local value, err = validation.integer(level, 0, 100)
-  if not value then return nil, err end
-  level = value
-  return confirmed({ indicator = level },
-    client:set_property(SIID_INDICATOR, PIID_INDICATOR_BRIGHT, level, "indicator"))
 end
 
 function M.set_indicator(client, mode)

@@ -33,15 +33,7 @@
     }
   ],
   "automation": {
-    "conditions": [
-      {
-        "component": "main",
-        "capability": "button",
-        "version": 1,
-        "values": [],
-        "patch": []
-      }
-    ],
+    "conditions": [],
     "actions": []
   }
 }

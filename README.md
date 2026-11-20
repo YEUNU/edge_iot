@@ -1,7 +1,7 @@
 # edge_iot — SmartThings Edge 로컬 제어
 
-Xiaomi MiIO/MiOT 기기와 Tuya IR 에어컨을 SmartThings에서 제어합니다.
-Xiaomi 제어는 허브에서 직접 실행하고, Tuya IR과 기기별 푸시는 Docker 컨테이너로 실행합니다.
+Xiaomi MiIO/MiOT 기기와 Tuya IR 에어컨을 SmartThings에서 로컬 제어합니다.
+Xiaomi 제어는 허브에서 직접 실행하고, Tuya IR 브리지와 Xiaomi 기기별 푸시 알림은 Docker 컨테이너로 실행합니다.
 
 ## 구성
 
@@ -10,10 +10,10 @@ Xiaomi 제어는 허브에서 직접 실행하고, Tuya IR과 기기별 푸시�
 | `xiaomi-miio/src/` | SmartThings 허브 | 암호화된 UDP/54321로 Xiaomi 검색·인증·제어 |
 | `xiaomi-miio/onboarding/` | 최초 등록 시 1회 실행 | Xiaomi QR 로그인과 일회용 암호화 자격증명 전달 |
 | `tuya-local/src/` | SmartThings 허브 | 기종 선택·시험·저장 UI와 LAN 브리지 명령 |
-| `tuya-local/bridge/` | Docker | 내장 IR 코드표를 사용해 지정한 Tuya 허브로 송신 |
-| `notification-service/` | Docker | 확인된 Xiaomi 경고를 조회해 SmartThings 직접 푸시 |
+| `tuya-local/bridge/` | Docker | 내장 IR 코드표로 지정한 Tuya IR 허브에 송신 |
+| `notification-service/` | Docker | 확정된 Xiaomi 경고를 조회해 SmartThings 직접 푸시 |
 | `smartthings/` | 개발·배포 자료 | capability, presentation, 번역, 화면 구성 |
-| `tests/`, `scripts/` | 개발 환경 | 단위 테스트 및 공개 데이터 검사 |
+| `tests/`, `scripts/` | 개발 환경 | 단위 테스트, 통합 설정 동기화, 공개 데이터 검사 |
 
 ```text
 SmartThings → Xiaomi Edge → MiIO UDP → Xiaomi 기기
@@ -25,7 +25,7 @@ Xiaomi 확정 상태 → SmartThings → 알림 서비스(Docker) → 기기별 
 
 | 기기 | 모델 | 주요 기능 |
 |---|---|---|
-| Mi Smart Standing Fan 2 | `zhimi.fan.za5` | 전원, 풍량, 바람 모드, 좌우 회전, 8시간 꺼짐 예약 |
+| Mi Smart Standing Fan 2 | `zhimi.fan.za5` | 전원, 풍량(0–100%), 바람 모드, 좌우 회전, 8시간 꺼짐 예약 |
 | Mi Air Purifier 4 Compact | `zhimi.airp.cpa4` | 전원, 모드, PM2.5, 수동 풍량(0–14), 필터 수명 |
 | Xiaomi Smart Dehumidifier 13L | `xiaomi.derh.13l` | 전원, 모드, 목표 습도(40–70%), 12시간 꺼짐 예약, 건조·고장 상태 |
 
@@ -51,7 +51,7 @@ python3 scripts/configure_integration.py
 python3 scripts/configure_integration.py --check
 ```
 
-저장소 루트에서 테스트 실행:
+저장소 루트에서 테스트 및 검증 실행:
 
 ```sh
 xiaomi-miio/onboarding/.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
@@ -72,4 +72,4 @@ smartthings edge:drivers:package xiaomi-miio --channel CHANNEL_ID --hub HUB_ID
 smartthings edge:drivers:package tuya-local --channel CHANNEL_ID --hub HUB_ID
 ```
 
-Tuya 브리지와 알림 서비스는 각각의 디렉터리(`tuya-local/bridge`, `notification-service`)에서 `docker compose up -d --build`로 배포합니다. 커밋 전 [공개 데이터 검사](PRIVACY.md)를 실행합니다.
+상시 실행 서비스(`tuya-local/bridge`, `notification-service`)는 각 디렉터리에서 `docker compose up -d --build`로만 배포하며, 호스트에서 백그라운드 Python 프로세스로 실행하지 않습니다. 커밋 전 [공개 데이터 검사](PRIVACY.md)를 실행합니다.

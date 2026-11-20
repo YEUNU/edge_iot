@@ -386,7 +386,7 @@ class Monitor:
                     return
                 try:
                     self.client.notify(self.config["locationId"], {"id": device_id, "label": "Xiaomi 알림"},
-                                       "Mac 알림 서비스가 정상 동작합니다. 루틴 없이 보낸 테스트입니다.")
+                                       "알림 서비스가 정상 동작합니다. 루틴 없이 보낸 테스트입니다.")
                 except (RequestError, OSError) as exc:
                     self.defer_push(key, stamp, pending, "Xiaomi 알림", "test", exc)
                     return
@@ -489,7 +489,9 @@ def main():
             auth.refresh()
             return
         if args.test:
-            device = next(d for d in config["devices"] if d["id"] == args.test)
+            device = next((d for d in config["devices"] if d["id"] == args.test), None)
+            if device is None:
+                parser.error("unknown device ID: " + args.test)
             client.notify(config["locationId"], device,
                           "기기별 직접 알림 테스트입니다. 루틴 없이 보냈으며 실제 고장이 아닙니다.")
             logging.info("test push accepted %s", device["label"])
@@ -510,7 +512,8 @@ def main():
                 logging.warning("health state save unavailable (%s)", exc)
             if args.once:
                 return
-            for _ in range(config.get("pollSeconds", 15)):
+            poll_seconds = max(1, int(config.get("pollSeconds", 15)))
+            for _ in range(poll_seconds):
                 if not running:
                     break
                 time.sleep(1)

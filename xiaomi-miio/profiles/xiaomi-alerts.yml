@@ -2,12 +2,10 @@ name: xiaomi-alerts.v1
 components:
   - id: main
     capabilities:
-      - id: button
-        version: 1
       - id: earthpanel38939.latestAlert
         version: 1
     categories:
       - name: RemoteController
 metadata:
   mnmn: SmartThingsCommunity
-  vid: 99b20734-530a-360b-a25a-421476e168c3
+  vid: 04df0718-055c-31c6-adfd-51737517389c

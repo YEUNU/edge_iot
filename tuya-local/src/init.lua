@@ -30,22 +30,23 @@ end
 local function in_setup(device)
   return device:get_field('setup_open') or (device.preferences.changeModel and not device:get_field('setup_closed'))
 end
+local function selected(device)
+  return tostring(device:get_field('active_profile') or device.preferences.remoteIndex or 104800501)
+end
 local function update_view(device)
   -- Profile attachment is asynchronous. A newly attached view needs its first
   -- complete publication even when its values match the preceding view.
   device:set_field('published_events',nil)
   local setup=in_setup(device)
-  local active=catalog[tostring(device:get_field('active_profile') or 104800501)] or {}
+  local active_id=selected(device)
+  local active=catalog[active_id] or {}
   local candidate=catalog[tostring(device:get_field('candidate_profile') or 104800501)] or {}
   local profile=not Client.valid(credentials(device)) and 'tuya-local-ac.connect.v1'
     or (device:get_field('keys_open') and 'tuya-local-ac.keys.v1')
     or (setup and (candidate.style=='buttons' and 'tuya-local-ac.setup-buttons.v1' or 'tuya-local-ac.setup.v1'))
     or (active.style=='buttons' and 'tuya-local-ac.buttons.v1')
-    or ( ('tuya-local-ac.'..(temperatures.by_id[tostring(device:get_field('active_profile') or 104800501)] or 'acTemp18To30')..'.v1'))
+    or ('tuya-local-ac.'..(temperatures.by_id[active_id] or 'acTemp18To30')..'.v1')
   device:try_update_metadata({profile=profile})
-end
-local function selected(device)
-  return tostring(device:get_field('active_profile') or device.preferences.remoteIndex or 104800501)
 end
 local function matches_brand(item, brand)
   if item.brand==brand then return true end

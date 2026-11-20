@@ -1,12 +1,9 @@
-# Publishing without household data
+# 개인·가정 데이터 비공개 유지
 
-Never commit device credentials, account sessions, household device/location IDs,
-raw cloud exports, packet captures, screenshots, or local runtime databases.
-Keep local configuration and state in ignored `data/`, `state/`, `.state/`, or
-`.env` files. Example files must contain placeholders. `.gitignore` does not
-remove files already tracked by Git.
+기기 자격증명, 계정 세션, 가정의 기기·장소 ID, 클라우드 원본 추출 파일, 패킷 캡처, 스크린샷, 로컬 런타임 데이터는 커밋하지 않습니다.
+로컬 설정과 상태는 `.gitignore` 대상인 `data/`, `state/`, `.state/`, `.env`에만 보관하고, 예시 파일에는 자리표시자만 둡니다.
 
-Before publishing:
+## 커밋·배포 전 검사
 
 ```sh
 python3 scripts/check_public_data.py
@@ -15,47 +12,24 @@ python3 scripts/check_public_data.py --staged --metadata
 gitleaks git . --redact
 ```
 
-The Python check scans tracked and publishable untracked working files, or the
-entire Git index with `--staged`. It decompresses `.gz` catalogs, rejects private
-runtime/export paths, and detects personal home-directory paths. Staged content
-is read from Git, so cleaning a working file does not hide an already staged leak.
+- 추적 파일과 커밋 가능한 미추적 파일(또는 `--staged` 시 Git 인덱스 전체)을 검사합니다.
+- `.gz` 카탈로그는 압축을 풀어 검사하며, 비공개 경로·개인 홈 디렉터리 경로(`/Users/...`, `/home/...`)를 차단합니다.
+- `--staged`는 Git 인덱스 내용을 직접 읽으므로 작업 트리를 비워도 이미 스테이징된 유출을 감지합니다.
 
-Known private values come from ignored runtime JSON configuration and `.env`
-files. Supported JSON names include `config.json`, `auth.json`, `credentials.json`,
-`cloud.json`, `devices.json`, `tinytuya.json`, `secrets.json`, `known_hubs.json`,
-`ir-detail.json`, and `ac-detail.json`. The comparison recognizes camelCase and
-snake_case tokens, keys, account/device/location/household IDs, numeric DIDs,
-LAN addresses, MAC addresses, and device IDs in notification configuration.
-Environment variables may have provider prefixes, including `TUYA_BIND_IP`.
-Public OAuth client IDs and catalog button IDs/IR payloads are not collected as
-credentials.
+## 비교 기준
 
-These external macOS configurations are also read when present:
+무시된 로컬 JSON 설정과 `.env` 파일에서 토큰·키·계정/기기/장소/허브 ID·숫자 DID·LAN IP·MAC 주소를 수집해 정확히 대조합니다.
 
-- `~/Library/Application Support/@smartthings/cli/credentials.json`
-- `~/Library/Application Support/@smartthings/cli/known_hubs.json`
-- `~/Library/Application Support/Xiaomi Notifications/auth.json`
-- `~/Library/Application Support/Xiaomi Notifications/config.json`
+- 저장소 내 지원 JSON 파일명: `config.json`, `cloud.json`, `credentials.json`, `auth.json`, `devices.json`, `tinytuya.json`, `secrets.json`, `known_hubs.json`, `ir-detail.json`, `ac-detail.json`
+- 자동 참조하는 외부 macOS 설정 경로:
+  - `~/Library/Application Support/@smartthings/cli/credentials.json`
+  - `~/Library/Application Support/@smartthings/cli/known_hubs.json`
+  - `~/Library/Application Support/Xiaomi Notifications/auth.json`
+  - `~/Library/Application Support/Xiaomi Notifications/config.json`
+- 추가 비공개 파일은 `--private-config PATH` 옵션으로 지정합니다.
+- 공개 OAuth 클라이언트 ID, 카탈로그 버튼 ID·IR 페이로드, 공개 SmartThings capability namespace 및 presentation ID는 비공개 값이 아닙니다.
+- 결과에는 파일명과 사유만 출력하며 실제 값은 출력하지 않습니다.
 
-Use repeatable `--private-config PATH` options for private JSON or `.env` files in
-other locations. `.state`, dependency directories, `tests`, and `fixtures` are
-excluded from automatic comparison-source discovery: audit output and synthetic
-fixtures are not authoritative configuration. Pass a trusted source there
-explicitly if needed. Missing explicit sources, unreadable/invalid private JSON,
-and unreadable/corrupt publishable files fail the check rather than being skipped.
+## 커밋 메타데이터
 
-The report prints file names and finding categories, never matching values or
-configuration contents. External sources use numbered labels instead of personal
-home paths. This is an exact-value comparison and complements a secret scanner;
-neither proves that every possible personal detail has been detected. On a clean
-clone, absent local configuration cannot supply comparison values.
-
-Use the GitHub-provided `users.noreply.github.com` email for commits. `--metadata`
-checks both author and committer emails in all reachable commits and reports
-non-GitHub-noreply addresses without printing them. It does not inspect historical
-file contents; run the Git secret scanner as well. Changing local Git
-configuration does not remove addresses already stored in commit metadata.
-
-Public SmartThings capability namespaces and presentation IDs are needed by the
-published profiles. They identify integration definitions, not a household's
-device, location, LAN address, or authentication key.
+커밋 이메일은 GitHub `users.noreply.github.com` 주소를 사용합니다. `--metadata`는 도달 가능한 모든 커밋의 author/committer 이메일을 검사합니다.

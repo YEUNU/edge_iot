@@ -89,11 +89,8 @@ class HealthTests(unittest.TestCase):
             with self.subTest(now=now):
                 self.assertFalse(h.healthy(status(), now))
 
-    def test_legacy_health_file_keeps_recent_read_check(self):
-        legacy = {"lastPollAt": 1000, "lastCloudReadAt": 1000, "pendingRetries": 0}
-        self.assertTrue(h.healthy(legacy, 1000))
-        legacy["lastPollAt"] = 1120
-        self.assertFalse(h.healthy(legacy, 1120))
+    def test_missing_device_cloud_reads_is_unhealthy(self):
+        self.assertFalse(h.healthy({"lastPollAt": 1000, "lastCloudReadAt": 1000, "pendingRetries": 0}, 1000))
 
 
 if __name__ == "__main__":

@@ -32,8 +32,8 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
     is_alert = profile.stem == 'xiaomi-alerts'
     rows = []
     for cap in caps:
-        # Keep API/automation attributes, but avoid redundant filter/legacy-button cards.
-        if cap in (NS + 'filterAlert', 'button', 'fanOscillationMode'):
+        # Keep API/automation attributes, but avoid redundant filter/oscillation cards.
+        if cap in (NS + 'filterAlert', 'fanOscillationMode'):
             continue
         # Android renders the standard sensor as a large history chart even
         # when patched to state. Keep its history/dashboard/automation contract,

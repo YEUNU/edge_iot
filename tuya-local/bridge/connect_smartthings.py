@@ -78,10 +78,16 @@ def main():
     if not args.address:
         env=Path(__file__).parent/'.env'
         if env.exists():
-            args.address=next((line.partition('=')[2].strip() for line in env.read_text().splitlines() if line.startswith('TUYA_BIND_IP=')),None)
+            raw=next((line.partition('=')[2].strip() for line in env.read_text().splitlines() if line.strip().startswith('TUYA_BIND_IP=')),None)
+            if raw:
+                args.address=raw.split('#',1)[0].strip().strip('"\'')
         if not args.address or args.address in ('127.0.0.1','0.0.0.0'):
             parser.error('Set TUYA_BIND_IP in bridge/.env or supply --address with the LAN address.')
-    uuid.UUID(args.device);ipaddress.IPv4Address(args.address)
+    try:
+        uuid.UUID(args.device)
+        ipaddress.IPv4Address(args.address)
+    except ValueError as exc:
+        parser.error(str(exc))
     if not 0<args.port<=65535:parser.error('invalid port')
     dispatch_enrollment(args)
 

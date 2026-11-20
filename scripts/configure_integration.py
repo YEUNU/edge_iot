@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Generate public deployment settings and native SmartThings references."""
 import argparse
-import ast
 import json
 from pathlib import Path
 import re
@@ -153,6 +152,23 @@ def planned_updates(root=ROOT, namespace=None):
                     updated["id"] = capability_id(updated["id"], old_namespaces, namespace)
                 desired[path] = (original if updated == value else
                                  json.dumps(updated, ensure_ascii=False, indent=2) + "\n")
+    compose_path = root / "notification-service/compose.yaml"
+    if compose_path.exists():
+        compose_text = compose_path.read_text(encoding="utf-8")
+        desired[compose_path] = re.sub(
+            r'(SMARTTHINGS_NAMESPACE:\s*"\$\{SMARTTHINGS_NAMESPACE:-)([A-Za-z][A-Za-z0-9_]*)(\}")',
+            rf"\g<1>{namespace}\g<3>",
+            compose_text,
+        )
+    notifier_path = root / "notification-service/notifier.py"
+    if notifier_path.exists():
+        notifier_text = notifier_path.read_text(encoding="utf-8")
+        desired[notifier_path] = re.sub(
+            r'(def _load_namespace\(\):[\s\S]*?return ")([A-Za-z][A-Za-z0-9_]*)(")',
+            rf"\g<1>{namespace}\g<3>",
+            notifier_text,
+            count=1,
+        )
     return {path: value for path, value in desired.items()
             if not path.exists() or path.read_text(encoding="utf-8") != value}
 
