@@ -66,7 +66,13 @@
       "capability": "earthpanel38939.acLocalLink",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "에어컨 기종"
+        }
+      ]
     }
   ],
   "automation": {
