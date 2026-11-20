@@ -78,6 +78,21 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
         if cap == 'relativeHumidityMeasurement':
             patch_row(item, {'label': '현재 습도', 'displayType': 'state',
                              'state': {'label': '{{humidity.value}}%'}})
+        if cap == 'temperatureMeasurement':
+            patch_row(item, {'label': '현재 온도', 'displayType': 'state',
+                             'state': {'label': '{{temperature.value}}°C'}})
+        if is_fan and cap == NS + 'fanOscillationDegrees':
+            item['visibleCondition'] = {'capability': NS + 'fanOscillationControl', 'version': 1,
+                'component': 'main', 'value': 'fanOscillationMode.value', 'operator': 'EQUALS',
+                'operand': 'horizontal', 'valueType': 'string', 'hideOnUnmatch': False}
+        if is_derh and cap == NS + 'dryRemainingMinutes':
+            item['visibleCondition'] = {'capability': NS + 'dryRemainingMinutes', 'version': 1,
+                'component': 'main', 'value': 'remainingMinutes.value', 'operator': 'GREATER_THAN',
+                'operand': '0', 'valueType': 'integer', 'hideOnUnmatch': True}
+        if is_derh and cap == NS + 'isWarmingUp':
+            item['visibleCondition'] = {'capability': NS + 'isWarmingUp', 'version': 1,
+                'component': 'main', 'value': 'warmingUp.value', 'operator': 'EQUALS',
+                'operand': 'yes', 'valueType': 'string', 'hideOnUnmatch': True}
         if cap == 'mode':
             item['patch'] = [{'op': 'replace', 'path': '/0/label',
                               'value': '바람 모드' if is_fan else '운전 모드'}]

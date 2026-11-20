@@ -88,7 +88,17 @@
           "path": "/0/label",
           "value": "회전 각도 (°)"
         }
-      ]
+      ],
+      "visibleCondition": {
+        "capability": "earthpanel38939.fanOscillationControl",
+        "version": 1,
+        "component": "main",
+        "value": "fanOscillationMode.value",
+        "operator": "EQUALS",
+        "operand": "horizontal",
+        "valueType": "string",
+        "hideOnUnmatch": false
+      }
     },
     {
       "component": "main",
@@ -114,7 +124,19 @@
       "capability": "temperatureMeasurement",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0",
+          "value": {
+            "label": "현재 온도",
+            "displayType": "state",
+            "state": {
+              "label": "{{temperature.value}}°C"
+            }
+          }
+        }
+      ]
     },
     {
       "component": "main",

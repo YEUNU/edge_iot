@@ -26,6 +26,7 @@ local cap_alarmBuzzer   = capabilities[NS .. ".alarmBuzzer"]
 local cap_indicatorMode = capabilities[NS .. ".indicatorLightMode"]
 local cap_deviceFault   = capabilities[NS .. ".deviceFault"]
 local cap_filterAlert = capabilities[NS .. ".filterAlert"]
+local cap_filterMaintenance = capabilities[NS .. ".filterMaintenance"]
 local cap_favoriteLevel = capabilities[NS .. ".airPurifierFavoriteLevel"]
 
 local SIID_AIRP = 2
@@ -57,6 +58,7 @@ local MODE_LABELS = { [0] = "자동", [1] = "수면", [2] = "즐겨찾기" }
 local LABEL_TO_MODE_CODE = { ["자동"] = 0, ["수면"] = 1, ["즐겨찾기"] = 2 }
 
 M.supported_modes = { "자동", "수면", "즐겨찾기" }
+M.uses_filter_maintenance = true
 M.confirmation_dependencies = { power = { "mode", "favorite-level" }, mode = { "favorite-level" } }
 
 local FAULT_LABELS = { [0] = "noFault", [2] = "motorStuck", [3] = "sensorLost" }
@@ -114,6 +116,9 @@ local function emit_supported_modes(device)
   events.emit(device, capabilities.filterState,
     capabilities.filterState.supportedFilterCommands(
       { "resetFilter" }, { visibility = { displayed = false } }))
+  if cap_filterMaintenance then
+    events.emit(device, cap_filterMaintenance, cap_filterMaintenance.status("ready"))
+  end
 end
 
 function M.on_added(device) emit_supported_modes(device) end

@@ -5,7 +5,7 @@
   },
   "detailView": [
     {
-      "label": "모드",
+      "label": "운전 모드",
       "displayType": "list",
       "list": {
         "command": {

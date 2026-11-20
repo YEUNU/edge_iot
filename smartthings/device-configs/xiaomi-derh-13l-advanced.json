@@ -107,7 +107,19 @@
       "capability": "temperatureMeasurement",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0",
+          "value": {
+            "label": "현재 온도",
+            "displayType": "state",
+            "state": {
+              "label": "{{temperature.value}}°C"
+            }
+          }
+        }
+      ]
     },
     {
       "component": "main",
@@ -260,14 +272,34 @@
       "capability": "earthpanel38939.dryRemainingMinutes",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [],
+      "visibleCondition": {
+        "capability": "earthpanel38939.dryRemainingMinutes",
+        "version": 1,
+        "component": "main",
+        "value": "remainingMinutes.value",
+        "operator": "GREATER_THAN",
+        "operand": "0",
+        "valueType": "integer",
+        "hideOnUnmatch": true
+      }
     },
     {
       "component": "main",
       "capability": "earthpanel38939.isWarmingUp",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [],
+      "visibleCondition": {
+        "capability": "earthpanel38939.isWarmingUp",
+        "version": 1,
+        "component": "main",
+        "value": "warmingUp.value",
+        "operator": "EQUALS",
+        "operand": "yes",
+        "valueType": "string",
+        "hideOnUnmatch": true
+      }
     },
     {
       "component": "main",
