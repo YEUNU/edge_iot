@@ -169,7 +169,7 @@ function M.apply_state(device, p)
   local fault = p["fault"]
   if fault ~= nil and FAULT_LABELS[fault] then
     local message
-    if fault == 2 then message = "모터 막힘이 감지됐어요. 기기 상태를 확인해 주세요." end
+    if fault == 2 then message = "모터 고장이 감지됐어요. 기기 상태를 확인해 주세요." end
     if fault == 3 then message = "센서 연결 오류가 감지됐어요. 기기 상태를 확인해 주세요." end
     alerts.report(device, "fault", FAULT_LABELS[fault], message)
   end

@@ -19,6 +19,7 @@ tuya-local/bridge/data/
 tuya-local/bridge/.venv/
 
 tuya-local/bridge/.env
+notification-service/.env
 
 tuya-local/bridge/state/
 

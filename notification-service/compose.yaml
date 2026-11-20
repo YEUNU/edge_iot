@@ -12,6 +12,7 @@ services:
     security_opt: [no-new-privileges:true]
     environment:
       TZ: Asia/Seoul
+      SMARTTHINGS_NAMESPACE: "${SMARTTHINGS_NAMESPACE:-earthpanel38939}"
     volumes:
       - type: bind
         source: ${NOTIFIER_DATA_DIR:-./data}

@@ -72,14 +72,6 @@ SmartThings의 프로필 갱신 안내가 나오면 확인을 누른 뒤 기기�
 
 번역 형식 참고: [SmartThings Capability Translations](https://developer.smartthings.com/docs/devices/capabilities/capability-translations/).
 
-## 실기 검증과 앱 제약
-
-[모바일 확인 항목](UI_AUDIT.md)에 따라 기본·고급 화면과 모드별 제어를 확인합니다.
-관리 버튼의 `state.label` 안내는 생성된 presentation에 포함되지만 현재 Android 앱은
-`pushButton` 상태 자리에 `-`를 표시합니다. 버튼 제목과 접근성 이름으로 동작을 구분하며,
-앱이 결정하는 카드 간격·색상·아이콘 모양은 드라이버에서 임의로 바꾸지 않습니다.
-필터 초기화는 실제 교체·청소 후에만 실행해야 합니다.
-
 ## 기기별 동작 범위
 
 제습기 목표 습도는 옷 건조 모드에서 조절할 수 없으며 실제 보고값을 유지합니다.

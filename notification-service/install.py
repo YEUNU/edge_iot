@@ -2,23 +2,13 @@
 """Prepare persistent credentials/configuration and run the Docker Compose service."""
 import argparse
 import fcntl
-import hashlib
 import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 
-from notifier import Auth, Client, CONDITIONS, DEFAULT_HOME, finite_number, save_json, timestamp_value, valid_token
-
-
-def token_fingerprint(token):
-    if not isinstance(token, str):
-        return None
-    try:
-        return hashlib.sha256(token.encode()).hexdigest()
-    except UnicodeError:
-        return None
+from notifier import Auth, Client, CONDITIONS, DEFAULT_HOME, NAMESPACE, finite_number, save_json, timestamp_value, valid_token
 
 
 def prepare(home, args, parser):
@@ -45,42 +35,10 @@ def prepare(home, args, parser):
         if not finite_number(expiry):
             parser.error("CLI profile expiry is invalid")
         save_json(home / "auth.json", {"accessToken": auth["accessToken"],
-                  "refreshToken": auth["refreshToken"], "expiresAt": expiry,
-                  "cliTransfer": {"profile": args.auth_profile,
-                                  "refreshTokenHash": token_fingerprint(auth["refreshToken"])}})
+                  "refreshToken": auth["refreshToken"], "expiresAt": expiry})
+        del data[key]
+        save_json(credentials, data)
     auth = Auth(home / "auth.json")
-    transfer = auth.data.get("cliTransfer")
-    if transfer is not None:
-        profile, fingerprint = transfer["profile"], transfer["refreshTokenHash"]
-    else:
-        # Recover an interrupted installation written by an older version only
-        # when the selected dedicated profile still holds this exact token.
-        profile = args.auth_profile
-        fingerprint = token_fingerprint(auth.data["refreshToken"]) if profile != "default" else None
-    if fingerprint is not None and credentials.exists():
-        try:
-            data = json.loads(credentials.read_text())
-            if not isinstance(data, dict):
-                raise ValueError("CLI credentials must be an object")
-        except (OSError, ValueError, RecursionError):
-            if transfer is not None:
-                parser.error("Cannot finish authentication transfer: CLI credentials are unreadable")
-            # An already installed service remains independent of unrelated
-            # CLI file damage; only journaled ownership must finish first.
-        else:
-            key = profile + ":api.smartthings.com"
-            candidate = data.get(key)
-            if isinstance(candidate, dict) and token_fingerprint(candidate.get("refreshToken")) == fingerprint:
-                # Persist the service copy before removing only the imported CLI
-                # session. A failed removal is resumed even after service rotation;
-                # a newer, independent CLI login in that profile remains untouched.
-                del data[key]
-                save_json(credentials, data)
-    if transfer is not None:
-        completed = dict(auth.data)
-        completed.pop("cliTransfer")
-        save_json(home / "auth.json", completed)
-        auth.data = completed
     client = Client(auth)
     devices = []
     for device_id in dict.fromkeys(args.device):
@@ -102,19 +60,19 @@ def prepare(home, args, parser):
             parser.error("Test device must be the Xiaomi alert endpoint in the same location")
     save_json(home / "config.json", {"locationId": args.location, "devices": devices,
                                     "pollSeconds": 15, "testDeviceId": args.test_device})
-    source = Path(__file__).parent
-    for name in ("notifier.py", "healthcheck.py", "integration_settings.py", "Dockerfile", "compose.yaml", ".dockerignore"):
-        if (source / name).resolve() != (home / name).resolve():
-            shutil.copyfile(source / name, home / name)
-        os.chmod(home / name, 0o600)
-    # Encode dotenv syntax instead of restricting valid directory names.
-    # Doubling dollars suppresses Compose environment interpolation.
+    source = Path(__file__).resolve().parent
     data_dir = str(home).translate(str.maketrans({
         "\\": "\\\\", '"': '\\"', "$": "$$", "\n": "\\n", "\r": "\\r", "\t": "\\t",
     }))
-    (home / ".env").write_text(
-        f'NOTIFIER_UID={os.getuid()}\nNOTIFIER_GID={os.getgid()}\nNOTIFIER_DATA_DIR="{data_dir}"\n')
-    os.chmod(home / ".env", 0o600)
+    env_text = (
+        f'NOTIFIER_UID={os.getuid()}\n'
+        f'NOTIFIER_GID={os.getgid()}\n'
+        f'NOTIFIER_DATA_DIR="{data_dir}"\n'
+        f'SMARTTHINGS_NAMESPACE="{NAMESPACE}"\n'
+    )
+    for env_dir in {source, home}:
+        (env_dir / ".env").write_text(env_text)
+        os.chmod(env_dir / ".env", 0o600)
 
 
 def main():
@@ -127,6 +85,7 @@ def main():
     parser.add_argument("--prepare-only", action="store_true")
     args = parser.parse_args()
     home = args.data_dir.expanduser().resolve()
+    source = Path(__file__).resolve().parent
     os.umask(0o077)
     docker = shutil.which("docker")
     if not docker:
@@ -142,7 +101,7 @@ def main():
         except BlockingIOError:
             parser.error("Stop the notification service before reconfiguring")
         prepare(home, args, parser)
-    compose = [docker, "compose", "--project-directory", str(home)]
+    compose = [docker, "compose", "--project-directory", str(source), "--env-file", str(home / ".env")]
     subprocess.run(compose + ["config", "--quiet"], check=True)
     if not args.prepare_only:
         subprocess.run(compose + ["up", "-d", "--build"], check=True)

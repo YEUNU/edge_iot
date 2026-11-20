@@ -218,27 +218,7 @@ function Client:send_raw(json_body, session)
 end
 
 local function make_body(id, method, params)
-  -- params must already be serialized JSON (arrays for properties, object for action).
-  return string.format('{"id":%d,"method":"%s","params":%s}', id, method, params)
-end
-
---- Encode a Lua value to JSON literal. Limited types: bool/number/string.
--- Returns string suitable for inlining into a JSON document.
-local function encode_value(v)
-  local t = type(v)
-  if t == "boolean" then return v and "true" or "false" end
-  if t == "number" then
-    if v ~= v then return "null" end  -- NaN
-    if math.type and math.type(v) == "integer" then return tostring(v) end
-    return tostring(v)
-  end
-  if t == "string" then
-    -- Minimal JSON string escape; miIO values are simple ASCII/UTF-8.
-    local esc = v:gsub('\\', '\\\\'):gsub('"', '\\"'):gsub("\n", "\\n"):gsub("\r", "\\r"):gsub("\t", "\\t")
-    return '"' .. esc .. '"'
-  end
-  if v == nil then return "null" end
-  error("cannot encode value of type " .. t)
+  return json.encode({ id = id, method = method, params = params })
 end
 
 --- Parse a JSON-RPC reply string. Returns (result, err).
@@ -270,7 +250,7 @@ end
 
 function Client:miio_info(session)
   local id = self:next_request_id()
-  local body = make_body(id, "miIO.info", "[]")
+  local body = make_body(id, "miIO.info", {})
   local resp, err = self:send_raw(body, session)
   if not resp then return nil, err end
   return self:_parse_reply(resp, id)
@@ -315,12 +295,10 @@ function Client:get_properties(props, session)
   for _, p in ipairs(props) do
     local did = p.did or string.format("%d-%d", p.siid, p.piid)
     requested[did] = p
-    entries[#entries + 1] = string.format(
-      '{"did":%s,"siid":%d,"piid":%d}', encode_value(did), p.siid, p.piid)
+    entries[#entries + 1] = { did = did, siid = p.siid, piid = p.piid }
   end
-  local params = "[" .. table.concat(entries, ",") .. "]"
   local id = self:next_request_id()
-  local body = make_body(id, "get_properties", params)
+  local body = make_body(id, "get_properties", entries)
   local resp, err = self:send_raw(body, session)
   if not resp then return nil, err end
   local result, parse_err = self:_parse_reply(resp, id)
@@ -335,13 +313,10 @@ function Client:set_properties(props)
   for _, p in ipairs(props) do
     local did = p.did or string.format("%d-%d", p.siid, p.piid)
     requested[did] = p
-    entries[#entries + 1] = string.format(
-      '{"did":%s,"siid":%d,"piid":%d,"value":%s}',
-      encode_value(did), p.siid, p.piid, encode_value(p.value))
+    entries[#entries + 1] = { did = did, siid = p.siid, piid = p.piid, value = p.value }
   end
-  local params = "[" .. table.concat(entries, ",") .. "]"
   local id = self:next_request_id()
-  local body = make_body(id, "set_properties", params)
+  local body = make_body(id, "set_properties", entries)
   local resp, err = self:send_raw(body)
   if not resp then return nil, err end
   local result, parse_err = self:_parse_reply(resp, id)
@@ -377,15 +352,7 @@ end
 
 function Client:action(siid, aiid, args, did)
   did = did or string.format("act-%d-%d", siid, aiid)
-  local in_arr = "[]"
-  if args and #args > 0 then
-    local parts = {}
-    for _, v in ipairs(args) do parts[#parts + 1] = encode_value(v) end
-    in_arr = "[" .. table.concat(parts, ",") .. "]"
-  end
-  local params = string.format(
-    '{"did":%s,"siid":%d,"aiid":%d,"in":%s}',
-    encode_value(did), siid, aiid, in_arr)
+  local params = { did = did, siid = siid, aiid = aiid, ["in"] = args or {} }
   local id = self:next_request_id()
   local body = make_body(id, "action", params)
   local resp, err = self:send_raw(body)

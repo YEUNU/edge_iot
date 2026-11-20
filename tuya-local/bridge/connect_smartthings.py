@@ -17,9 +17,14 @@ import tempfile
 import time
 import ipaddress
 import uuid
-from integration_settings import capability
 
 from pairing import PairingStore
+
+NAMESPACE = json.loads((Path(__file__).resolve().parents[2] / 'integration.json').read_text())['namespace']
+
+
+def capability(name):
+    return NAMESPACE + '.' + name
 
 
 def dispatch_enrollment(args):

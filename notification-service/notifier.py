@@ -17,15 +17,28 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from integration_settings import capability
+
+def _load_namespace():
+    env_ns = os.environ.get("SMARTTHINGS_NAMESPACE")
+    if env_ns:
+        return env_ns
+    cfg = Path(__file__).resolve().parents[1] / "integration.json"
+    if cfg.exists():
+        return json.loads(cfg.read_text(encoding="utf-8"))["namespace"]
+    return "earthpanel38939"
+
+
+NAMESPACE = _load_namespace()
+
+
+def capability(name):
+    return NAMESPACE + "." + name
+
 
 API = "https://api.smartthings.com/v1"
 TOKEN_URL = "https://auth-global.api.smartthings.com/oauth/token"
 CLI_CLIENT_ID = "d18cf96e-c626-4433-bf51-ddbb10c5d1ed"
 DEFAULT_HOME = Path.home() / "Library/Application Support/Xiaomi Notifications"
-MAX_JSON_DEPTH = 64
-# This model alternates waterFull and filterClean while both warnings remain.
-# A sustained filter-only interval permits the next waterFull notification.
 WATER_FULL_REARM_SECONDS = 300
 WATER_FULL_MAX_READ_GAP = 120
 REMINDER_SECONDS = 24 * 60 * 60
@@ -89,48 +102,8 @@ def object_field(value, key):
     return object_value(object_value(value).get(key, {}))
 
 
-def parse_json(raw):
-    """Bound nesting before the decoder, whose recursion limit varies by Python."""
-    if isinstance(raw, (bytes, bytearray)):
-        # Match json.loads' BOM and UTF-8/16/32 decoding for response bodies.
-        raw = raw.decode(json.detect_encoding(raw), "surrogatepass")
-    depth, quoted, escaped = 0, False, False
-    for char in raw:
-        if quoted:
-            if escaped:
-                escaped = False
-            elif char == "\\":
-                escaped = True
-            elif char == '"':
-                quoted = False
-        elif char == '"':
-            quoted = True
-        elif char in "[{":
-            depth += 1
-            if depth > MAX_JSON_DEPTH:
-                raise ValueError("JSON nesting limit exceeded")
-        elif char in "]}":
-            depth -= 1
-    return json.loads(raw)
-
-
 def valid_token(value):
     return isinstance(value, str) and bool(value) and all(33 <= ord(c) <= 126 for c in value)
-
-
-def valid_cli_transfer(value):
-    if (not isinstance(value, dict) or set(value) != {"profile", "refreshTokenHash"}
-            or not isinstance(value.get("profile"), str)
-            or not value["profile"] or value["profile"] == "default"
-            or not isinstance(value.get("refreshTokenHash"), str)
-            or len(value["refreshTokenHash"]) != 64
-            or any(c not in "0123456789abcdef" for c in value["refreshTokenHash"])):
-        return False
-    try:
-        value["profile"].encode()
-    except UnicodeError:
-        return False
-    return True
 
 
 def finite_number(value):
@@ -183,8 +156,6 @@ def episode_notified(record, messages):
     values = record.get("notified")
     if isinstance(values, list) and all(isinstance(item, str) and messages.get(item) for item in values):
         return set(values)
-    # Older records were only written after a successful push. Their current
-    # warning is therefore already notified even without the new episode list.
     return {value}
 
 
@@ -192,15 +163,13 @@ def reminder_deadlines(record, notified, now):
     deadlines = record.get("remindAfter", {}) if isinstance(record, dict) else {}
     if not isinstance(deadlines, dict):
         deadlines = {}
-    # Old state has no delivery times. Start its reminder interval on upgrade
-    # rather than replaying every already-notified warning at service startup.
     return {value: deadlines[value] if finite_number(deadlines.get(value)) and deadlines[value] >= 0
             else now + REMINDER_SECONDS for value in notified}
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None  # Never forward credentials to another destination.
+        return None
 
 
 HTTPS_CONTEXT = ssl.create_default_context()
@@ -221,11 +190,9 @@ def request_json(url, method="GET", data=None, token=None, form=False, accept="a
         if token:
             headers["Authorization"] = "Bearer " + token
         req = urllib.request.Request(url, data=body, headers=headers, method=method)
-        # Reuse verified trust configuration; each request keeps its own
-        # opener/handler and credentials, with redirects still disabled.
         https = urllib.request.HTTPSHandler(context=HTTPS_CONTEXT)
         with urllib.request.build_opener(NoRedirect, https).open(req, timeout=15) as response:
-            return object_value(parse_json(response.read()))
+            return object_value(json.loads(response.read()))
     except urllib.error.HTTPError as exc:
         raise RequestError(exc.code) from None
     except (OSError, http.client.HTTPException, ValueError, RecursionError):
@@ -239,8 +206,7 @@ class Auth:
         if (not all(valid_token(self.data.get(k)) for k in ("accessToken", "refreshToken"))
                 or not finite_number(self.data.get("expiresAt"))
                 or ("refreshAt" in self.data and (not finite_number(self.data["refreshAt"])
-                    or self.data["refreshAt"] > self.data["expiresAt"]))
-                or ("cliTransfer" in self.data and not valid_cli_transfer(self.data["cliTransfer"]))):
+                    or self.data["refreshAt"] > self.data["expiresAt"]))):
             raise RequestError("invalid-auth")
         self.pending_data = None
 
@@ -266,10 +232,6 @@ class Auth:
                                  "refreshToken": result["refresh_token"],
                                  "expiresAt": now + lifetime,
                                  "refreshAt": now + lifetime - min(3600, lifetime / 10)}
-            if "cliTransfer" in self.data:
-                self.pending_data["cliTransfer"] = dict(self.data["cliTransfer"])
-        # A temporary write failure must not discard an already rotated token.
-        # Retry persistence before using it or requesting another rotation.
         save_json(self.path, self.pending_data)
         self.data = self.pending_data
         self.pending_data = None
@@ -288,13 +250,9 @@ class Client:
     def api(self, path, method="GET", data=None):
         options = {}
         base = API
-        # Match the official SDK's device metadata/preferences API version;
-        # the generic JSON representation omits deviceModel.
         if path.startswith("/devices/") and (path.count("/") == 2 or path.endswith("/preferences")):
             options["accept"] = "application/vnd.smartthings+json;v=20170916"
             base = "https://api.smartthings.com"
-        # An OAuth endpoint rejection is an authentication failure, not a
-        # device API 401. Only the latter permits one refresh and API retry.
         token = self.auth.token()
         try:
             return object_value(self.request(base + path, method, data, token=token, **options))
@@ -321,12 +279,8 @@ def conditions(device, status):
         try:
             reading = object_field(object_field(main, cap), attr)
         except RequestError:
-            # Fault and filter warnings are independent. One malformed reading
-            # cannot discard a valid warning from the other capability.
             continue
         value, stamp = reading.get("value"), reading.get("timestamp")
-        # Missing/unknown reads never clear a warning. Timestamps reject stale
-        # reads; only an observed value change can distinguish a new condition.
         if isinstance(value, str) and value in messages and valid_timestamp(stamp):
             yield key, {"value": value, "timestamp": stamp}, messages
 
@@ -335,9 +289,7 @@ class Monitor:
     def __init__(self, config, state_path, client, clock=time.time):
         self.config, self.path, self.client, self.clock = config, Path(state_path), client, clock
         try:
-            self.state = object_value(parse_json(self.path.read_text()), "invalid-state") if self.path.exists() else {}
-            # Reject corrupt but parseable JSON before accepting any pushes;
-            # it must remain possible to persist the complete dedup state.
+            self.state = object_value(json.loads(self.path.read_text()), "invalid-state") if self.path.exists() else {}
             json.dumps(self.state, ensure_ascii=False, allow_nan=False).encode()
         except (ValueError, RecursionError):
             raise RequestError("invalid-state") from None
@@ -420,7 +372,7 @@ class Monitor:
                 return
             self.cloud_reads[device_id] = self.clock()
             if key not in self.state:
-                self.state[key] = stamp  # Do not replay historical button requests on installation.
+                self.state[key] = stamp
                 self.save_state()
                 return
             pending = self.retry.get(key)
@@ -449,8 +401,6 @@ class Monitor:
         self.poll_test()
         checked = 0
         for device in self.config["devices"]:
-            # Only a complete, current, online filterClean read may continue
-            # this window. Missing/failed/offline reads and restart break it.
             previous_water_clear = self.water_clear_reads.pop(device["id"], None)
             try:
                 health = object_value(self.client.api("/devices/" + device["id"] + "/health"))
@@ -479,16 +429,11 @@ class Monitor:
                     if not message and (warning_open or pending):
                         previous = (occurrence_stamp(saved), occurrence_stamp(pending[0]) if pending else None)
                         if any(stamp is not None and occurrence_stamp(occurrence) <= stamp for stamp in previous):
-                            # Conflicting values at the same timestamp have no
-                            # known order. Recovery must follow the warning.
                             continue
                     if pending and not same_condition(pending[0], occurrence):
                         self.retry.pop(state_key)
                         pending = None
                     elif pending and not same_occurrence(pending[0], occurrence):
-                        # A refreshed cloud timestamp does not create a new
-                        # warning or reset its retry deadline/backoff. Still
-                        # retain the latest timestamp to reject stale recovery.
                         pending = (occurrence, pending[1], pending[2])
                         self.retry[state_key] = pending
                     notified = episode_notified(self.state.get(state_key), messages)
@@ -505,9 +450,6 @@ class Monitor:
                             body = "다시 알려드려요. " + message if reminder_due else message
                             self.client.notify(self.config["locationId"], device, body)
                         except (RequestError, OSError) as exc:
-                            # Persist the newest observation even on failure so
-                            # restart cannot accept an older recovery reading.
-                            # The failed warning is still absent from notified.
                             self.save_condition(state_key, occurrence, notified, remind_after)
                             self.defer_push(state_key, occurrence, pending, device["label"], key, exc)
                             continue

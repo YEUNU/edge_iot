@@ -64,10 +64,6 @@ class IntegrationSettingsTest(unittest.TestCase):
             self.assertIn("permissions:\n  lan: {}", yaml)
             self.assertIn("vid: old-presentation", (self.root / driver / "profiles/device.yml").read_text())
             self.assertIn('namespace = "firstspace"', (self.root / driver / "src/integration_settings.lua").read_text())
-        for directory in configure.PYTHON_DIRS:
-            module = {}
-            exec((self.root / directory / "integration_settings.py").read_text(), module)
-            self.assertEqual(module["capability"]("control"), "firstspace.control")
 
     def test_namespace_switch_updates_only_owned_deployment_fields(self):
         self.apply()
@@ -119,16 +115,16 @@ class IntegrationSettingsTest(unittest.TestCase):
 
     def test_generated_modules_are_not_executed_to_read_previous_namespace(self):
         self.apply()
-        module_path = self.root / configure.PYTHON_DIRS[0] / "integration_settings.py"
-        module_path.write_text(module_path.read_text() + "raise RuntimeError('must not execute')\n")
+        module_path = self.root / configure.DRIVERS[0] / "src/integration_settings.lua"
+        module_path.write_text(module_path.read_text() + "error('must not execute')\n")
         updates = configure.planned_updates(self.root, "secondspace")
         self.assertIn(module_path, updates)
         self.assertNotIn("must not execute", updates[module_path])
 
     def test_stale_settings_are_reported_without_network_or_runtime_state(self):
         self.apply()
-        module_path = self.root / configure.PYTHON_DIRS[0] / "integration_settings.py"
-        module_path.write_text("# stale\n")
+        module_path = self.root / configure.DRIVERS[0] / "src/integration_settings.lua"
+        module_path.write_text("-- stale\n")
         updates = configure.planned_updates(self.root)
         self.assertEqual(set(updates), {module_path})
 

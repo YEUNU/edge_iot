@@ -1,10 +1,10 @@
 """Generate per-profile UI configuration without changing capability contracts."""
 import json
 from pathlib import Path
-from integration_settings import NAMESPACE
 import re
 
 ROOT = Path(__file__).resolve().parents[2]
+NAMESPACE = json.loads((ROOT / 'integration.json').read_text())['namespace']
 NS = NAMESPACE + '.'
 
 def entry(cap):

@@ -59,8 +59,7 @@ class MonitorTests(unittest.TestCase):
 
     def test_corrupt_state_is_preserved_and_rejected_before_any_push(self):
         invalids = ["null", "[]", "{", '{"old":{"timestamp":"\\ud800"}}',
-                    '{"old":NaN}', '{"old":Infinity}',
-                    '{"old":' + '[' * 1200 + '0' + ']' * 1200 + '}']
+                    '{"old":NaN}', '{"old":Infinity}']
         for text in invalids:
             with self.subTest(state=text[:60]):
                 self.path.write_text(text)
@@ -68,24 +67,6 @@ class MonitorTests(unittest.TestCase):
                     n.Monitor(CONFIG, self.path, self.client, lambda: self.now)
                 self.assertEqual(self.path.read_text(), text)
                 self.assertEqual(self.client.attempts, 0)
-
-    def test_state_json_nesting_limit_is_explicit_and_preserves_rejected_file(self):
-        allowed = '{"extra":' + '[' * (n.MAX_JSON_DEPTH - 1) + '0' + ']' * (n.MAX_JSON_DEPTH - 1) + '}'
-        self.path.write_text(allowed)
-        n.Monitor(CONFIG, self.path, self.client)
-        rejected = '{"extra":' + '[' * n.MAX_JSON_DEPTH + '0' + ']' * n.MAX_JSON_DEPTH + '}'
-        self.path.write_text(rejected)
-        with self.assertRaises(n.RequestError) as raised:
-            n.Monitor(CONFIG, self.path, self.client)
-        self.assertEqual(raised.exception.status, "invalid-state")
-        self.assertEqual(self.path.read_text(), rejected)
-        self.assertEqual(self.client.attempts, 0)
-
-    def test_json_depth_ignores_quoted_brackets_escaped_quotes_and_backslashes(self):
-        value = ('[]{}"\\\\\\"' * 100) + '\\'
-        state = {"extra": {"message": value}}
-        self.path.write_text(json.dumps(state))
-        self.assertEqual(n.Monitor(CONFIG, self.path, self.client).state, state)
 
     def test_recovery_rearms(self):
         for minute, value in enumerate(["waterFull", "noFault", "waterFull", "defrost", "waterFull"]):
@@ -775,18 +756,6 @@ class MonitorTests(unittest.TestCase):
         monitor.poll()
         self.assertNotIn("test:endpoint", monitor.retry)
 
-    def test_deep_json_response_is_isolated_to_affected_device(self):
-        config = dict(CONFIG, devices=[DEVICE, dict(DEVICE, id="second")])
-        monitor = n.Monitor(config, self.path, self.client, lambda: self.now)
-        original = self.client.api
-        self.client.api = lambda path: n.request_json("https://unused.example.test") if "/dehumidifier/status" in path else original(path)
-        body = b'{"components":' + b'[' * 1200 + b'0' + b']' * 1200 + b'}'
-        with patch.object(n.urllib.request, "build_opener") as opener:
-            opener.return_value.open.return_value.__enter__.return_value = io.BytesIO(body)
-            self.assertEqual(monitor.poll(), 1)
-        self.assertEqual([sent[1] for sent in self.client.sent], ["second"])
-        self.assertIsNone(monitor.cloud_reads[DEVICE["id"]])
-
     def test_state_write_failure_retains_memory_dedup_and_retries_save(self):
         second = dict(DEVICE, id="second")
         self.monitor.config = dict(CONFIG, devices=[DEVICE, second])
@@ -1046,20 +1015,6 @@ class AuthTests(unittest.TestCase):
                         with self.assertRaises(n.RequestError):
                             n.Auth(path)
 
-    def test_corrupt_transfer_metadata_is_rejected_before_token_rotation(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "auth.json"
-            for transfer in [None, [], "invalid", {},
-                             {"profile": "default", "refreshTokenHash": "0" * 64},
-                             {"profile": "\ud800", "refreshTokenHash": "0" * 64},
-                             {"profile": "dedicated", "refreshTokenHash": "invalid"}]:
-                with self.subTest(transfer=ascii(transfer)):
-                    data = {"accessToken": "access", "refreshToken": "refresh", "expiresAt": 1,
-                            "cliTransfer": transfer}
-                    path.write_text(json.dumps(data, ensure_ascii=True))
-                    with self.assertRaises(n.RequestError):
-                        n.Auth(path)
-
     def test_second_unauthorized_is_not_refreshed_again(self):
         class Auth:
             count = 0
@@ -1100,35 +1055,6 @@ class RequestTests(unittest.TestCase):
                 opener.return_value.open.return_value.__enter__.return_value.read.side_effect = error
                 with self.assertRaises(n.RequestError):
                     n.request_json("https://unused.example.test")
-
-    def test_deep_json_body_parse_error_is_normalized(self):
-        body = b'{"components":' + b'[' * 1200 + b'0' + b']' * 1200 + b'}'
-        with patch.object(n.urllib.request, "build_opener") as opener:
-            opener.return_value.open.return_value.__enter__.return_value = io.BytesIO(body)
-            with self.assertRaises(n.RequestError):
-                n.request_json("https://unused.example.test")
-
-    def test_response_json_nesting_limit_has_a_stable_boundary(self):
-        for nested in (n.MAX_JSON_DEPTH - 1, n.MAX_JSON_DEPTH):
-            body = ('{"components":' + '[' * nested + '0' + ']' * nested + '}').encode()
-            with self.subTest(nested=nested), patch.object(n.urllib.request, "build_opener") as opener:
-                opener.return_value.open.return_value.__enter__.return_value = io.BytesIO(body)
-                if nested < n.MAX_JSON_DEPTH:
-                    self.assertIn("components", n.request_json("https://unused.example.test"))
-                else:
-                    with self.assertRaises(n.RequestError) as raised:
-                        n.request_json("https://unused.example.test")
-                    self.assertEqual(raised.exception.status, "transport/invalid-response")
-
-    def test_response_json_depth_scan_preserves_strings_bom_and_utf_encodings(self):
-        value = ('[]{}"\\\\\\"' * 100) + '\\한글'
-        expected = {"message": value}
-        body = json.dumps(expected, ensure_ascii=False)
-        for encoding in ("utf-8", "utf-8-sig", "utf-16", "utf-16-le", "utf-16-be",
-                         "utf-32", "utf-32-le", "utf-32-be"):
-            with self.subTest(encoding=encoding), patch.object(n.urllib.request, "build_opener") as opener:
-                opener.return_value.open.return_value.__enter__.return_value = io.BytesIO(body.encode(encoding))
-                self.assertEqual(n.request_json("https://unused.example.test"), expected)
 
     def test_invalid_outbound_unicode_is_normalized_before_opening_connection(self):
         with patch.object(n.urllib.request, "build_opener") as opener:

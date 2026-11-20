@@ -52,8 +52,5 @@ MiOT 모델 정의로 속성 주소, 단위, 열거형, 읽기/쓰기 권한을 
 설정합니다. 전용 `dehumidifierTimer` capability로 720분을 처리하고, 선풍기는
 `powerOffTimer`의 화면·드라이버 상한 480분을 사용합니다.
 
-자동 검사는 속성 매핑·경계·순차 처리·지연 응답을 검사합니다. 장시간 운전, 실제 고장,
-물리적 풍량·소음·제습 성능을 증명하지 않습니다. 실기기 검증 절차는
-[검증 안내](VERIFICATION.md)를 따르며, 필터 수명 초기화는 모의 검증으로 확인합니다.
-
+자동 검사는 속성 매핑·경계·순차 처리·지연 응답을 검사합니다.
 MiOT action 전송 형식은 [python-miio 구현](https://github.com/rytilahti/python-miio/blob/master/miio/miot_device.py)의 `call_action_by`와 대조합니다. 속성 조회·쓰기의 배열 형식과 구분합니다.

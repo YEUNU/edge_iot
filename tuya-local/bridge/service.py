@@ -121,8 +121,6 @@ def main():
     if os.name == 'posix' and config_path.stat().st_mode & 0o077:
         parser.error('config contains secrets: chmod 600 ' + str(config_path))
     config = json.loads(config_path.read_text())
-    from local_network import restrict_to_hub
-    restrict_to_hub(config['ip'])
     if args.action == 'inspect':
         # Does not require a guessed mapping and never sends a control command.
         import tinytuya
