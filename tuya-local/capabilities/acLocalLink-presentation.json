@@ -10,7 +10,7 @@
   },
   "detailView": [
     {
-      "label": "기기 상태",
+      "label": "에어컨 기종",
       "displayType": "state",
       "state": {
         "label": "{{status.value}}"

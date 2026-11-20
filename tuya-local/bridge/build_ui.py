@@ -54,11 +54,11 @@ def build_model_library():
     presentation = {'dashboard': {'states': [], 'actions': [], 'panelItems': []},
                     'detailView': [], 'automation': {'conditions': [], 'actions': []}}
 
-    def model_summary(p):
+    def model_kind(p):
         rid = str(p['remote_index'])
         data = json.loads(gzip.decompress((CATALOG_DIR / (rid + '.json.gz')).read_bytes()))
         if data.get('control_style') == 'buttons':
-            return '창문/이동식 (버튼형)'
+            return '버튼형', '창문/이동식 (버튼형)'
         codes = [e['state'] for e in data.get('codes', []) if e['state'].get('power')]
         temps = sorted({s['target_temperature'] for s in codes})
         modes = {s['mode'] for s in codes}
@@ -70,13 +70,14 @@ def build_model_library():
             kind = '냉방단순형'
         else:
             kind = '냉방전용'
-        return f'{temp_text} {kind}'
+        return kind, f'{temp_text} {kind}'
 
     def model_label(p):
         rid = str(p['remote_index'])
         if p['remote_index'] == 104800501:
             return '기존 캐리어 (18~30°C 냉난방) · 104800501'
-        return f'{model_summary(p)} · {rid}'
+        _, summary = model_kind(p)
+        return f'{summary} · {rid}'
 
     for attr_name, label, values, command in [
         ('brand', '제조사', [{'key': b, 'value': brand_labels.get(b, b)} for b in brands], 'setBrand'),
@@ -97,10 +98,11 @@ def build_model_library():
     lines = ['return {']
     for p in profiles:
         aliases = '{' + ','.join(json.dumps(b) for b in p.get('brands', [p['manufacturer']])) + '}'
+        kind, _ = model_kind(p)
         lines.append('  [%s]={brand=%s,brands=%s,style=%s,name=%s,label=%s},' % (
             json.dumps(str(p['remote_index'])), json.dumps(p['manufacturer'], ensure_ascii=False),
             aliases, json.dumps(p.get('control_style', 'state')),
-            json.dumps(p['name'], ensure_ascii=False), json.dumps(model_summary(p), ensure_ascii=False)))
+            json.dumps(p['name'], ensure_ascii=False), json.dumps(kind, ensure_ascii=False)))
     (ROOT / 'src/catalog.lua').write_text('\n'.join(lines + ['}']) + '\n')
     return index, profiles, brands
 

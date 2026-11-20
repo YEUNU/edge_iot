@@ -254,7 +254,7 @@ assert(#calls==before+1,'pending storage must not trigger another command')
 local storage_warning=false
 for i=event_start+1,#events do
  local e=events[i]
- if e.cap==NS .. '.acLocalLink' and e.attr=='status' and e.value:find('전송 완료 (설정 저장 대기)',1,true) then storage_warning=true end
+ if e.cap==NS .. '.acLocalLink' and e.attr=='status' and e.value:find('저장 대기',1,true) then storage_warning=true end
 end
 assert(storage_warning,'successful IR with pending storage needs a separate status')
 request_override=function()return good_response()end
@@ -415,28 +415,28 @@ local function connection_text()
 end
 request_override=function(p)return response_for(p,18)end
 h.refresh.refresh(nil,d)
-assert(connection_text()=='캐리어 18~30°C 냉난방 · 전원 미확인 (마지막 설정)','unknown state must be distinguished from remembered settings')
+assert(connection_text()=='캐리어 냉난방 · 전원 미확인','unknown state must be distinguished from remembered settings')
 request_override=function(p)
  local result=response_for(p,18);result.state={power=true,mode='cool',fan='auto',target_temperature=18}
  return result
 end
 h.switch.on(nil,d)
-assert(connection_text()=='캐리어 18~30°C 냉난방 · 정상 연결 (마지막 전송)','a transmitted absolute state should keep the normal command-based label')
+assert(connection_text()=='캐리어 냉난방','a transmitted absolute state should keep the normal command-based label')
 fields.keys_open=true;fields.remote_key='extra'
 request_override=function(p,c)
  local result=response_for(p,18);result.supported_keys={{id='extra'}}
  return result
 end
 raw.sendKey(nil,d)
-assert(connection_text():find('버튼 제어 (상태 미확인)',1,true),'remote-button view must keep its button transmission label')
+assert(connection_text():find('버튼 제어',1,true),'remote-button view must keep its button transmission label')
 raw.back(nil,d)
-assert(connection_text()=='캐리어 18~30°C 냉난방 · 전원 미확인 (마지막 설정)','returning after a button must not imply an established power state')
+assert(connection_text()=='캐리어 냉난방 · 전원 미확인','returning after a button must not imply an established power state')
 request_override=function(p)
  local result=response_for(p,18);result.control_style='buttons';result.supported_keys={{id='power'}}
  return result
 end
 h.refresh.refresh(nil,d)
-assert(connection_text():find('버튼 제어 (상태 미확인)',1,true),'button-only profile must retain its absolute-state warning')
+assert(connection_text():find('버튼 제어',1,true),'button-only profile must retain its absolute-state warning')
 request_override=nil
 print('Unknown power and remembered settings are distinguished while button-view warnings stay intact')
 
@@ -461,7 +461,7 @@ d.emit_event=real_emit
 assert(changed and #calls==before+2 and d.is_online==true and fields.active_profile=='1000047')
 for i=changed_at+1,#events do
  local e=events[i]
- assert(not (e.cap==NS .. '.acLocalLink' and e.attr=='status' and e.value=='브리지 연결을 확인해 주세요'),
+ assert(not (e.cap==NS .. '.acLocalLink' and e.attr=='status' and e.value=='브리지 연결 확인 필요'),
   'failure publication must recheck the model after a note event reenters setup')
 end
 assert(not fields.busy and fields.pending_refresh==nil)
@@ -523,7 +523,7 @@ d.emit_event=real_emit
 
 stable.settings_save_pending=true;failed_event=true;failed_count=0
 function d:emit_event(e)
- if e.cap==NS .. '.acLocalLink' and e.value:find('전송 완료 (설정 저장 대기)',1,true) and failed_event then
+ if e.cap==NS .. '.acLocalLink' and e.value:find('저장 대기',1,true) and failed_event then
   failed_count=failed_count+1;failed_event=false;error('temporary status failure')
  end
  return real_emit(self,e)
@@ -582,7 +582,7 @@ for i=event_start+1,#events do
  local e=events[i]
  if e.cap==NS .. '.acLocalLink' then
   status_count=status_count+1
-  assert(e.value:find('전송 완료 (설정 저장 대기)',1,true),'pending save must take precedence over the button label')
+  assert(e.value:find('저장 대기',1,true),'pending save must take precedence over the button label')
  end
 end
 assert(status_count==1,'the pending button view must publish a single connection label')
@@ -590,7 +590,7 @@ event_start=#events
 for _=1,10 do h.refresh.refresh(nil,d)end
 assert(#events==event_start,'stable button/save-pending polls must not flicker or duplicate events')
 button_pending=false;event_start=#events;h.refresh.refresh(nil,d)
-assert(#events==event_start+1 and connection_text():find('버튼 제어 (상태 미확인)',1,true),
+assert(#events==event_start+1 and connection_text():find('버튼 제어',1,true),
  'save recovery must restore the button transmission warning once')
 request_override=nil
 print('Button-only pending-save status stays stable and restores the warning after recovery')
