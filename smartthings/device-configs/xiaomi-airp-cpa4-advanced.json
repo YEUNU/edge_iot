@@ -109,7 +109,19 @@
       "capability": "fineDustSensor",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0",
+          "value": {
+            "label": "초미세먼지",
+            "displayType": "state",
+            "state": {
+              "label": "{{fineDustLevel.value}} ㎍/㎥"
+            }
+          }
+        }
+      ]
     },
     {
       "component": "main",
@@ -119,8 +131,14 @@
       "patch": [
         {
           "op": "replace",
-          "path": "/0/label",
-          "value": "필터 잔량"
+          "path": "/0",
+          "value": {
+            "label": "필터 잔량",
+            "displayType": "state",
+            "state": {
+              "label": "{{filterLifeRemaining.value}}%"
+            }
+          }
         },
         {
           "op": "remove",

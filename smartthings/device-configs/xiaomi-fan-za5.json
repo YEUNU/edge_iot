@@ -30,6 +30,51 @@
     },
     {
       "component": "main",
+      "capability": "mode",
+      "version": 1,
+      "values": [],
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "운전 모드"
+        },
+        {
+          "op": "replace",
+          "path": "/0/list/command/alternatives",
+          "value": [
+            {
+              "key": "자연풍",
+              "value": "자연풍",
+              "type": "active"
+            },
+            {
+              "key": "직선풍",
+              "value": "직선풍",
+              "type": "active"
+            }
+          ]
+        },
+        {
+          "op": "replace",
+          "path": "/0/list/state/alternatives",
+          "value": [
+            {
+              "key": "자연풍",
+              "value": "자연풍",
+              "type": "active"
+            },
+            {
+              "key": "직선풍",
+              "value": "직선풍",
+              "type": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "component": "main",
       "capability": "fanSpeedPercent",
       "version": 1,
       "values": [],
@@ -38,19 +83,6 @@
           "op": "replace",
           "path": "/0/label",
           "value": "바람 세기"
-        }
-      ]
-    },
-    {
-      "component": "main",
-      "capability": "mode",
-      "version": 1,
-      "values": [],
-      "patch": [
-        {
-          "op": "replace",
-          "path": "/0/label",
-          "value": "바람 모드"
         }
       ]
     },
@@ -67,6 +99,11 @@
       "version": 1,
       "values": [],
       "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "꺼짐 예약"
+        },
         {
           "op": "replace",
           "path": "/0/slider/range",
@@ -121,7 +158,24 @@
         "capability": "mode",
         "version": 1,
         "values": [],
-        "patch": []
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/list/alternatives",
+            "value": [
+              {
+                "key": "자연풍",
+                "value": "자연풍",
+                "type": "active"
+              },
+              {
+                "key": "직선풍",
+                "value": "직선풍",
+                "type": "active"
+              }
+            ]
+          }
+        ]
       },
       {
         "component": "main",
@@ -182,7 +236,24 @@
         "capability": "mode",
         "version": 1,
         "values": [],
-        "patch": []
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/list/alternatives",
+            "value": [
+              {
+                "key": "자연풍",
+                "value": "자연풍",
+                "type": "active"
+              },
+              {
+                "key": "직선풍",
+                "value": "직선풍",
+                "type": "active"
+              }
+            ]
+          }
+        ]
       },
       {
         "component": "main",

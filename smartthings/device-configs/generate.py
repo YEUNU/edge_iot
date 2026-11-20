@@ -59,7 +59,8 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
             item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '최근 메시지'},
                              {'op': 'replace', 'path': '/1/state/label', 'value': '테스트 보내기'}]
         labels = {NS + 'alarmBuzzer': '조작음', NS + 'indicatorLightMode': '표시등',
-                  NS + 'childLock': '버튼 잠금', NS + 'fanOscillationDegrees': '회전 각도 (°)'}
+                  NS + 'childLock': '버튼 잠금', NS + 'fanOscillationDegrees': '회전 각도',
+                  NS + 'powerOffTimer': '꺼짐 예약', NS + 'dehumidifierTimer': '꺼짐 예약'}
         if cap in labels:
             item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': labels[cap]}]
         # Binary settings should be one-tap toggles, not two-option dialogs.
@@ -93,13 +94,16 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
             item['visibleCondition'] = {'capability': NS + 'isWarmingUp', 'version': 1,
                 'component': 'main', 'value': 'warmingUp.value', 'operator': 'EQUALS',
                 'operand': 'yes', 'valueType': 'string', 'hideOnUnmatch': True}
+        if cap == 'fineDustSensor':
+            patch_row(item, {'label': '초미세먼지', 'displayType': 'state',
+                             'state': {'label': '{{fineDustLevel.value}} ㎍/㎥'}})
         if cap == 'mode':
-            item['patch'] = [{'op': 'replace', 'path': '/0/label',
-                              'value': '바람 모드' if is_fan else '운전 모드'}]
+            item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '운전 모드'}]
         if cap == 'fanSpeedPercent':
             item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '바람 세기'}]
         if cap == 'filterState':
-            item['patch'] = [{'op': 'replace', 'path': '/0/label', 'value': '필터 잔량'}]
+            patch_row(item, {'label': '필터 잔량', 'displayType': 'state',
+                             'state': {'label': '{{filterLifeRemaining.value}}%'}})
             item['patch'].append({'op': 'remove', 'path': '/1'})
         if cap == NS + 'filterMaintenance':
             item['patch'] = [{'op': 'replace', 'path': '/0/label',
@@ -111,15 +115,20 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
                     'component': 'main', 'value': 'switch.value', 'operator': 'EQUALS',
                     'operand': 'off'}
         if cap == NS + 'currentHumidity':
-            item['patch'] = [{'op': 'replace', 'path': '/0/state/label', 'value': '{{humidity.value}} %'}]
+            item['patch'] = [{'op': 'replace', 'path': '/0/state/label', 'value': '{{humidity.value}}%'}]
         rows.append(item)
-    # Main controls retain the same relative order in basic and advanced views.
-    priority = ['switch', 'fanSpeedPercent', NS + 'targetHumidity', 'mode', NS + 'airPurifierFavoriteLevel',
-                NS + 'fanOscillationControl', NS + 'powerOffTimer', NS + 'dehumidifierTimer', NS + 'fanOscillationDegrees', NS + 'currentHumidity',
-                'fineDustSensor', 'relativeHumidityMeasurement',
+    # Unified 7-section layout across all appliances:
+    # 1. power -> 2. mode -> 3. intensity/target -> 4. auxiliary/timer ->
+    # 5. sensors/status -> 6. device settings -> 7. maintenance actions
+    priority = ['switch', 'mode',
+                'fanSpeedPercent', NS + 'targetHumidity', NS + 'airPurifierFavoriteLevel',
+                NS + 'fanOscillationControl', NS + 'fanOscillationDegrees',
+                NS + 'powerOffTimer', NS + 'dehumidifierTimer',
+                'fineDustSensor', NS + 'currentHumidity', 'relativeHumidityMeasurement',
                 'temperatureMeasurement', 'filterState', NS + 'deviceFault',
+                NS + 'dryRemainingMinutes', NS + 'isWarmingUp',
                 NS + 'indicatorLightMode', NS + 'alarmBuzzer', NS + 'childLock',
-                NS + 'dryAfterOff', NS + 'dryRemainingMinutes', NS + 'isWarmingUp',
+                NS + 'dryAfterOff',
                 NS + 'filterMaintenance', NS + 'latestAlert']
     rows.sort(key=lambda x: priority.index(x['capability']))
     # Dashboard state drives both the label and active/inactive card styling.
@@ -139,10 +148,14 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
                 limits = [40, 70] if cap == NS + 'targetHumidity' else [0, 480 if is_fan else 720]
                 if not any(p.get('path') == '/0' for p in item['patch']):
                     item['patch'].append({'op': 'replace', 'path': '/0/slider/range', 'value': limits})
-            if is_airp and cap == 'mode':
-                # Preserve the existing mode value for routines; only rename its UI.
+            if cap == 'mode' and (is_airp or is_fan or is_derh):
+                mode_pairs = (
+                    [('자동', '자동'), ('수면', '수면'), ('즐겨찾기', '수동')] if is_airp else
+                    [('자연풍', '자연풍'), ('직선풍', '직선풍')] if is_fan else
+                    [('스마트', '스마트'), ('수면', '수면'), ('옷 건조', '옷 건조')]
+                )
                 alternatives = [{'key': key, 'value': label, 'type': 'active'}
-                                for key, label in [('자동', '자동'), ('수면', '수면'), ('즐겨찾기', '수동')]]
+                                for key, label in mode_pairs]
                 paths = (['/0/list/command/alternatives', '/0/list/state/alternatives']
                          if group is rows else ['/0/list/alternatives'])
                 item['patch'].extend({'op': 'replace', 'path': path, 'value': alternatives}

@@ -30,6 +30,13 @@
     },
     {
       "component": "main",
+      "capability": "earthpanel38939.acModeControl",
+      "version": 1,
+      "values": [],
+      "patch": []
+    },
+    {
+      "component": "main",
       "capability": "thermostatCoolingSetpoint",
       "version": 1,
       "values": [],
@@ -43,17 +50,16 @@
     },
     {
       "component": "main",
-      "capability": "earthpanel38939.acModeControl",
-      "version": 1,
-      "values": [],
-      "patch": []
-    },
-    {
-      "component": "main",
       "capability": "airConditionerFanMode",
       "version": 1,
       "values": [],
-      "patch": []
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "바람 세기"
+        }
+      ]
     },
     {
       "component": "main",

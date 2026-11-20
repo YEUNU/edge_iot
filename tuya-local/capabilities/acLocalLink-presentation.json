@@ -10,7 +10,7 @@
   },
   "detailView": [
     {
-      "label": "연결",
+      "label": "기기 상태",
       "displayType": "state",
       "state": {
         "label": "{{status.value}}"

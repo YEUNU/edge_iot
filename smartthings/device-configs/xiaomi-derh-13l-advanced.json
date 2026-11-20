@@ -30,6 +30,61 @@
     },
     {
       "component": "main",
+      "capability": "mode",
+      "version": 1,
+      "values": [],
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/0/label",
+          "value": "운전 모드"
+        },
+        {
+          "op": "replace",
+          "path": "/0/list/command/alternatives",
+          "value": [
+            {
+              "key": "스마트",
+              "value": "스마트",
+              "type": "active"
+            },
+            {
+              "key": "수면",
+              "value": "수면",
+              "type": "active"
+            },
+            {
+              "key": "옷 건조",
+              "value": "옷 건조",
+              "type": "active"
+            }
+          ]
+        },
+        {
+          "op": "replace",
+          "path": "/0/list/state/alternatives",
+          "value": [
+            {
+              "key": "스마트",
+              "value": "스마트",
+              "type": "active"
+            },
+            {
+              "key": "수면",
+              "value": "수면",
+              "type": "active"
+            },
+            {
+              "key": "옷 건조",
+              "value": "옷 건조",
+              "type": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "component": "main",
       "capability": "earthpanel38939.targetHumidity",
       "version": 1,
       "values": [],
@@ -56,23 +111,15 @@
     },
     {
       "component": "main",
-      "capability": "mode",
+      "capability": "earthpanel38939.dehumidifierTimer",
       "version": 1,
       "values": [],
       "patch": [
         {
           "op": "replace",
           "path": "/0/label",
-          "value": "운전 모드"
-        }
-      ]
-    },
-    {
-      "component": "main",
-      "capability": "earthpanel38939.dehumidifierTimer",
-      "version": 1,
-      "values": [],
-      "patch": [
+          "value": "꺼짐 예약"
+        },
         {
           "op": "replace",
           "path": "/0/slider/range",
@@ -143,6 +190,40 @@
         }
       ],
       "patch": []
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.dryRemainingMinutes",
+      "version": 1,
+      "values": [],
+      "patch": [],
+      "visibleCondition": {
+        "capability": "earthpanel38939.dryRemainingMinutes",
+        "version": 1,
+        "component": "main",
+        "value": "remainingMinutes.value",
+        "operator": "GREATER_THAN",
+        "operand": "0",
+        "valueType": "integer",
+        "hideOnUnmatch": true
+      }
+    },
+    {
+      "component": "main",
+      "capability": "earthpanel38939.isWarmingUp",
+      "version": 1,
+      "values": [],
+      "patch": [],
+      "visibleCondition": {
+        "capability": "earthpanel38939.isWarmingUp",
+        "version": 1,
+        "component": "main",
+        "value": "warmingUp.value",
+        "operator": "EQUALS",
+        "operand": "yes",
+        "valueType": "string",
+        "hideOnUnmatch": true
+      }
     },
     {
       "component": "main",
@@ -269,40 +350,6 @@
     },
     {
       "component": "main",
-      "capability": "earthpanel38939.dryRemainingMinutes",
-      "version": 1,
-      "values": [],
-      "patch": [],
-      "visibleCondition": {
-        "capability": "earthpanel38939.dryRemainingMinutes",
-        "version": 1,
-        "component": "main",
-        "value": "remainingMinutes.value",
-        "operator": "GREATER_THAN",
-        "operand": "0",
-        "valueType": "integer",
-        "hideOnUnmatch": true
-      }
-    },
-    {
-      "component": "main",
-      "capability": "earthpanel38939.isWarmingUp",
-      "version": 1,
-      "values": [],
-      "patch": [],
-      "visibleCondition": {
-        "capability": "earthpanel38939.isWarmingUp",
-        "version": 1,
-        "component": "main",
-        "value": "warmingUp.value",
-        "operator": "EQUALS",
-        "operand": "yes",
-        "valueType": "string",
-        "hideOnUnmatch": true
-      }
-    },
-    {
-      "component": "main",
       "capability": "earthpanel38939.filterMaintenance",
       "version": 1,
       "values": [],
@@ -394,7 +441,29 @@
         "capability": "mode",
         "version": 1,
         "values": [],
-        "patch": []
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/list/alternatives",
+            "value": [
+              {
+                "key": "스마트",
+                "value": "스마트",
+                "type": "active"
+              },
+              {
+                "key": "수면",
+                "value": "수면",
+                "type": "active"
+              },
+              {
+                "key": "옷 건조",
+                "value": "옷 건조",
+                "type": "active"
+              }
+            ]
+          }
+        ]
       },
       {
         "component": "main",
@@ -500,7 +569,29 @@
         "capability": "mode",
         "version": 1,
         "values": [],
-        "patch": []
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/0/list/alternatives",
+            "value": [
+              {
+                "key": "스마트",
+                "value": "스마트",
+                "type": "active"
+              },
+              {
+                "key": "수면",
+                "value": "수면",
+                "type": "active"
+              },
+              {
+                "key": "옷 건조",
+                "value": "옷 건조",
+                "type": "active"
+              }
+            ]
+          }
+        ]
       },
       {
         "component": "main",
