@@ -9,6 +9,13 @@ local connection = caps[NS .. '.acLocalLink']
 local remote_keys = caps[NS .. '.acRemoteKeys']
 local mode_control = caps[NS .. '.acModeControl']
 local cached_emit
+local brand_labels={Samsung='삼성',LG='LG',Carrier='캐리어',Winia='위니아'}
+local function status_text(profile_id,text)
+  local id=tostring(profile_id or '')
+  local item=catalog[id]
+  if not item then return text end
+  return (brand_labels[item.brand] or item.brand)..' '..id..' · '..text
+end
 local function connection_note(device,text)
   if device:supports_capability(connection) then
     cached_emit(device,connection.ID..'.status',text,function() return connection.status(text) end)
@@ -197,8 +204,8 @@ local function apply(device, result, testing, request)
   end
   if not current_request(device,request) then return end
   if result.control_style=='buttons' or device:get_field('keys_open') then
-    connection_note(device,result.settings_save_pending and '전송 완료 · 설정 저장 대기'
-      or '버튼 제어 모드 · 실제 상태 미확인')
+    connection_note(device,status_text(request.profile,result.settings_save_pending and '전송 완료 (설정 저장 대기)'
+      or '버튼 제어 (상태 미확인)'))
     return
   end
   if type(s.power) == 'boolean' then
@@ -227,8 +234,8 @@ local function apply(device, result, testing, request)
   if settings.mode then emit('airConditionerMode.airConditionerMode',settings.mode,function() return caps.airConditionerMode.airConditionerMode(settings.mode) end) end
   if settings.fan then emit('airConditionerFanMode.fanMode',settings.fan,function() return caps.airConditionerFanMode.fanMode(settings.fan) end) end
   if current_request(device,request) then
-    connection_note(device,result.settings_save_pending and '전송 완료 · 설정 저장 대기'
-      or (s.power==nil and '전원 미확인 · 마지막 설정 표시' or '정상 연결 · 마지막 전송 기준'))
+    connection_note(device,status_text(request.profile,result.settings_save_pending and '전송 완료 (설정 저장 대기)'
+      or (s.power==nil and '전원 미확인 (마지막 설정)' or '정상 연결 (마지막 전송)')))
   end
 end
 
@@ -253,7 +260,7 @@ local function complete_request(device,request,ok,result,err)
       elseif request.changes and current_request(device,request) then
         note(device,'명령을 보냈습니다 · 실제 작동 상태는 확인할 수 없습니다')
       end
-      if result.settings_save_pending and current_request(device,request) then connection_note(device,'전송 완료 · 설정 저장 대기') end
+      if result.settings_save_pending and current_request(device,request) then connection_note(device,status_text(request.profile,'전송 완료 (설정 저장 대기)')) end
     end)
     return true
   else
