@@ -29,7 +29,7 @@ components:
 preferences:
   - name: showAdvanced
     title: 고급 기능 표시
-    description: 표시등, 부저, 잠금 기능을 표시합니다
+    description: 표시등, 조작음, 버튼 잠금, 필터 초기화를 표시합니다
     required: true
     preferenceType: boolean
     definition:
@@ -45,7 +45,7 @@ preferences:
       maxLength: 15
       default: "0.0.0.0"
   - name: deviceToken
-    title: 기기 Token (32-hex)
+    title: 기기 토큰 (32자리)
     description: 자동 검색으로 확보되지 않을 때만 기기의 32자리 로컬 토큰 입력
     required: true
     preferenceType: string

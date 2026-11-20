@@ -7,7 +7,7 @@
           { "key": "noFault", "value": "정상", "type": "inactive" },
           { "key": "waterFull", "value": "물통 가득 참", "type": "active" },
           { "key": "sensorFault1", "value": "센서 고장", "type": "active" },
-          { "key": "sensorFault2", "value": "센서 고장 2", "type": "active" },
+          { "key": "sensorFault2", "value": "보조 센서 고장", "type": "active" },
           { "key": "commFault1", "value": "통신 오류", "type": "active" },
           { "key": "filterClean", "value": "필터 청소 필요", "type": "active" },
           { "key": "defrost", "value": "제상 중", "type": "active" },
@@ -15,7 +15,7 @@
           { "key": "overload", "value": "과부하", "type": "active" },
           { "key": "lackOfRefrigerant", "value": "냉매 부족", "type": "active" },
           { "key": "motorStuck", "value": "모터 막힘", "type": "active" },
-          { "key": "sensorLost", "value": "센서 끊김", "type": "active" }
+          { "key": "sensorLost", "value": "센서 연결 오류", "type": "active" }
         ]
       }
     ],
@@ -32,7 +32,7 @@
           { "key": "noFault", "value": "정상", "type": "inactive" },
           { "key": "waterFull", "value": "물통 가득 참", "type": "active" },
           { "key": "sensorFault1", "value": "센서 고장", "type": "active" },
-          { "key": "sensorFault2", "value": "센서 고장 2", "type": "active" },
+          { "key": "sensorFault2", "value": "보조 센서 고장", "type": "active" },
           { "key": "commFault1", "value": "통신 오류", "type": "active" },
           { "key": "filterClean", "value": "필터 청소 필요", "type": "active" },
           { "key": "defrost", "value": "제상 중", "type": "active" },
@@ -40,7 +40,7 @@
           { "key": "overload", "value": "과부하", "type": "active" },
           { "key": "lackOfRefrigerant", "value": "냉매 부족", "type": "active" },
           { "key": "motorStuck", "value": "모터 막힘", "type": "active" },
-          { "key": "sensorLost", "value": "센서 끊김", "type": "active" }
+          { "key": "sensorLost", "value": "센서 연결 오류", "type": "active" }
         ]
       }
     }
@@ -55,7 +55,7 @@
             { "key": "noFault", "value": "정상", "type": "inactive" },
             { "key": "waterFull", "value": "물통 가득 참", "type": "active" },
             { "key": "sensorFault1", "value": "센서 고장", "type": "active" },
-            { "key": "sensorFault2", "value": "센서 고장 2", "type": "active" },
+            { "key": "sensorFault2", "value": "보조 센서 고장", "type": "active" },
             { "key": "commFault1", "value": "통신 오류", "type": "active" },
             { "key": "filterClean", "value": "필터 청소 필요", "type": "active" },
             { "key": "defrost", "value": "제상 중", "type": "active" },
@@ -63,7 +63,7 @@
             { "key": "overload", "value": "과부하", "type": "active" },
             { "key": "lackOfRefrigerant", "value": "냉매 부족", "type": "active" },
             { "key": "motorStuck", "value": "모터 막힘", "type": "active" },
-            { "key": "sensorLost", "value": "센서 끊김", "type": "active" }
+            { "key": "sensorLost", "value": "센서 연결 오류", "type": "active" }
           ],
           "value": "fault.value",
           "valueType": "string",

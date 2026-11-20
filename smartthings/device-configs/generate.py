@@ -51,7 +51,7 @@ for profile in sorted((ROOT / 'xiaomi-miio/profiles').glob('*.yml')):
                 'component': 'main', 'value': 'adjustable.value', 'operator': 'EQUALS',
                 'operand': 'yes', 'valueType': 'string', 'hideOnUnmatch': False}
         if cap == NS + 'dryAfterOff':
-            patch_row(item, {'label': '종료 후 내부 건조', 'displayType': 'toggleSwitch',
+            patch_row(item, {'label': '종료 후 건조', 'displayType': 'toggleSwitch',
                 'toggleSwitch': {'command': {'on': 'enable', 'off': 'disable'},
                     'state': {'value': 'dryAfterOff.value', 'on': 'on', 'off': 'off',
                               'valueType': 'string'}}})

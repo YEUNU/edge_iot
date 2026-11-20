@@ -37,7 +37,7 @@ components:
 preferences:
   - name: showAdvanced
     title: 고급 기능 표시
-    description: 온도, 표시등, 부저, 잠금, 필터 관리를 표시합니다
+    description: 온도, 표시등, 조작음, 버튼 잠금, 종료 후 건조, 필터 초기화를 표시합니다
     required: true
     preferenceType: boolean
     definition:
@@ -53,7 +53,7 @@ preferences:
       maxLength: 15
       default: "0.0.0.0"
   - name: deviceToken
-    title: 기기 Token (32-hex)
+    title: 기기 토큰 (32자리)
     description: 자동 검색으로 확보되지 않을 때만 기기의 32자리 로컬 토큰 입력
     required: true
     preferenceType: string
@@ -64,4 +64,4 @@ preferences:
       default: "00000000000000000000000000000000"
 metadata:
   mnmn: SmartThingsCommunity
-  vid: e05c5004-5bb5-3a10-84d0-53e459be30eb
+  vid: 32dd7f2e-7ce0-3224-ac2c-09e64c39ed0a

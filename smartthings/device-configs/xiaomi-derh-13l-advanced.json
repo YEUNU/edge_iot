@@ -330,7 +330,7 @@
           "op": "replace",
           "path": "/0",
           "value": {
-            "label": "종료 후 내부 건조",
+            "label": "종료 후 건조",
             "displayType": "toggleSwitch",
             "toggleSwitch": {
               "command": {

@@ -197,8 +197,8 @@ local function apply(device, result, testing, request)
   end
   if not current_request(device,request) then return end
   if result.control_style=='buttons' or device:get_field('keys_open') then
-    connection_note(device,result.settings_save_pending and '명령 전송 완료 · 설정 저장 대기'
-      or '버튼 전송 기준 · 실제 상태는 확인할 수 없습니다')
+    connection_note(device,result.settings_save_pending and '전송 완료 · 설정 저장 대기'
+      or '버튼 제어 모드 · 실제 상태 미확인')
     return
   end
   if type(s.power) == 'boolean' then
@@ -227,8 +227,8 @@ local function apply(device, result, testing, request)
   if settings.mode then emit('airConditionerMode.airConditionerMode',settings.mode,function() return caps.airConditionerMode.airConditionerMode(settings.mode) end) end
   if settings.fan then emit('airConditionerFanMode.fanMode',settings.fan,function() return caps.airConditionerFanMode.fanMode(settings.fan) end) end
   if current_request(device,request) then
-    connection_note(device,result.settings_save_pending and '명령 전송 완료 · 설정 저장 대기'
-      or (s.power==nil and '전원 미확인 · 저장된 설정 기준' or '리모컨 명령 기준'))
+    connection_note(device,result.settings_save_pending and '전송 완료 · 설정 저장 대기'
+      or (s.power==nil and '전원 미확인 · 마지막 설정 표시' or '정상 연결 · 마지막 전송 기준'))
   end
 end
 
@@ -253,7 +253,7 @@ local function complete_request(device,request,ok,result,err)
       elseif request.changes and current_request(device,request) then
         note(device,'명령을 보냈습니다 · 실제 작동 상태는 확인할 수 없습니다')
       end
-      if result.settings_save_pending and current_request(device,request) then connection_note(device,'명령 전송 완료 · 설정 저장 대기') end
+      if result.settings_save_pending and current_request(device,request) then connection_note(device,'전송 완료 · 설정 저장 대기') end
     end)
     return true
   else
@@ -269,7 +269,7 @@ local function complete_request(device,request,ok,result,err)
       if not current_request(device,request) then return end
       note(device,'요청 실패 · 연결 또는 지원 조합을 확인하세요')
       if current_request(device,request) then
-        connection_note(device,err=='unsupported' and '이 조합은 지원하지 않습니다' or '브리지 연결 확인 필요')
+        connection_note(device,err=='unsupported' and '지원하지 않는 설정 조합입니다' or '브리지 연결을 확인해 주세요')
       end
     end)
     warn(device,'Tuya LAN request or response failed')
